@@ -197,3 +197,45 @@ def check_postgis_version(pg_cur, settings, logger):
     logger.info("")
     logger.info("Running on Postgres {0} and PostGIS {1} (with GEOS {2})"
                 .format(pg_version, postgis_version, geos_version))
+
+
+# imports a Shapefile into Postgres in 2 steps: SHP > SQL; SQL > Postgres
+# overcomes issues trying to use psql with PGPASSWORD set at runtime
+def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_table, logger):
+
+    # delete target table or append to it?
+    if delete_table:
+        delete_append_flag = "-d"
+    else:
+        delete_append_flag = "-a"
+
+    # build shp2pgsql command line
+    shp2pgsql_cmd = "shp2pgsql {0} -s 4283 -i -I {1} {2}.{3}".format(delete_append_flag, file_path, pg_schema, pg_table)
+
+    # convert the Shapefile to SQL statements
+    try:
+        process = subprocess.Popen(shp2pgsql_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        sqlobj, err = process.communicate()
+    except:
+        logger.fatal("Importing {0} - Couldn't convert Shapefile to SQL".format(file_path))
+        return False
+
+    # prep Shapefile SQL
+    sql = str(sqlobj)
+    sql = sql.replace("Shapefile type: ", "-- Shapefile type: ")
+    sql = sql.replace("Postgis type: ", "-- Postgis type: ")
+    sql = sql.replace("SELECT DropGeometryColumn", "-- SELECT DropGeometryColumn")
+
+    # this is required due to differing approaches by different versions of PostGIS
+    sql = sql.replace("DROP TABLE ", "DROP TABLE IF EXISTS ")
+    sql = sql.replace("DROP TABLE IF EXISTS IF EXISTS ", "DROP TABLE IF EXISTS ")
+
+    # import data to Postgres
+    try:
+        pg_cur.execute(sql)
+    except:
+        logger.fatal("Importing {0} - Couldn't run Shapefile SQL".format(file_path))
+        return False
+
+    logger.info("Successfully imported {0}".format(pg_table))
+    return True

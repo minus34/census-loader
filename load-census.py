@@ -81,8 +81,8 @@ def main():
     start_time = datetime.now()
     logger.info("Part 2 of 4 : Start census boundary load : {0}".format(start_time))
     load_boundaries(pg_cur, settings)
-    prep_boundaries(pg_cur, settings)
-    create_boundaries_for_analysis(settings)
+    # prep_boundaries(pg_cur, settings)
+    # create_boundaries_for_analysis(settings)
     logger.info("Part 2 of 4 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
     # # PART 3 - create flattened and standardised GNAF and Administrative Boundary reference tables
@@ -154,7 +154,7 @@ def set_arguments():
     census_year = '2016'
     
     parser.add_argument(
-        '--census-version', default=census_year,
+        '--census-year', default=census_year,
         help='Census year as YYYY. Defaults to last census \'' + census_year + '\'.')
     parser.add_argument(
         '--data-schema', default='census_' + census_year + '_data',
@@ -175,10 +175,10 @@ def set_arguments():
     parser.add_argument(
         '--census-bdys-path', required=True, help='Local path to source admin boundary files.')
 
-    # states to load
-    parser.add_argument('--states', nargs='+', choices=["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"],
-                        default=["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"],
-                        help='List of states to load data for. Defaults to all states.')
+    # # states to load
+    # parser.add_argument('--states', nargs='+', choices=["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"],
+    #                     default=["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"],
+    #                     help='List of states to load data for. Defaults to all states.')
 
     return parser.parse_args()
 
@@ -189,20 +189,21 @@ def get_settings(args):
 
     settings['max_concurrent_processes'] = args.max_processes
     settings['census_year'] = args.census_year
-    settings['states_to_load'] = args.states
+    # settings['states_to_load'] = args.states
+    settings['states'] = ["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"]
     settings['data_schema'] = args.data_schema
     settings['boundary_schema'] = args.boundary_schema
-    settings['data_network_directory'] = args.gnaf_tables_path.replace("\\", "/")
+    settings['data_network_directory'] = args.census_data_path.replace("\\", "/")
     if args.local_server_dir:
         settings['data_pg_server_local_directory'] = args.local_server_dir.replace("\\", "/")
     else:
         settings['data_pg_server_local_directory'] = settings['data_network_directory']
-    settings['admin_bdys_local_directory'] = args.admin_bdys_path.replace("\\", "/")
+    settings['boundaries_local_directory'] = args.census_bdys_path.replace("\\", "/")
 
     # create postgres connect string
     settings['pg_host'] = args.pghost or os.getenv("PGHOST", "localhost")
     settings['pg_port'] = args.pgport or os.getenv("PGPORT", 5432)
-    settings['pg_db'] = args.pgdb or os.getenv("PGDATABASE", "psma")
+    settings['pg_db'] = args.pgdb or os.getenv("PGDATABASE", "geo")
     settings['pg_user'] = args.pguser or os.getenv("PGUSER", "postgres")
     settings['pg_password'] = args.pgpassword or os.getenv("PGPASSWORD", "password")
 
@@ -243,13 +244,13 @@ def create_data_tables(pg_cur, settings):
     sql = open(os.path.join(settings['sql_dir'], "01-03-raw-gnaf-create-tables.sql"), "r").read()
 
     # create schema and set as search path
-    if settings['raw_gnaf_schema'] != "public":
+    if settings['data_schema'] != "public":
         pg_cur.execute("CREATE SCHEMA IF NOT EXISTS {0} AUTHORIZATION {1}"
-                       .format(settings['raw_gnaf_schema'], settings['pg_user']))
-        pg_cur.execute("SET search_path = {0}".format(settings['raw_gnaf_schema'],))
+                       .format(settings['data_schema'], settings['pg_user']))
+        pg_cur.execute("SET search_path = {0}".format(settings['data_schema'],))
 
         # alter create table script to run on chosen schema
-        sql = sql.replace("SET search_path = public", "SET search_path = {0}".format(settings['raw_gnaf_schema'],))
+        sql = sql.replace("SET search_path = public", "SET search_path = {0}".format(settings['data_schema'],))
 
     # set tables to unlogged to speed up the load? (if requested)
     # -- they'll have to be rebuilt using this script again after a system crash --
@@ -306,7 +307,7 @@ def get_data_files(prefix, settings):
                         # logger.info(file_path
 
                     sql = "COPY {0}.{1} FROM '{2}' DELIMITER '|' CSV HEADER;"\
-                        .format(settings['raw_gnaf_schema'], table, file_path)
+                        .format(settings['data_schema'], table, file_path)
 
                     sql_list.append(sql)
 
@@ -340,7 +341,7 @@ def create_primary_foreign_keys(settings):
         sql = sql.strip()
         if sql[0:6] == "ALTER ":
             # add schema to tables names, in case raw gnaf schema not the default
-            sql = sql.replace("ALTER TABLE ONLY ", "ALTER TABLE ONLY " + settings['raw_gnaf_schema'] + ".")
+            sql = sql.replace("ALTER TABLE ONLY ", "ALTER TABLE ONLY " + settings['data_schema'] + ".")
             sql_list.append(sql)
 
     sql_list = []
@@ -358,7 +359,7 @@ def analyse_data_tables(pg_cur, settings):
     # get list of tables that haven't been analysed (i.e. that have no real row count)
     sql = "SELECT nspname|| '.' || relname AS table_name " \
           "FROM pg_class C LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)" \
-          "WHERE nspname = '{0}' AND relkind='r' AND reltuples = 0".format(settings['raw_gnaf_schema'])
+          "WHERE nspname = '{0}' AND relkind='r' AND reltuples = 0".format(settings['data_schema'])
     pg_cur.execute(sql)
 
     sql_list = []
@@ -377,96 +378,79 @@ def load_boundaries(pg_cur, settings):
     start_time = datetime.now()
 
     # drop existing views
-    pg_cur.execute(utils.open_sql_file("02-01-drop-admin-bdy-views.sql", settings))
-
-    # add locality class authority code table
-    settings['states_to_load'].extend(["authority_code"])
+    # pg_cur.execute(utils.open_sql_file("02-01-drop-admin-bdy-views.sql", settings))
 
     # create schema
-    if settings['raw_admin_bdys_schema'] != "public":
+    if settings['boundary_schema'] != "public":
         pg_cur.execute("CREATE SCHEMA IF NOT EXISTS {0} AUTHORIZATION {1}"
-                       .format(settings['raw_admin_bdys_schema'], settings['pg_user']))
+                       .format(settings['boundary_schema'], settings['pg_user']))
 
-    # set psql connect string and password
-    psql_str = "psql -U {0} -d {1} -h {2} -p {3}"\
-        .format(settings['pg_user'], settings['pg_db'], settings['pg_host'], settings['pg_port'])
-
-    password_str = ''
-    if not os.getenv("PGPASSWORD"):
-        if platform.system() == "Windows":
-            password_str = "SET"
-        else:
-            password_str = "export"
-
-        password_str += " PGPASSWORD={0}&&".format(settings['pg_password'])
+    # # set psql connect string and password
+    # psql_str = "psql -U {0} -d {1} -h {2} -p {3}"\
+    #     .format(settings['pg_user'], settings['pg_db'], settings['pg_host'], settings['pg_port'])
+    #
+    # password_str = ''
+    # if not os.getenv("PGPASSWORD"):
+    #     if platform.system() == "Windows":
+    #         password_str = "SET"
+    #     else:
+    #         password_str = "export"
+    #
+    #     password_str += " PGPASSWORD={0}&&".format(settings['pg_password'])
 
     # get file list
     table_list = []
-    cmd_list1 = []
-    cmd_list2 = []
+    create_list = []
+    append_list = []
 
-    for state in settings['states_to_load']:
-        state = state.lower()
-        # get a dictionary of Shapefiles and DBFs matching the state
-        for root, dirs, files in os.walk(settings['admin_bdys_local_directory']):
-            for file_name in files:
-                if file_name.lower().startswith(state + "_"):
-                    if file_name.lower().endswith("_shp.dbf"):
-                        # change file type for spatial files
-                        if file_name.lower().endswith("_polygon_shp.dbf"):
-                            spatial = True
-                            bdy_file = os.path.join(root, file_name.replace(".dbf", ".shp"))
-                        else:
-                            spatial = False
-                            bdy_file = os.path.join(root, file_name)
+    # get a dictionary of Shapefile paths
+    for root, dirs, files in os.walk(settings['boundaries_local_directory']):
+        for file_name in files:
+            file_name = file_name.lower()
+            
+            if file_name.endswith(".shp"):
+                file_path = os.path.join(root, file_name)
+    
+                if file_name.startswith("mb_"):
+                    for state in settings['states_to_load']:
+                        state = state.lower()
+                        
+                        if state in file_name:
+                            pg_table = file_name.replace("_" + state + ".shp", "_aust", 1)
+                else:
+                    pg_table = file_name.replace(".shp", "")
+    
+                # set to replace or append to table depending on whether this is the 1st state for that dataset
+                # (only applies to meshblocks in Census 2016)
+                table_list_add = False
+    
+                if pg_table not in table_list:
+                    table_list_add = True
 
-                        bdy_table = file_name.lower().replace(state + "_", "aus_", 1).replace("_shp.dbf", "")
+                    delete_table = True
+                else:
+                    delete_table = False
+    
+                if table_list_add:
+                    table_list.append(pg_table)
+                    create_list.append(cmd)
+                else:
+                    append_list.append(cmd)
 
-                        # set command line parameters depending on whether this is the 1st state (for creating tables)
-                        table_list_add = False
+    # logger.info('\n'.join(create_list))
+    # logger.info('\n'.join(cmd_list2))
 
-                        if bdy_table not in table_list:
-                            table_list_add = True
+    utils.import_shapefile_to_postgres(pg_cur, file_path, pg_table, settings['boundary_schema'], delete_table, logger)
 
-                            if spatial:
-                                params = "-d -D -s 4283 -i"
-                            else:
-                                params = "-d -D -G -n -i"
-                        else:
-                            if spatial:
-                                params = "-a -D -s 4283 -i"
-                            else:
-                                params = "-a -D -G -n -i"
-
-                        cmd = "{0}shp2pgsql {1} \"{2}\" {3}.{4} | {5}".format(
-                            password_str, params, bdy_file, settings['raw_admin_bdys_schema'], bdy_table, psql_str)
-
-                        # if locality file from Towns folder: don't add - it's a duplicate
-                        if "town points" not in bdy_file.lower():
-                            if table_list_add:
-                                table_list.append(bdy_table)
-                                cmd_list1.append(cmd)
-                            else:
-                                cmd_list2.append(cmd)
-                        else:
-                            if not bdy_file.lower().endswith("_locality_shp.dbf"):
-                                if table_list_add:
-                                    table_list.append(bdy_table)
-                                    cmd_list1.append(cmd)
-                                else:
-                                    cmd_list2.append(cmd)
-
-    # logger.info('\n'.join(cmd_list1)
-    # logger.info('\n'.join(cmd_list2)
 
     # are there any files to load?
-    if len(cmd_list1) == 0:
+    if len(create_list) == 0:
         logger.fatal("No Admin Boundary files found\nACTION: Check your 'admin-bdys-path' argument")
     else:
         # load files in separate processes -
         # do the commands that create the tables first before attempting the subsequent insert commands
-        utils.multiprocess_list("cmd", cmd_list1, settings, logger)
-        utils.multiprocess_list("cmd", cmd_list2, settings, logger)
+        utils.multiprocess_list("cmd", create_list, settings, logger)
+        utils.multiprocess_list("cmd", append_list, settings, logger)
         logger.info("\t- Step 1 of 3 : raw admin boundaries loaded : {0}".format(datetime.now() - start_time))
 
 
@@ -474,9 +458,9 @@ def prep_boundaries(pg_cur, settings):
     # Step 2 of 3 : create admin bdy tables read to be used
     start_time = datetime.now()
 
-    if settings['admin_bdys_schema'] != "public":
+    if settings['boundaries_schema'] != "public":
         pg_cur.execute("CREATE SCHEMA IF NOT EXISTS {0} AUTHORIZATION {1}"
-                       .format(settings['admin_bdys_schema'], settings['pg_user']))
+                       .format(settings['boundaries_schema'], settings['pg_user']))
 
     # create tables using multiprocessing - using flag in file to split file up into sets of statements
     sql_list = utils.open_sql_file("02-02a-prep-admin-bdys-tables.sql", settings).split("-- # --")
@@ -526,7 +510,7 @@ def create_boundaries_for_analysis(settings):
         for table in settings['admin_bdy_list']:
             sql = template_sql.format(table[0], table[1])
             if table[0] == 'locality_bdys':  # special case, need to change schema name
-                # sql = sql.replace(settings['raw_admin_bdys_schema'], settings['admin_bdys_schema'])
+                # sql = sql.replace(settings['boundaries_schema'], settings['boundaries_schema'])
                 sql = sql.replace("name", "locality_name")
             sql_list.append(sql)
         utils.multiprocess_list("sql", sql_list, settings, logger)
@@ -580,7 +564,8 @@ def create_boundaries_for_analysis(settings):
 #     # Step 7 of 14 : populate addresses, using multiprocessing
 #     start_time = datetime.now()
 #     sql = utils.open_sql_file("03-07-reference-populate-addresses-1.sql", settings)
-#     sql_list = utils.split_sql_into_list(pg_cur, sql, settings['data_schema'], "streets", "str", "gid", settings, logger)
+#     sql_list = utils.split_sql_into_list(pg_cur, sql, settings['data_schema'],
+# "streets", "str", "gid", settings, logger)
 #     if sql_list is not None:
 #         utils.multiprocess_list('sql', sql_list, settings, logger)
 #     pg_cur.execute(utils.prep_sql("ANALYZE gnaf.temp_addresses;", settings))
@@ -700,7 +685,7 @@ def create_boundaries_for_analysis(settings):
 #         for table in table_list:
 #             sql = template_sql.format(table[0], table[1])
 #
-#             short_sql_list = utils.split_sql_into_list(pg_cur, sql, settings['admin_bdys_schema'], table[0],
+#             short_sql_list = utils.split_sql_into_list(pg_cur, sql, settings['boundaries_schema'], table[0],
 #                                                       "bdys", "gid", settings, logger)
 #
 #             if short_sql_list is not None:
@@ -752,7 +737,8 @@ def create_boundaries_for_analysis(settings):
 #             select_field_list.append(", temp_{0}_tags.bdy_pid, temp_{0}_tags.bdy_name ".format(table[0]))
 #             insert_join_list.append("LEFT OUTER JOIN {0}.temp_{1}_tags ON pnts.gnaf_pid = temp_{1}_tags.gnaf_pid "
 #                                     .format(settings['data_schema'], table[0]))
-#             drop_table_list.append("DROP TABLE IF EXISTS {0}.temp_{1}_tags;".format(settings['data_schema'], table[0]))
+#             drop_table_list.append("DROP TABLE IF EXISTS {0}.temp_{1}_tags;"
+# .format(settings['data_schema'], table[0]))
 #
 #         insert_field_list.append(") ")
 #
@@ -807,7 +793,8 @@ def create_boundaries_for_analysis(settings):
 #         for duplicate in duplicates:
 #             gnaf_pids.append("\t\t" + duplicate[0])
 #
-#         logger.warning("\t- Step {0} of 8 : found boundary tag duplicates : {1}".format(i, datetime.now() - start_time))
+#         logger.warning("\t- Step {0} of 8 : found boundary tag duplicates : {1}"
+# .format(i, datetime.now() - start_time))
 #         logger.warning("\n".join(gnaf_pids))
 #     except psycopg2.Error:
 #         logger.info("\t- Step {0} of 8 : no boundary tag duplicates : {1}".format(i, datetime.now() - start_time))
@@ -819,7 +806,7 @@ def create_qa_tables(pg_cur, settings):
 
     i = 0
 
-    for schema in [settings['data_schema'], settings['admin_bdys_schema']]:
+    for schema in [settings['data_schema'], settings['boundaries_schema']]:
 
         i += 1
 
@@ -900,7 +887,7 @@ if __name__ == '__main__':
     logging.getLogger('').addHandler(console)
 
     logger.info("")
-    logger.info("Start gnaf-loader")
+    logger.info("Start census-loader")
 
     if main():
         logger.info("Finished successfully!")
