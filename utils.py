@@ -199,6 +199,44 @@ def check_postgis_version(pg_cur, settings, logger):
                 .format(pg_version, postgis_version, geos_version))
 
 
+def multiprocess_shapefile_load(work_list, settings, logger):
+    pool = multiprocessing.Pool(processes=settings['max_concurrent_processes'])
+
+    num_jobs = len(work_list)
+
+    results = pool.imap_unordered(intermediate_shapefile_load_step, [[w, settings, logger] for w in work_list])
+
+    pool.close()
+    pool.join()
+
+    result_list = list(results)
+    num_results = len(result_list)
+
+    if num_jobs > num_results:
+        logger.warning("\t- A MULTIPROCESSING PROCESS FAILED WITHOUT AN ERROR\nACTION: Check the record counts")
+
+    for result in result_list:
+        if result != "SUCCESS":
+            logger.info(result)
+
+
+def intermediate_shapefile_load_step(args):
+    work_dict = args[0]
+    settings = args[1]
+    logger = args[1]
+
+    file_path = work_dict['file_path']
+    pg_table = work_dict['pg_table']
+    pg_schema = work_dict['pg_schema']
+    delete_table = work_dict['delete_table']
+
+    pg_conn = psycopg2.connect(settings['pg_connect_string'])
+    pg_conn.autocommit = True
+    pg_cur = pg_conn.cursor()
+
+    import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_table, logger)
+
+
 # imports a Shapefile into Postgres in 2 steps: SHP > SQL; SQL > Postgres
 # overcomes issues trying to use psql with PGPASSWORD set at runtime
 def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_table, logger):

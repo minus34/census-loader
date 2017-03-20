@@ -399,9 +399,9 @@ def load_boundaries(pg_cur, settings):
     #     password_str += " PGPASSWORD={0}&&".format(settings['pg_password'])
 
     # get file list
-    table_list = []
-    create_list = []
-    append_list = []
+    table_list = list()
+    create_list = list()
+    append_list = list()
 
     # get a dictionary of Shapefile paths
     for root, dirs, files in os.walk(settings['boundaries_local_directory']):
@@ -409,49 +409,49 @@ def load_boundaries(pg_cur, settings):
             file_name = file_name.lower()
             
             if file_name.endswith(".shp"):
-                file_path = os.path.join(root, file_name)
-    
+                file_dict = dict()
+                file_dict['file_path'] = os.path.join(root, file_name)
+
                 if file_name.startswith("mb_"):
-                    for state in settings['states_to_load']:
+                    for state in settings['states']:
                         state = state.lower()
                         
                         if state in file_name:
-                            pg_table = file_name.replace("_" + state + ".shp", "_aust", 1)
+                            file_dict['pg_table'] = file_name.replace("_" + state + ".shp", "_aust", 1)
                 else:
-                    pg_table = file_name.replace(".shp", "")
-    
+                    file_dict['pg_table'] = file_name.replace(".shp", "")
+
+                file_dict['pg_schema'] = settings['boundary_schema']
+
                 # set to replace or append to table depending on whether this is the 1st state for that dataset
                 # (only applies to meshblocks in Census 2016)
                 table_list_add = False
     
-                if pg_table not in table_list:
+                if file_dict['pg_table'] not in table_list:
                     table_list_add = True
 
-                    delete_table = True
+                    file_dict['delete_table'] = True
                 else:
-                    delete_table = False
+                    file_dict['delete_table'] = False
     
                 if table_list_add:
-                    table_list.append(pg_table)
-                    create_list.append(cmd)
+                    table_list.append(file_dict['pg_table'])
+                    create_list.append(file_dict)
                 else:
-                    append_list.append(cmd)
+                    append_list.append(file_dict)
 
-    # logger.info('\n'.join(create_list))
-    # logger.info('\n'.join(cmd_list2))
-
-    utils.import_shapefile_to_postgres(pg_cur, file_path, pg_table, settings['boundary_schema'], delete_table, logger)
-
+    # logger.info(create_list)
+    # logger.info(append_list)
 
     # are there any files to load?
     if len(create_list) == 0:
-        logger.fatal("No Admin Boundary files found\nACTION: Check your 'admin-bdys-path' argument")
+        logger.fatal("No census boundary files found\nACTION: Check your 'admin-bdys-path' argument")
     else:
         # load files in separate processes -
         # do the commands that create the tables first before attempting the subsequent insert commands
-        utils.multiprocess_list("cmd", create_list, settings, logger)
-        utils.multiprocess_list("cmd", append_list, settings, logger)
-        logger.info("\t- Step 1 of 3 : raw admin boundaries loaded : {0}".format(datetime.now() - start_time))
+        utils.multiprocess_shapefile_load(create_list, settings, logger)
+        utils.multiprocess_shapefile_load(append_list, settings, logger)
+        logger.info("\t- Step 1 of 3 : raw census boundaries loaded : {0}".format(datetime.now() - start_time))
 
 
 def prep_boundaries(pg_cur, settings):
