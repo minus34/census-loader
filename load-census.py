@@ -445,8 +445,13 @@ def load_boundaries(pg_cur, settings):
 
     # are there any files to load?
     if len(create_list) == 0:
-        logger.fatal("No census boundary files found\nACTION: Check your 'admin-bdys-path' argument")
+        logger.fatal("No census boundary files found\nACTION: Check your 'census-bdys-path' argument")
     else:
+        # for shp in create_list:
+        #     if shp['pg_table'].startswith("mb_"):
+        #         utils.import_shapefile_to_postgres(pg_cur, shp['file_path'], shp['pg_table'], shp['pg_schema'],
+        #                                            shp['delete_table'])
+
         # load files in separate processes -
         # do the commands that create the tables first before attempting the subsequent insert commands
         utils.multiprocess_shapefile_load(create_list, settings, logger)

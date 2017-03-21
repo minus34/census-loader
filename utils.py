@@ -204,7 +204,7 @@ def multiprocess_shapefile_load(work_list, settings, logger):
 
     num_jobs = len(work_list)
 
-    results = pool.imap_unordered(intermediate_shapefile_load_step, [[w, settings, logger] for w in work_list])
+    results = pool.imap_unordered(intermediate_shapefile_load_step, [[w, settings] for w in work_list])
 
     pool.close()
     pool.join()
@@ -223,7 +223,7 @@ def multiprocess_shapefile_load(work_list, settings, logger):
 def intermediate_shapefile_load_step(args):
     work_dict = args[0]
     settings = args[1]
-    logger = args[1]
+    # logger = args[2]
 
     file_path = work_dict['file_path']
     pg_table = work_dict['pg_table']
@@ -234,12 +234,14 @@ def intermediate_shapefile_load_step(args):
     pg_conn.autocommit = True
     pg_cur = pg_conn.cursor()
 
-    import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_table, logger)
+    result = import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_table)
+
+    return result
 
 
 # imports a Shapefile into Postgres in 2 steps: SHP > SQL; SQL > Postgres
 # overcomes issues trying to use psql with PGPASSWORD set at runtime
-def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_table, logger):
+def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_table):
 
     # delete target table or append to it?
     if delete_table:
@@ -255,11 +257,10 @@ def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_
         process = subprocess.Popen(shp2pgsql_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         sqlobj, err = process.communicate()
     except:
-        logger.fatal("Importing {0} - Couldn't convert Shapefile to SQL".format(file_path))
-        return False
+        return "Importing {0} - Couldn't convert Shapefile to SQL".format(file_path)
 
     # prep Shapefile SQL
-    sql = str(sqlobj)
+    sql = sqlobj.decode("utf-8")  # this is required for Python 3
     sql = sql.replace("Shapefile type: ", "-- Shapefile type: ")
     sql = sql.replace("Postgis type: ", "-- Postgis type: ")
     sql = sql.replace("SELECT DropGeometryColumn", "-- SELECT DropGeometryColumn")
@@ -272,8 +273,9 @@ def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_
     try:
         pg_cur.execute(sql)
     except:
-        logger.fatal("Importing {0} - Couldn't run Shapefile SQL".format(file_path))
-        return False
+        target = open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test.sql'), "w")
+        target.write(sql)
 
-    logger.info("Successfully imported {0}".format(pg_table))
-    return True
+        return "\tImporting {0} - Couldn't run Shapefile SQL".format(file_path)
+
+    return "SUCCESS"
