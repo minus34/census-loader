@@ -447,18 +447,11 @@ def load_boundaries(pg_cur, settings):
     if len(create_list) == 0:
         logger.fatal("No census boundary files found\nACTION: Check your 'census-bdys-path' argument")
     else:
-        # for shp in create_list:
-        #     if shp['pg_table'].startswith("mb_"):
-        #         utils.import_shapefile_to_postgres(pg_cur, shp['file_path'], shp['pg_table'], shp['pg_schema'],
-        #                                            shp['delete_table'])
-
-        # load files in separate processes -
-        # do the commands that create the tables first before attempting the subsequent insert commands
+        # load files in separate processes
         utils.multiprocess_shapefile_load(create_list, settings, logger)
 
-        # Can't multi process the appends as large sets of INSERTs cause database deadlocks
+        # Run the appends one at a time (Can't multi process as large sets of parallel INSERTs cause database deadlocks)
         # utils.multiprocess_shapefile_load(append_list, settings, logger)
-
         for shp in append_list:
             utils.import_shapefile_to_postgres(pg_cur, shp['file_path'], shp['pg_table'], shp['pg_schema'],
                                                shp['delete_table'])

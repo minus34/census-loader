@@ -265,6 +265,10 @@ def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_
     sql = sql.replace("Postgis type: ", "-- Postgis type: ")
     sql = sql.replace("SELECT DropGeometryColumn", "-- SELECT DropGeometryColumn")
 
+    # bug in shp2pgsql? - an append command will still create a spatial index if requested - disable it
+    if not delete_table:
+        sql = sql.replace("CREATE INDEX ", "-- CREATE INDEX ")
+
     # this is required due to differing approaches by different versions of PostGIS
     sql = sql.replace("DROP TABLE ", "DROP TABLE IF EXISTS ")
     sql = sql.replace("DROP TABLE IF EXISTS IF EXISTS ", "DROP TABLE IF EXISTS ")
@@ -273,9 +277,17 @@ def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_
     try:
         pg_cur.execute(sql)
     except:
-        target = open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test.sql'), "w")
-        target.write(sql)
+        # target = open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test.sql'), "w")
+        # target.write(sql)
 
         return "\tImporting {0} - Couldn't run Shapefile SQL".format(file_path)
+
+    # Cluster table on spatial index for performance
+    sql = "ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx".format(pg_schema, pg_table)
+
+    try:
+        pg_cur.execute(sql)
+    except:
+        return "\tImporting {0} - Couldn't cluster on spatial index".format(pg_table)
 
     return "SUCCESS"
