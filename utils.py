@@ -283,11 +283,12 @@ def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_
         return "\tImporting {0} - Couldn't run Shapefile SQL".format(file_path)
 
     # Cluster table on spatial index for performance
-    sql = "ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx".format(pg_schema, pg_table)
+    if delete_table:
+        sql = "ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx".format(pg_schema, pg_table)
 
-    try:
-        pg_cur.execute(sql)
-    except:
-        return "\tImporting {0} - Couldn't cluster on spatial index".format(pg_table)
+        try:
+            pg_cur.execute(sql)
+        except:
+            return "\tImporting {0} - Couldn't cluster on spatial index".format(pg_table)
 
     return "SUCCESS"
