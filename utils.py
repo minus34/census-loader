@@ -239,7 +239,6 @@ def intermediate_shapefile_load_step(args):
     return result
 
 
-
 # imports a Shapefile into Postgres in 2 steps: SHP > SQL; SQL > Postgres
 # overcomes issues trying to use psql with PGPASSWORD set at runtime
 def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_table, spatial):
