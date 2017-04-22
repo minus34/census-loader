@@ -239,9 +239,10 @@ def intermediate_shapefile_load_step(args):
     return result
 
 
+
 # imports a Shapefile into Postgres in 2 steps: SHP > SQL; SQL > Postgres
 # overcomes issues trying to use psql with PGPASSWORD set at runtime
-def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_table):
+def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_table, spatial):
 
     # delete target table or append to it?
     if delete_table:
@@ -249,8 +250,16 @@ def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_
     else:
         delete_append_flag = "-a"
 
+    # assign coordinate system if spatial, otherwise flag as non-spatial
+    if spatial:
+        spatial_or_dbf_flags = "-s 4283 -I"
+    else:
+        spatial_or_dbf_flags = "-G -n"
+
     # build shp2pgsql command line
-    shp2pgsql_cmd = "shp2pgsql {0} -s 4283 -i -I {1} {2}.{3}".format(delete_append_flag, file_path, pg_schema, pg_table)
+    shp2pgsql_cmd = "shp2pgsql {0} {1} -i \"{2}\" {3}.{4}"\
+        .format(delete_append_flag, spatial_or_dbf_flags, file_path, pg_schema, pg_table)
+    # print(shp2pgsql_cmd)
 
     # convert the Shapefile to SQL statements
     try:
@@ -277,13 +286,14 @@ def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_
     try:
         pg_cur.execute(sql)
     except:
-        # target = open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test.sql'), "w")
-        # target.write(sql)
+        # if import fails for some reason - output sql to file for debugging
+        target = open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test.sql'), "w")
+        target.write(sql)
 
-        return "\tImporting {0} - Couldn't run Shapefile SQL".format(file_path)
+        return "\tImporting {0} - Couldn't run Shapefile SQL\nshp2pgsql result was: {1} ".format(file_path, err)
 
     # Cluster table on spatial index for performance
-    if delete_table:
+    if spatial:
         sql = "ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx".format(pg_schema, pg_table)
 
         try:
