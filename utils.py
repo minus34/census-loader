@@ -229,12 +229,13 @@ def intermediate_shapefile_load_step(args):
     pg_table = work_dict['pg_table']
     pg_schema = work_dict['pg_schema']
     delete_table = work_dict['delete_table']
+    spatial = work_dict['spatial']
 
     pg_conn = psycopg2.connect(settings['pg_connect_string'])
     pg_conn.autocommit = True
     pg_cur = pg_conn.cursor()
 
-    result = import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_table)
+    result = import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_table, spatial)
 
     return result
 

@@ -433,7 +433,9 @@ def load_boundaries(pg_cur, settings):
                     file_dict['delete_table'] = True
                 else:
                     file_dict['delete_table'] = False
-    
+
+                file_dict['spatial'] = True
+
                 if table_list_add:
                     table_list.append(file_dict['pg_table'])
                     create_list.append(file_dict)
@@ -454,7 +456,7 @@ def load_boundaries(pg_cur, settings):
         # utils.multiprocess_shapefile_load(append_list, settings, logger)
         for shp in append_list:
             utils.import_shapefile_to_postgres(pg_cur, shp['file_path'], shp['pg_table'], shp['pg_schema'],
-                                               shp['delete_table'])
+                                               shp['delete_table'], True)
 
         logger.info("\t- Step 1 of 3 : raw census boundaries loaded : {0}".format(datetime.now() - start_time))
 
