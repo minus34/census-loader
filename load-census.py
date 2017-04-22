@@ -895,6 +895,7 @@ if __name__ == '__main__':
 
     logger.info("")
     logger.info("Start census-loader")
+    utils.check_python_version(logger)
 
     if main():
         logger.info("Finished successfully!")

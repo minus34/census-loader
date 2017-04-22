@@ -1,8 +1,10 @@
 import multiprocessing
 import math
 import os
-import subprocess
+import platform
 import psycopg2
+import subprocess
+import sys
 
 
 # takes a list of sql queries or command lines and runs them using multiprocessing
@@ -194,9 +196,20 @@ def check_postgis_version(pg_cur, settings, logger):
             geos_version_num = float(geos_version[:3])
     if postgis_version_num >= 2.2 and geos_version_num >= 3.5:
         settings['st_subdivide_supported'] = True
-    logger.info("")
-    logger.info("Running on Postgres {0} and PostGIS {1} (with GEOS {2})"
+    logger.info("using Postgres {0} and PostGIS {1} (with GEOS {2})"
                 .format(pg_version, postgis_version, geos_version))
+
+
+def check_python_version(logger):
+    # get python and psycopg2 version
+    python_version = sys.version.split("(")[0].strip()
+    psycopg2_version = psycopg2.__version__.split("(")[0].strip()
+    os_version = platform.system() + " " + platform.version().strip()
+
+    logger.info("")
+    logger.info("Running Python {0} with Psycopg2 {1}"
+                .format(python_version, psycopg2_version))
+    logger.info("on {0}".format(os_version))
 
 
 def multiprocess_shapefile_load(work_list, settings, logger):
