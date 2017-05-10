@@ -11,18 +11,18 @@
 # Copyright:
 #  - Code is licensed under an Apache License, version 2.0
 #  - Data is copyright ABS - licensed under a Creative Commons (By Attribution) license.
-#    See http://abs.gov.au for the correct attribution to use
+#    See http://abs.gov.au for the correct attribution
 
 # Process:
 #   1. 
 #
 # *********************************************************************************************************************
 
-import os
-# import platform
-import psycopg2
 import argparse
 import logging.config
+import os
+import pandas  # module needs to be installed
+import psycopg2  # module needs to be installed (IMPORTANT: need to install 'xlrd' module for Pandas to read XLSX files)
 import utils
 
 from datetime import datetime
@@ -59,13 +59,14 @@ def main():
 
     # START LOADING DATA
 
-    # # PART 1 - load census from CSV files
-    # logger.info("")
-    # start_time = datetime.now()
-    # logger.info("Part 1 of 4 : Start raw GNAF load : {0}".format(start_time))
+    # PART 1 - load census data from CSV files
+    logger.info("")
+    start_time = datetime.now()
+    logger.info("Part 1 of 4 : Start census data load : {0}".format(start_time))
     # drop_tables_and_vacuum_db(pg_cur, settings)
-    # create_raw_gnaf_tables(pg_cur, settings)
-    # populate_raw_gnaf(settings)
+    load_metadata(pg_cur, settings)
+    create_data_tables(pg_cur, settings)
+    populate_data_tables(settings)
     # index_raw_gnaf(settings)
     # if settings['primary_foreign_keys']:
     #     create_primary_foreign_keys(settings)
@@ -158,10 +159,10 @@ def set_arguments():
         help='Census year as YYYY. Defaults to last census \'' + census_year + '\'.')
     parser.add_argument(
         '--data-schema', default='census_' + census_year + '_data',
-        help='Schema name to store raw GNAF tables in. Defaults to \'raw_gnaf_' + census_year + '\'.')
+        help='Schema name to store raw GNAF tables in. Defaults to \'census_' + census_year + '\'.')
     parser.add_argument(
         '--boundary-schema', default='census_' + census_year + '_bdys',
-        help='Schema name to store raw admin boundary tables in. Defaults to \'raw_admin_bdys_' + census_year + '\'.')
+        help='Schema name to store raw admin boundary tables in. Defaults to \'census_' + census_year + '\'.')
 
     # directories
     parser.add_argument(
@@ -194,6 +195,7 @@ def get_settings(args):
     settings['data_schema'] = args.data_schema
     settings['boundary_schema'] = args.boundary_schema
     settings['data_network_directory'] = args.census_data_path.replace("\\", "/")
+
     if args.local_server_dir:
         settings['data_pg_server_local_directory'] = args.local_server_dir.replace("\\", "/")
     else:
@@ -236,9 +238,39 @@ def get_settings(args):
     return settings
 
 
+def load_metadata(pg_cur, settings):
+    # get a dictionary of all files matching the metadata filename prefix
+    for root, dirs, files in os.walk(settings['data_network_directory']):
+        for file_name in files:
+            if file_name.lower().startswith("metadata_"):
+                if file_name.lower().endswith(".xlsx"):
+                    file_path = os.path.join(root, file_name)\
+
+                    # read in excel worksheets into pandas dataframes
+                    df_tables = pandas.read_excel(file_path, sheetname="Table number, name population")
+                    df_cells = pandas.read_excel(file_path, sheetname="Cell descriptors information")
+
+
+                    f = io.StringIO()
+                    pandas.DataFrame({'a':[1,2], 'b':[3,4]}).to_csv(f, index=False, header=False)  # removed header
+                    f.seek(0)  # move position to beginning of file before reading
+                    pg_cur.execute('create table bbbb (a int, b int);COMMIT; ')
+                    pg_cur.copy_from(f, 'bbbb', columns=('a', 'b'), sep=',')
+                    # pg_cur.execute("select * from bbbb;")
+                    # a = pg_cur.fetchall()
+                    # print(a)
+                    # pg_cur.close()
+
+
 def create_data_tables(pg_cur, settings):
-    # Step 3 of 7 : create tables
+    # Step 1 of 2 : create tables from metadata in Census Excel spreadsheets
     start_time = datetime.now()
+
+    # get_metadata_files("metadata", settings)
+    #
+    # # read in excel file into a dataframe
+    # df = pandas.read_excel(settings["metadata_xls"], sheetname="Sheet1")
+
 
     # prep create table sql scripts (note: file doesn't contain any schema prefixes on table names)
     sql = open(os.path.join(settings['sql_dir'], "01-03-raw-gnaf-create-tables.sql"), "r").read()
@@ -267,7 +299,7 @@ def create_data_tables(pg_cur, settings):
 
 
 # load raw gnaf authority & state tables using multiprocessing
-def populate_data(settings):
+def populate_data_tables(settings):
     # Step 4 of 7 : load raw gnaf authority & state tables
     start_time = datetime.now()
 
@@ -287,6 +319,9 @@ def populate_data(settings):
         # load all PSV files using multiprocessing
         utils.multiprocess_list("sql", sql_list, settings, logger)
         logger.info("\t- Step 4 of 7 : tables populated : {0}".format(datetime.now() - start_time))
+
+
+
 
 
 def get_data_files(prefix, settings):
