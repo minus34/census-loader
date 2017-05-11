@@ -19,6 +19,7 @@
 # *********************************************************************************************************************
 
 import argparse
+import io
 import logging.config
 import os
 import pandas  # module needs to be installed
@@ -239,6 +240,30 @@ def get_settings(args):
 
 
 def load_metadata(pg_cur, settings):
+
+    # create schema and set as search path
+    if settings['data_schema'] != "public":
+        pg_cur.execute("CREATE SCHEMA IF NOT EXISTS {0} AUTHORIZATION {1}"
+                       .format(settings['data_schema'], settings['pg_user']))
+        pg_cur.execute("SET search_path = {0}".format(settings['data_schema'],))
+
+    # create metadata tables
+    sql = "DROP TABLE IF EXISTS {0}.metadata_tables;" \
+          "CREATE TABLE {0}.metadata_tables (table_number text, table_name text, table_description text) " \
+          "WITH (OIDS=FALSE);" \
+          "ALTER TABLE {0}.metadata_tables OWNER TO {1}".format(settings['data_schema'], settings['pg_user'])
+    pg_cur.execute(sql)
+
+    sql = "DROP TABLE IF EXISTS {0}.metadata_cells;" \
+          "CREATE TABLE {0}.metadata_cells (sequential text, short text, long text, datapack_file text, " \
+          "profile_table text, column_heading_description_in_profile_text text) " \
+          "WITH (OIDS=FALSE);" \
+          "ALTER TABLE {0}.metadata_cells OWNER TO {1}".format(settings['data_schema'], settings['pg_user'])
+    pg_cur.execute(sql)
+
+    census_metadata_dicts = [{"sheet": "Table number, name population", "skiprows": 2, "table": "metadata_tables"},
+                             {"sheet": "Cell descriptors information", "skiprows": 3, "table": "metadata_cells"}]
+
     # get a dictionary of all files matching the metadata filename prefix
     for root, dirs, files in os.walk(settings['data_network_directory']):
         for file_name in files:
@@ -247,19 +272,26 @@ def load_metadata(pg_cur, settings):
                     file_path = os.path.join(root, file_name)\
 
                     # read in excel worksheets into pandas dataframes
-                    df_tables = pandas.read_excel(file_path, sheetname="Table number, name population")
-                    df_cells = pandas.read_excel(file_path, sheetname="Cell descriptors information")
+                    xl = pandas.ExcelFile(file_path)
 
+                    for dict in census_metadata_dicts:
+                        df = xl.parse(dict["sheet"], skiprows=dict["skiprows"])
 
-                    f = io.StringIO()
-                    pandas.DataFrame({'a':[1,2], 'b':[3,4]}).to_csv(f, index=False, header=False)  # removed header
-                    f.seek(0)  # move position to beginning of file before reading
-                    pg_cur.execute('create table bbbb (a int, b int);COMMIT; ')
-                    pg_cur.copy_from(f, 'bbbb', columns=('a', 'b'), sep=',')
-                    # pg_cur.execute("select * from bbbb;")
-                    # a = pg_cur.fetchall()
-                    # print(a)
-                    # pg_cur.close()
+                        f = io.StringIO()
+                        df.to_csv(f, sep="\t", index=False, header=False)  # removed header
+                        f.seek(0)  # move position to beginning of file before reading
+                        pg_cur.copy_from(f, "{0}.{1}".format(settings['data_schema'], dict["table"]), sep="\t", null="")
+
+                        # clean up invalid rows
+                        if dict["table"] == "metadata_tables":
+                            pg_cur.execute("DELETE FROM {0}.metadata_tables WHERE table_number IS NULL"
+                                           .format(settings['data_schema']))
+
+                        # update stats
+                        pg_cur.execute("ANALYZE {0}.{1}".format(settings['data_schema'], dict["table"]))
+
+                    print("hello")
+
 
 
 def create_data_tables(pg_cur, settings):
