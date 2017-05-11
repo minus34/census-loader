@@ -285,7 +285,7 @@ def load_metadata(pg_cur, settings):
                         # drop excess columns in unclean spreadsheets
                         if dict["table"] == "metadata_cells":
                             try:
-                                df.drop(df.columns[[6, 7, 8]], axis=1)
+                                df.drop(df.columns[[6, 7, 8]], axis=1, inplace=True)
                             except:
                                 pass
 
