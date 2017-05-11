@@ -240,6 +240,8 @@ def get_settings(args):
 
 
 def load_metadata(pg_cur, settings):
+    # Step 1 of 2 : create metadata tables from Census Excel spreadsheets
+    start_time = datetime.now()
 
     # create schema and set as search path
     if settings['data_schema'] != "public":
@@ -261,8 +263,8 @@ def load_metadata(pg_cur, settings):
           "ALTER TABLE {0}.metadata_cells OWNER TO {1}".format(settings['data_schema'], settings['pg_user'])
     pg_cur.execute(sql)
 
-    census_metadata_dicts = [{"sheet": "Table number, name population", "skiprows": 2, "table": "metadata_tables"},
-                             {"sheet": "Cell descriptors information", "skiprows": 3, "table": "metadata_cells"}]
+    census_metadata_dicts = [{"skiprows": 2, "table": "metadata_tables"},
+                             {"skiprows": 3, "table": "metadata_cells"}]
 
     # get a dictionary of all files matching the metadata filename prefix
     for root, dirs, files in os.walk(settings['data_network_directory']):
@@ -274,13 +276,24 @@ def load_metadata(pg_cur, settings):
                     # read in excel worksheets into pandas dataframes
                     xl = pandas.ExcelFile(file_path)
 
-                    for dict in census_metadata_dicts:
-                        df = xl.parse(dict["sheet"], skiprows=dict["skiprows"])
+                    sheets = xl.sheet_names
+                    i = 0
 
-                        f = io.StringIO()
-                        df.to_csv(f, sep="\t", index=False, header=False)  # removed header
-                        f.seek(0)  # move position to beginning of file before reading
-                        pg_cur.copy_from(f, "{0}.{1}".format(settings['data_schema'], dict["table"]), sep="\t", null="")
+                    for dict in census_metadata_dicts:
+                        df = xl.parse(sheets[i], skiprows=dict["skiprows"])
+
+                        # drop excess columns in unclean spreadsheets
+                        if dict["table"] == "metadata_cells":
+                            try:
+                                df.drop(df.columns[[6, 7, 8]], axis=1)
+                            except:
+                                pass
+
+                        tsv_file = io.StringIO()
+                        df.to_csv(tsv_file, sep="\t", index=False, header=False)
+                        tsv_file.seek(0)  # move position to beginning of file before reading
+                        pg_cur.copy_from(
+                            tsv_file, "{0}.{1}".format(settings['data_schema'], dict["table"]), sep="\t", null="")
 
                         # clean up invalid rows
                         if dict["table"] == "metadata_tables":
@@ -290,8 +303,11 @@ def load_metadata(pg_cur, settings):
                         # update stats
                         pg_cur.execute("ANALYZE {0}.{1}".format(settings['data_schema'], dict["table"]))
 
-                    print("hello")
+                        i += 1
 
+                    logger.info("\t\t- imported {0}".format(file_name))
+
+    logger.info("\t- Step 1 of 2 : metadata tables created : {0}".format(datetime.now() - start_time))
 
 
 def create_data_tables(pg_cur, settings):
