@@ -263,14 +263,14 @@ def load_metadata(pg_cur, settings):
           "ALTER TABLE {0}.metadata_cells OWNER TO {1}".format(settings['data_schema'], settings['pg_user'])
     pg_cur.execute(sql)
 
-    census_metadata_dicts = [{"skiprows": 2, "table": "metadata_tables"},
-                             {"skiprows": 3, "table": "metadata_cells"}]
+    census_metadata_dicts = [{"skiprows": 10, "table": "metadata_tables", "first_row": "table number"},
+                             {"skiprows": 10, "table": "metadata_cells", "first_row": "sequential"}]
 
     # get a dictionary of all files matching the metadata filename prefix
     for root, dirs, files in os.walk(settings['data_network_directory']):
         for file_name in files:
-            if file_name.lower().startswith("metadata_"):
-                if file_name.lower().endswith(".xlsx"):
+            if file_name.lower().startswith("sample_metadata_"):
+                if file_name.lower().endswith(".xls"):
                     file_path = os.path.join(root, file_name)\
 
                     # read in excel worksheets into pandas dataframes
@@ -280,28 +280,49 @@ def load_metadata(pg_cur, settings):
                     i = 0
 
                     for dict in census_metadata_dicts:
-                        df = xl.parse(sheets[i], skiprows=dict["skiprows"])
+                        # df = xl.parse(sheets[i], skiprows=dict["skiprows"])
+                        df = xl.parse(sheets[i])
 
-                        # drop excess columns in unclean spreadsheets
-                        if dict["table"] == "metadata_cells":
-                            try:
-                                df.drop(df.columns[[6, 7, 8]], axis=1, inplace=True)
-                            except:
-                                pass
+                        # get rid on unwanted rows at the top
+                        j = 0
+                        first_row = False
 
-                        tsv_file = io.StringIO()
-                        df.to_csv(tsv_file, sep="\t", index=False, header=False)
-                        tsv_file.seek(0)  # move position to beginning of file before reading
-                        pg_cur.copy_from(
-                            tsv_file, "{0}.{1}".format(settings['data_schema'], dict["table"]), sep="\t", null="")
+                        while not first_row:
+                            cell = df.iloc[j, 0]
 
-                        # clean up invalid rows
-                        if dict["table"] == "metadata_tables":
-                            pg_cur.execute("DELETE FROM {0}.metadata_tables WHERE table_number IS NULL"
-                                           .format(settings['data_schema']))
+                            if str(cell).lower() == dict["first_row"]:
+                                df_clean = df.drop(df.index[0:j+1])
+                                first_row = True
 
-                        # update stats
-                        pg_cur.execute("ANALYZE {0}.{1}".format(settings['data_schema'], dict["table"]))
+                                print(j)
+
+                                # drop excess columns in unclean spreadsheets
+                                if dict["table"] == "metadata_cells":
+                                    try:
+                                        df_clean.drop(df.columns[[6, 7, 8]], axis=1, inplace=True)
+                                    except:
+                                        pass
+
+                                # print(df_clean)
+
+                                tsv_file = io.StringIO()
+
+                                # print(tsv_file)
+
+                                df_clean.to_csv(tsv_file, sep="\t", index=False, header=False)
+                                tsv_file.seek(0)  # move position to beginning of file before reading
+                                pg_cur.copy_from(
+                                    tsv_file, "{0}.{1}".format(settings['data_schema'], dict["table"]), sep="\t", null="")
+
+                                # clean up invalid rows
+                                if dict["table"] == "metadata_tables":
+                                    pg_cur.execute("DELETE FROM {0}.metadata_tables WHERE table_number IS NULL"
+                                                   .format(settings['data_schema']))
+
+                                # update stats
+                                pg_cur.execute("ANALYZE {0}.{1}".format(settings['data_schema'], dict["table"]))
+
+                            j += 1
 
                         i += 1
 
