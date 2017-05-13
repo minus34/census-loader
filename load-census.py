@@ -257,14 +257,16 @@ def load_metadata(pg_cur, settings):
     pg_cur.execute(sql)
 
     sql = "DROP TABLE IF EXISTS {0}.metadata_cells;" \
-          "CREATE TABLE {0}.metadata_cells (sequential text, short text, long text, datapack_file text, " \
-          "profile_table text, column_heading_description_in_profile_text text) " \
+          "CREATE TABLE {0}.metadata_cells (sequential text, short_description text, long_description text, " \
+          "datapack_file text, profile_table text, column_heading_description_in_profile_text text) " \
           "WITH (OIDS=FALSE);" \
           "ALTER TABLE {0}.metadata_cells OWNER TO {1}".format(settings['data_schema'], settings['pg_user'])
     pg_cur.execute(sql)
 
-    census_metadata_dicts = [{"table": "metadata_tables", "first_row": "table number", "primary_key": "table_number"},
-                             {"table": "metadata_cells", "first_row": "sequential", "primary_key": "sequential"}]
+    census_metadata_dicts = [{"table": "metadata_tables", "first_row": "table number"},
+                             {"table": "metadata_cells", "first_row": "sequential"}]
+    # census_metadata_dicts = [{"table": "metadata_tables", "first_row": "table number", "primary_key": "table_number"},
+    #                          {"table": "metadata_cells", "first_row": "sequential", "primary_key": "sequential"}]
 
     # get a dictionary of all files matching the metadata filename prefix
     for root, dirs, files in os.walk(settings['data_network_directory']):
@@ -318,8 +320,24 @@ def load_metadata(pg_cur, settings):
     # clean up invalid rows
     pg_cur.execute("DELETE FROM {0}.metadata_tables WHERE table_number IS NULL".format(settings['data_schema']))
 
+    # add primary keys
+    pg_cur.execute("ALTER TABLE {0}.metadata_tables ADD CONSTRAINT metadata_tables_pkey PRIMARY KEY (table_number)"
+                   .format(settings['data_schema']))
+    pg_cur.execute("ALTER TABLE {0}.metadata_cells ADD CONSTRAINT metadata_cells_pkey PRIMARY KEY (sequential)"
+                   .format(settings['data_schema']))
+
+    # cluster tables on primary key (for minor performance improvement)
+    pg_cur.execute("ALTER TABLE {0}.metadata_tables CLUSTER ON metadata_tables_pkey".format(settings['data_schema']))
+    pg_cur.execute("ALTER TABLE {0}.metadata_cells CLUSTER ON metadata_cells_pkey".format(settings['data_schema']))
+
     # add cell type field to cells table
     pg_cur.execute("ALTER TABLE {0}.metadata_cells ADD COLUMN cell_type text".format(settings['data_schema']))
+
+    # populate cell type field
+    pg_cur.execute("UPDATE {0}.metadata_cells "
+                   "SET cell_type = 'float' "
+                   "WHERE lower(long_description) like '%median%' OR lower(long_description) like '%average%'"
+                   .format(settings['data_schema']))
 
     # update stats
     pg_cur.execute("ANALYZE {0}.metadata_tables".format(settings['data_schema']))
