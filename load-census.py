@@ -263,8 +263,8 @@ def load_metadata(pg_cur, settings):
           "ALTER TABLE {0}.metadata_cells OWNER TO {1}".format(settings['data_schema'], settings['pg_user'])
     pg_cur.execute(sql)
 
-    census_metadata_dicts = [{"skiprows": 10, "table": "metadata_tables", "first_row": "table number"},
-                             {"skiprows": 10, "table": "metadata_cells", "first_row": "sequential"}]
+    census_metadata_dicts = [{"table": "metadata_tables", "first_row": "table number", "primary_key": "table_number"},
+                             {"table": "metadata_cells", "first_row": "sequential", "primary_key": "sequential"}]
 
     # get a dictionary of all files matching the metadata filename prefix
     for root, dirs, files in os.walk(settings['data_network_directory']):
@@ -279,54 +279,51 @@ def load_metadata(pg_cur, settings):
                     sheets = xl.sheet_names
                     i = 0
 
-                    for dict in census_metadata_dicts:
-                        # df = xl.parse(sheets[i], skiprows=dict["skiprows"])
+                    for table_dict in census_metadata_dicts:
+
                         df = xl.parse(sheets[i])
 
-                        # get rid on unwanted rows at the top
+                        # drop unwanted rows at the top
                         j = 0
                         first_row = False
 
                         while not first_row:
                             cell = df.iloc[j, 0]
 
-                            if str(cell).lower() == dict["first_row"]:
+                            if str(cell).lower() == table_dict["first_row"]:
                                 df_clean = df.drop(df.index[0:j+1])
                                 first_row = True
 
-                                print(j)
-
                                 # drop excess columns in unclean spreadsheets
-                                if dict["table"] == "metadata_cells":
+                                if table_dict["table"] == "metadata_cells":
                                     try:
                                         df_clean.drop(df.columns[[6, 7, 8]], axis=1, inplace=True)
                                     except:
                                         pass
 
-                                # print(df_clean)
-
+                                # export to in-memory tab delimited text file
                                 tsv_file = io.StringIO()
-
-                                # print(tsv_file)
-
                                 df_clean.to_csv(tsv_file, sep="\t", index=False, header=False)
-                                tsv_file.seek(0)  # move position to beginning of file before reading
-                                pg_cur.copy_from(
-                                    tsv_file, "{0}.{1}".format(settings['data_schema'], dict["table"]), sep="\t", null="")
-
-                                # clean up invalid rows
-                                if dict["table"] == "metadata_tables":
-                                    pg_cur.execute("DELETE FROM {0}.metadata_tables WHERE table_number IS NULL"
-                                                   .format(settings['data_schema']))
-
-                                # update stats
-                                pg_cur.execute("ANALYZE {0}.{1}".format(settings['data_schema'], dict["table"]))
+                                tsv_file.seek(0)  # move position back to beginning of file before reading
+                                pg_cur.copy_from(tsv_file, "{0}.{1}"
+                                                 .format(settings['data_schema'], table_dict["table"]),
+                                                 sep="\t", null="")
 
                             j += 1
 
                         i += 1
 
                     logger.info("\t\t- imported {0}".format(file_name))
+
+    # clean up invalid rows
+    pg_cur.execute("DELETE FROM {0}.metadata_tables WHERE table_number IS NULL".format(settings['data_schema']))
+
+    # add cell type field to cells table
+    pg_cur.execute("ALTER TABLE {0}.metadata_cells ADD COLUMN cell_type text".format(settings['data_schema']))
+
+    # update stats
+    pg_cur.execute("ANALYZE {0}.metadata_tables".format(settings['data_schema']))
+    pg_cur.execute("ANALYZE {0}.metadata_cells".format(settings['data_schema']))
 
     logger.info("\t- Step 1 of 2 : metadata tables created : {0}".format(datetime.now() - start_time))
 
