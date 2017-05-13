@@ -335,8 +335,12 @@ def load_metadata(pg_cur, settings):
 
     # populate cell type field
     pg_cur.execute("UPDATE {0}.metadata_cells "
-                   "SET cell_type = 'float' "
+                   "SET cell_type = 'double precision' "
                    "WHERE lower(long_description) like '%median%' OR lower(long_description) like '%average%'"
+                   .format(settings['data_schema']))
+    pg_cur.execute("UPDATE {0}.metadata_cells "
+                   "SET cell_type = 'integer' "
+                   "WHERE cell_type IS NULL"
                    .format(settings['data_schema']))
 
     # update stats
