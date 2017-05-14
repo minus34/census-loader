@@ -354,6 +354,48 @@ def create_data_tables(pg_cur, settings):
     # Step 1 of 2 : create tables from metadata in Census Excel spreadsheets
     start_time = datetime.now()
 
+    sql = "SELECT table_number FROM {0}.metadata_tables".format(settings['data_schema'])
+    pg_cur.execute(sql)
+
+    rows = pg_cur.fetchall()
+
+    # scroll through eah table number and create it
+    for row in rows:
+        table_number = row[0].lower()
+
+        # get the census fields for the table
+        field_list = list()
+
+        sql = "SELECT sequential || ' ' || cell_type AS field " \
+              "FROM {0}.metadata_cells " \
+              "WHERE lower(profile_table) LIKE '{1}%'"\
+            .format(settings['data_schema'], table_number)
+        pg_cur.execute(sql)
+
+        fields = pg_cur.fetchall()
+
+        for field in fields:
+            field_list.append(field[0].lower())
+
+        fields_string = ",".join(field_list)
+
+        # create the table
+        create_table_sql = "DROP TABLE IF EXISTS {0}.{1};" \
+                           "CREATE TABLE {0}.{1} (aus_code_2016 text, {2}) WITH (OIDS=FALSE);" \
+                           "ALTER TABLE {0}.metadata_tables OWNER TO {3}"\
+            .format(settings['data_schema'], table_number, fields_string, settings['pg_user'])
+
+        pg_cur.execute(create_table_sql)
+
+
+
+
+
+
+
+
+
+
     # get_metadata_files("metadata", settings)
     #
     # # read in excel file into a dataframe
