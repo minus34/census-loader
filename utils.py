@@ -33,6 +33,7 @@ def multiprocess_csv_import(work_list, settings, logger):
 def run_csv_import_multiprocessing(args):
     file_dict = args[0]
     settings = args[1]
+
     pg_conn = psycopg2.connect(settings['pg_connect_string'])
     pg_conn.autocommit = True
     pg_cur = pg_conn.cursor()
@@ -40,11 +41,11 @@ def run_csv_import_multiprocessing(args):
     try:
         csv_file = io.StringIO(file_dict["path"])
         csv_file.seek(0)  # move position back to beginning of file before reading
-        pg_cur.copy_from(csv_file, "{0}.{1}".format(settings['data_schema'], file_dict["table"]), sep=",", null="")
+        pg_cur.copy_from(csv_file, "{0}.{1}".format(settings['data_schema'], file_dict["table"]), sep=",", null="..")
 
         result = "SUCCESS"
     except Exception as ex:
-        result = "IMPORT CSV INTO POSTGRES FAILED! : {0} : {1}".format(file_dict["table"], ex)
+        result = "IMPORT CSV INTO POSTGRES FAILED! : {0} : {1}".format(file_dict["path"], ex)
 
     pg_cur.close()
     pg_conn.close()

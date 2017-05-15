@@ -65,8 +65,10 @@ def main():
     start_time = datetime.now()
     logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
     # create_metadata_tables(pg_cur, "Sample_Metadata_", ".xls", settings)
-    create_metadata_tables(pg_cur, "Metadata_", ".xlsx", settings)
-    create_data_tables(pg_cur, settings)
+
+    # create_metadata_tables(pg_cur, "Metadata_", ".xlsx", settings)
+    # create_data_tables(pg_cur, settings)
+
     # populate_data_tables("2016_Sample_", ".csv", 2, settings)
     populate_data_tables("2011Census_", ".csv", 1, settings)
     # # set postgres search path back to the default
