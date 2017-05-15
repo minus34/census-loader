@@ -391,26 +391,12 @@ def create_data_tables(pg_cur, settings):
 
 
 # load raw gnaf authority & state tables using multiprocessing
-def populate_data_tables(file_prefix, file_suffix, file_name_part, settings):
+def populate_data_tables(prefix, suffix, file_name_part, settings):
     # Step 3 of 3 : populate stats tables with CSV files using multiprocessing
     start_time = datetime.now()
 
     # get the file list and create sql copy statements
-    sql_list = get_data_files(file_prefix, file_suffix, file_name_part, settings)
-
-    # are there any files to load?
-    if len(sql_list) == 0:
-        logger.fatal("No Census data CSV files found\nACTION: Check your 'data_network_directory' path")
-        logger.fatal("\t- Step 3 of 3 : table populate FAILED!")
-    else:
-        # load all files using multiprocessing
-        utils.multiprocess_list("sql", sql_list, settings, logger)
-        logger.info("\t- Step 3 of 3 : tables populated : {0}".format(datetime.now() - start_time))
-
-
-def get_data_files(prefix, suffix, file_name_part, settings):
-    sql_list = []
-    prefix = prefix.lower()
+    file_list = []
     # get a dictionary of all files matching the filename prefix
     for root, dirs, files in os.walk(settings['data_network_directory']):
         for file_name in files:
@@ -419,22 +405,47 @@ def get_data_files(prefix, suffix, file_name_part, settings):
                     file_path = os.path.join(root, file_name)\
                         .replace(settings['data_network_directory'], settings['data_pg_server_local_directory'])
 
-                    table = file_name.lower().split("_")[file_name_part]
-
                     # if a non-Windows Postgres server OS - fix file path
                     if settings['data_pg_server_local_directory'][0:1] == "/":
                         file_path = file_path.replace("\\", "/")
 
-                    sql = "COPY {0}.{1} FROM '{2}' DELIMITER ',' CSV HEADER;" \
-                          "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY (aus_code_2016);" \
-                          "ALTER TABLE {0}.{1} CLUSTER ON {1}_pkey;" \
-                          "ANALYSE {0}.{1}" \
-                        .format(settings['data_schema'], table, file_path)
+                    table = file_name.lower().split("_")[file_name_part]
 
-                    sql_list.append(sql)
+                    file_dict = dict()
+                    file_dict["path"] = file_path
+                    file_dict["table"] = table
 
-    return sql_list
-    
+                    file_list.append(file_dict)
+
+                    # sql = "COPY {0}.{1} FROM '{2}' DELIMITER ',' NULL '..' CSV HEADER;" \
+                    #       "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY (aus_code_2016);" \
+                    #       "ALTER TABLE {0}.{1} CLUSTER ON {1}_pkey;" \
+                    #       "ANALYSE {0}.{1}" \
+                    #     .format(settings['data_schema'], table, file_path)
+                    #
+                    # sql_list.append(sql)
+
+    # are there any files to load?
+    if len(file_list) == 0:
+        logger.fatal("No Census data CSV files found\nACTION: Check your 'data_network_directory' path")
+        logger.fatal("\t- Step 3 of 3 : table populate FAILED!")
+    else:
+        # load all files using multiprocessing
+        utils.multiprocess_csv_import(file_list, settings, logger)
+        logger.info("\t- Step 3 of 3 : tables populated : {0}".format(datetime.now() - start_time))
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # loads the admin bdy shapefiles using the shp2pgsql command line tool (part of PostGIS), using multiprocessing
 def load_boundaries(pg_cur, settings):
