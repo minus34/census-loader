@@ -39,9 +39,9 @@ def run_sql_multiprocessing(args):
     pg_conn.autocommit = True
     pg_cur = pg_conn.cursor()
 
-    # set raw gnaf database schema (it's needed for the primary and foreign key creation)
-    if settings['raw_gnaf_schema'] != "public":
-        pg_cur.execute("SET search_path = {0}, public, pg_catalog".format(settings['raw_gnaf_schema'],))
+    # # set raw gnaf database schema (it's needed for the primary and foreign key creation)
+    # if settings['raw_gnaf_schema'] != "public":
+    #     pg_cur.execute("SET search_path = {0}, public, pg_catalog".format(settings['raw_gnaf_schema'],))
 
     try:
         pg_cur.execute(the_sql)
@@ -67,36 +67,36 @@ def run_command_line(cmd):
     return result
 
 
-def open_sql_file(file_name, settings):
-    sql = open(os.path.join(settings['sql_dir'], file_name), "r").read()
-    return prep_sql(sql, settings)
+# def open_sql_file(file_name, settings):
+#     sql = open(os.path.join(settings['sql_dir'], file_name), "r").read()
+#     return prep_sql(sql, settings)
+#
+#
+# # change schema names in an array of SQL script if schemas not the default
+# def prep_sql_list(sql_list, settings):
+#     output_list = []
+#     for sql in sql_list:
+#         output_list.append(prep_sql(sql, settings))
+#     return output_list
 
 
-# change schema names in an array of SQL script if schemas not the default
-def prep_sql_list(sql_list, settings):
-    output_list = []
-    for sql in sql_list:
-        output_list.append(prep_sql(sql, settings))
-    return output_list
-
-
-# set schema names in the SQL script
-def prep_sql(sql, settings):
-
-    if settings['raw_gnaf_schema'] is not None:
-        sql = sql.replace(" raw_gnaf.", " {0}.".format(settings['raw_gnaf_schema'], ))
-    if settings['raw_admin_bdys_schema'] is not None:
-        sql = sql.replace(" raw_admin_bdys.", " {0}.".format(settings['raw_admin_bdys_schema'], ))
-    if settings['gnaf_schema'] is not None:
-        sql = sql.replace(" gnaf.", " {0}.".format(settings['gnaf_schema'], ))
-    if settings['admin_bdys_schema'] is not None:
-        sql = sql.replace(" admin_bdys.", " {0}.".format(settings['admin_bdys_schema'], ))
-
-    if settings['pg_user'] != "postgres":
-        # alter create table script to run with correct Postgres user name
-        sql = sql.replace(" postgres;", " {0};".format(settings['pg_user'], ))
-
-    return sql
+# # set schema names in the SQL script
+# def prep_sql(sql, settings):
+#
+#     if settings['raw_gnaf_schema'] is not None:
+#         sql = sql.replace(" raw_gnaf.", " {0}.".format(settings['raw_gnaf_schema'], ))
+#     if settings['raw_admin_bdys_schema'] is not None:
+#         sql = sql.replace(" raw_admin_bdys.", " {0}.".format(settings['raw_admin_bdys_schema'], ))
+#     if settings['gnaf_schema'] is not None:
+#         sql = sql.replace(" gnaf.", " {0}.".format(settings['gnaf_schema'], ))
+#     if settings['admin_bdys_schema'] is not None:
+#         sql = sql.replace(" admin_bdys.", " {0}.".format(settings['admin_bdys_schema'], ))
+#
+#     if settings['pg_user'] != "postgres":
+#         # alter create table script to run with correct Postgres user name
+#         sql = sql.replace(" postgres;", " {0};".format(settings['pg_user'], ))
+#
+#     return sql
 
 
 def split_sql_into_list(pg_cur, the_sql, table_schema, table_name, table_alias, table_gid, settings, logger):

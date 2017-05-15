@@ -63,47 +63,32 @@ def main():
     # PART 1 - load census data from CSV files
     logger.info("")
     start_time = datetime.now()
-    logger.info("Part 1 of 4 : Start census data load : {0}".format(start_time))
-    # drop_tables_and_vacuum_db(pg_cur, settings)
-    load_metadata(pg_cur, settings)
+    logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
+    # create_metadata_tables(pg_cur, "Sample_Metadata_", ".xls", settings)
+    create_metadata_tables(pg_cur, "Metadata_", ".xlsx", settings)
     create_data_tables(pg_cur, settings)
-    populate_data_tables(settings)
-    # index_raw_gnaf(settings)
-    # if settings['primary_foreign_keys']:
-    #     create_primary_foreign_keys(settings)
-    # else:
-    #     logger.info("\t- Step 6 of 7 : primary & foreign keys NOT created")
-    # analyse_raw_gnaf_tables(pg_cur, settings)
+    # populate_data_tables("2016_Sample_", ".csv", 2, settings)
+    populate_data_tables("2011Census_", ".csv", 1, settings)
     # # set postgres search path back to the default
     # pg_cur.execute("SET search_path = public, pg_catalog")
-    # logger.info("Part 1 of 4 : Raw GNAF loaded! : {0}".format(datetime.now() - start_time))
+    logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
 
-    # PART 2 - load census boundaries from Shapefiles
-    logger.info("")
-    start_time = datetime.now()
-    logger.info("Part 2 of 4 : Start census boundary load : {0}".format(start_time))
-    load_boundaries(pg_cur, settings)
-    # prep_boundaries(pg_cur, settings)
-    # create_boundaries_for_analysis(settings)
-    logger.info("Part 2 of 4 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
+    # # PART 2 - load census boundaries from Shapefiles
+    # logger.info("")
+    # start_time = datetime.now()
+    # logger.info("Part 2 of 3 : Start census boundary load : {0}".format(start_time))
+    # load_boundaries(pg_cur, settings)
+    # # prep_boundaries(pg_cur, settings)
+    # # create_boundaries_for_analysis(settings)
+    # logger.info("Part 2 of 3 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
-    # # PART 3 - create flattened and standardised GNAF and Administrative Boundary reference tables
+    # # PART 3 - create views
     # logger.info("")
     # start_time = datetime.now()
     # logger.info("Part 3 of 4 : Start create reference tables : {0}".format(start_time))
     # create_reference_tables(pg_cur, settings)
     # logger.info("Part 3 of 4 : Reference tables created! : {0}".format(datetime.now() - start_time))
-    # 
-    # # PART 4 - boundary tag GNAF addresses
-    # logger.info("")
-    # if settings['boundary_tag']:
-    #     start_time = datetime.now()
-    #     logger.info("Part 4 of 4 : Start boundary tagging addresses : {0}".format(start_time))
-    #     boundary_tag_gnaf(pg_cur, settings)
-    #     logger.info("Part 4 of 4 : Addresses boundary tagged: {0}".format(datetime.now() - start_time))
-    # else:
-    #     logger.warning("Part 4 of 4 : Addresses NOT boundary tagged")
-    # 
+    #
     # # # PART 5 - get record counts for QA
     # logger.info("")
     # start_time = datetime.now()
@@ -131,7 +116,7 @@ def set_arguments():
     parser.add_argument(
         '--max-processes', type=int, default=3,
         help='Maximum number of parallel processes to use for the data load. (Set it to the number of cores on the '
-             'Postgres server minus 2, limit to 12 if 16+ cores - there is minimal benefit beyond 12). Defaults to 6.')
+             'Postgres server minus 2, limit to 12 if 16+ cores - there is minimal benefit beyond 12). Defaults to 3.')
 
     # PG Options
     parser.add_argument(
@@ -239,8 +224,8 @@ def get_settings(args):
     return settings
 
 
-def load_metadata(pg_cur, settings):
-    # Step 1 of 2 : create metadata tables from Census Excel spreadsheets
+def create_metadata_tables(pg_cur, prefix, suffix, settings):
+    # Step 1 of 3 : create metadata tables from Census Excel spreadsheets
     start_time = datetime.now()
 
     # create schema and set as search path
@@ -256,66 +241,79 @@ def load_metadata(pg_cur, settings):
           "ALTER TABLE {0}.metadata_tables OWNER TO {1}".format(settings['data_schema'], settings['pg_user'])
     pg_cur.execute(sql)
 
-    sql = "DROP TABLE IF EXISTS {0}.metadata_cells;" \
-          "CREATE TABLE {0}.metadata_cells (sequential text, short_description text, long_description text, " \
-          "datapack_file text, profile_table text, column_heading_description_in_profile_text text) " \
+    sql = "DROP TABLE IF EXISTS {0}.metadata_stats;" \
+          "CREATE TABLE {0}.metadata_stats (sequential_id text, short_id text, long_id text, " \
+          "table_number text, profile_table text, column_heading_description text) " \
           "WITH (OIDS=FALSE);" \
-          "ALTER TABLE {0}.metadata_cells OWNER TO {1}".format(settings['data_schema'], settings['pg_user'])
+          "ALTER TABLE {0}.metadata_stats OWNER TO {1}".format(settings['data_schema'], settings['pg_user'])
     pg_cur.execute(sql)
 
     census_metadata_dicts = [{"table": "metadata_tables", "first_row": "table number"},
-                             {"table": "metadata_cells", "first_row": "sequential"}]
-    # census_metadata_dicts = [{"table": "metadata_tables", "first_row": "table number", "primary_key": "table_number"},
-    #                          {"table": "metadata_cells", "first_row": "sequential", "primary_key": "sequential"}]
+                             {"table": "metadata_stats", "first_row": "sequential"}]
 
-    # get a dictionary of all files matching the metadata filename prefix
+    # get a list of all files matching the metadata filename prefix
+    file_list = list()
+
     for root, dirs, files in os.walk(settings['data_network_directory']):
         for file_name in files:
-            if file_name.lower().startswith("sample_metadata_"):
-                if file_name.lower().endswith(".xls"):
-                    file_path = os.path.join(root, file_name)\
+            if file_name.lower().startswith(prefix.lower()):
+                if file_name.lower().endswith(suffix.lower()):
+                    file_path = os.path.join(root, file_name)
 
-                    # read in excel worksheets into pandas dataframes
-                    xl = pandas.ExcelFile(file_path)
+                    file_dict = dict()
+                    file_dict["name"] = file_name
+                    file_dict["path"] = file_path
 
-                    sheets = xl.sheet_names
-                    i = 0
+                    file_list.append(file_dict)
 
-                    for table_dict in census_metadata_dicts:
+    # are there any files to load?
+    if len(file_list) == 0:
+        logger.fatal("No Census metadata XLS files found\nACTION: Check your 'data_network_directory' path")
+        logger.fatal("\t- Step 3 of 3 : create metadata tables FAILED!")
+    else:
+        # read in excel worksheets into pandas dataframes
+        for file_dict in file_list:
 
-                        df = xl.parse(sheets[i])
+            xl = pandas.ExcelFile(file_dict["path"])
 
-                        # drop unwanted rows at the top
-                        j = 0
-                        first_row = False
+            sheets = xl.sheet_names
+            i = 0
 
-                        while not first_row:
-                            cell = df.iloc[j, 0]
+            for table_dict in census_metadata_dicts:
 
-                            if str(cell).lower() == table_dict["first_row"]:
-                                df_clean = df.drop(df.index[0:j+1])
-                                first_row = True
+                df = xl.parse(sheets[i])
 
-                                # drop excess columns in unclean spreadsheets
-                                if table_dict["table"] == "metadata_cells":
-                                    try:
-                                        df_clean.drop(df.columns[[6, 7, 8]], axis=1, inplace=True)
-                                    except:
-                                        pass
+                # drop unwanted rows at the top
+                j = 0
+                first_row = False
 
-                                # export to in-memory tab delimited text file
-                                tsv_file = io.StringIO()
-                                df_clean.to_csv(tsv_file, sep="\t", index=False, header=False)
-                                tsv_file.seek(0)  # move position back to beginning of file before reading
-                                pg_cur.copy_from(tsv_file, "{0}.{1}"
-                                                 .format(settings['data_schema'], table_dict["table"]),
-                                                 sep="\t", null="")
+                while not first_row:
+                    cell = df.iloc[j, 0]
 
-                            j += 1
+                    if str(cell).lower() == table_dict["first_row"]:
+                        df_clean = df.drop(df.index[0:j+1])
+                        first_row = True
 
-                        i += 1
+                        # drop excess columns in unclean spreadsheets
+                        if table_dict["table"] == "metadata_stats":
+                            try:
+                                df_clean.drop(df.columns[[6, 7, 8]], axis=1, inplace=True)
+                            except:
+                                pass
 
-                    logger.info("\t\t- imported {0}".format(file_name))
+                        # export to in-memory tab delimited text file
+                        tsv_file = io.StringIO()
+                        df_clean.to_csv(tsv_file, sep="\t", index=False, header=False)
+                        tsv_file.seek(0)  # move position back to beginning of file before reading
+                        pg_cur.copy_from(tsv_file, "{0}.{1}"
+                                         .format(settings['data_schema'], table_dict["table"]),
+                                         sep="\t", null="")
+
+                    j += 1
+
+                i += 1
+
+            logger.info("\t\t- imported {0}".format(file_dict["name"]))
 
     # clean up invalid rows
     pg_cur.execute("DELETE FROM {0}.metadata_tables WHERE table_number IS NULL".format(settings['data_schema']))
@@ -323,38 +321,38 @@ def load_metadata(pg_cur, settings):
     # add primary keys
     pg_cur.execute("ALTER TABLE {0}.metadata_tables ADD CONSTRAINT metadata_tables_pkey PRIMARY KEY (table_number)"
                    .format(settings['data_schema']))
-    pg_cur.execute("ALTER TABLE {0}.metadata_cells ADD CONSTRAINT metadata_cells_pkey PRIMARY KEY (sequential)"
+    pg_cur.execute("ALTER TABLE {0}.metadata_stats ADD CONSTRAINT metadata_stats_pkey PRIMARY KEY (sequential_id)"
                    .format(settings['data_schema']))
 
     # cluster tables on primary key (for minor performance improvement)
     pg_cur.execute("ALTER TABLE {0}.metadata_tables CLUSTER ON metadata_tables_pkey".format(settings['data_schema']))
-    pg_cur.execute("ALTER TABLE {0}.metadata_cells CLUSTER ON metadata_cells_pkey".format(settings['data_schema']))
+    pg_cur.execute("ALTER TABLE {0}.metadata_stats CLUSTER ON metadata_stats_pkey".format(settings['data_schema']))
 
     # add cell type field to cells table
-    pg_cur.execute("ALTER TABLE {0}.metadata_cells ADD COLUMN cell_type text".format(settings['data_schema']))
+    pg_cur.execute("ALTER TABLE {0}.metadata_stats ADD COLUMN stat_type text".format(settings['data_schema']))
 
     # populate cell type field
-    pg_cur.execute("UPDATE {0}.metadata_cells "
-                   "SET cell_type = 'double precision' "
-                   "WHERE lower(long_description) like '%median%' OR lower(long_description) like '%average%'"
+    pg_cur.execute("UPDATE {0}.metadata_stats "
+                   "SET stat_type = 'double precision' "
+                   "WHERE lower(long_id) like '%median%' OR lower(long_id) like '%average%'"
                    .format(settings['data_schema']))
-    pg_cur.execute("UPDATE {0}.metadata_cells "
-                   "SET cell_type = 'integer' "
-                   "WHERE cell_type IS NULL"
+    pg_cur.execute("UPDATE {0}.metadata_stats "
+                   "SET stat_type = 'integer' "
+                   "WHERE stat_type IS NULL"
                    .format(settings['data_schema']))
 
     # update stats
     pg_cur.execute("ANALYZE {0}.metadata_tables".format(settings['data_schema']))
-    pg_cur.execute("ANALYZE {0}.metadata_cells".format(settings['data_schema']))
+    pg_cur.execute("ANALYZE {0}.metadata_stats".format(settings['data_schema']))
 
-    logger.info("\t- Step 1 of 2 : metadata tables created : {0}".format(datetime.now() - start_time))
+    logger.info("\t- Step 1 of 3 : metadata tables created : {0}".format(datetime.now() - start_time))
 
 
 def create_data_tables(pg_cur, settings):
-    # Step 1 of 2 : create tables from metadata in Census Excel spreadsheets
+    # Step 2 of 3 : create tables from metadata tables
     start_time = datetime.now()
 
-    sql = "SELECT table_number FROM {0}.metadata_tables".format(settings['data_schema'])
+    sql = "SELECT DISTINCT table_number FROM {0}.metadata_stats".format(settings['data_schema'])
     pg_cur.execute(sql)
 
     rows = pg_cur.fetchall()
@@ -366,176 +364,76 @@ def create_data_tables(pg_cur, settings):
         # get the census fields for the table
         field_list = list()
 
-        sql = "SELECT sequential || ' ' || cell_type AS field " \
-              "FROM {0}.metadata_cells " \
-              "WHERE lower(profile_table) LIKE '{1}%'"\
+        sql = "SELECT sequential_id || ' ' || stat_type AS field " \
+              "FROM {0}.metadata_stats " \
+              "WHERE lower(table_number) LIKE '{1}%'"\
             .format(settings['data_schema'], table_number)
         pg_cur.execute(sql)
 
         fields = pg_cur.fetchall()
 
-        for field in fields:
-            field_list.append(field[0].lower())
+        # only for sample files - remove for actual data
+        if len(fields) > 0:
+            for field in fields:
+                field_list.append(field[0].lower())
 
-        fields_string = ",".join(field_list)
+            fields_string = ",".join(field_list)
 
-        # create the table
-        create_table_sql = "DROP TABLE IF EXISTS {0}.{1};" \
-                           "CREATE TABLE {0}.{1} (aus_code_2016 text, {2}) WITH (OIDS=FALSE);" \
-                           "ALTER TABLE {0}.metadata_tables OWNER TO {3}"\
-            .format(settings['data_schema'], table_number, fields_string, settings['pg_user'])
+            # create the table
+            create_table_sql = "DROP TABLE IF EXISTS {0}.{1};" \
+                               "CREATE TABLE {0}.{1} (aus_code_2016 text, {2}) WITH (OIDS=FALSE);" \
+                               "ALTER TABLE {0}.metadata_tables OWNER TO {3}"\
+                .format(settings['data_schema'], table_number, fields_string, settings['pg_user'])
 
-        pg_cur.execute(create_table_sql)
+            pg_cur.execute(create_table_sql)
 
-
-
-
-
-
-
-
-
-
-    # get_metadata_files("metadata", settings)
-    #
-    # # read in excel file into a dataframe
-    # df = pandas.read_excel(settings["metadata_xls"], sheetname="Sheet1")
-
-
-    # prep create table sql scripts (note: file doesn't contain any schema prefixes on table names)
-    sql = open(os.path.join(settings['sql_dir'], "01-03-raw-gnaf-create-tables.sql"), "r").read()
-
-    # create schema and set as search path
-    if settings['data_schema'] != "public":
-        pg_cur.execute("CREATE SCHEMA IF NOT EXISTS {0} AUTHORIZATION {1}"
-                       .format(settings['data_schema'], settings['pg_user']))
-        pg_cur.execute("SET search_path = {0}".format(settings['data_schema'],))
-
-        # alter create table script to run on chosen schema
-        sql = sql.replace("SET search_path = public", "SET search_path = {0}".format(settings['data_schema'],))
-
-    # set tables to unlogged to speed up the load? (if requested)
-    # -- they'll have to be rebuilt using this script again after a system crash --
-    if settings['unlogged_tables']:
-        sql = sql.replace("CREATE TABLE ", "CREATE UNLOGGED TABLE ")
-        unlogged_string = "UNLOGGED "
-    else:
-        unlogged_string = ""
-
-    # create raw gnaf tables
-    pg_cur.execute(sql)
-
-    logger.info("\t- Step 3 of 7 : {1}tables created : {0}".format(datetime.now() - start_time, unlogged_string))
+    logger.info("\t- Step 2 of 3 : stats tables created : {0}".format(datetime.now() - start_time))
 
 
 # load raw gnaf authority & state tables using multiprocessing
-def populate_data_tables(settings):
-    # Step 4 of 7 : load raw gnaf authority & state tables
+def populate_data_tables(file_prefix, file_suffix, file_name_part, settings):
+    # Step 3 of 3 : populate stats tables with CSV files using multiprocessing
     start_time = datetime.now()
 
-    # authority code file list
-    sql_list = get_data_files("authority_code", settings)
-
-    # add state file lists
-    for state in settings['states_to_load']:
-        logger.info("\t\t- Loading state {}".format(state))
-        sql_list.extend(get_data_files(state, settings))
+    # get the file list and create sql copy statements
+    sql_list = get_data_files(file_prefix, file_suffix, file_name_part, settings)
 
     # are there any files to load?
     if len(sql_list) == 0:
-        logger.fatal("No raw GNAF PSV files found\nACTION: Check your 'gnaf_network_directory' path")
-        logger.fatal("\t- Step 4 of 7 : table populate FAILED!")
+        logger.fatal("No Census data CSV files found\nACTION: Check your 'data_network_directory' path")
+        logger.fatal("\t- Step 3 of 3 : table populate FAILED!")
     else:
-        # load all PSV files using multiprocessing
+        # load all files using multiprocessing
         utils.multiprocess_list("sql", sql_list, settings, logger)
-        logger.info("\t- Step 4 of 7 : tables populated : {0}".format(datetime.now() - start_time))
+        logger.info("\t- Step 3 of 3 : tables populated : {0}".format(datetime.now() - start_time))
 
 
-
-
-
-def get_data_files(prefix, settings):
+def get_data_files(prefix, suffix, file_name_part, settings):
     sql_list = []
     prefix = prefix.lower()
     # get a dictionary of all files matching the filename prefix
     for root, dirs, files in os.walk(settings['data_network_directory']):
         for file_name in files:
-            if file_name.lower().startswith(prefix + "_"):
-                if file_name.lower().endswith(".psv"):
+            if file_name.lower().startswith(prefix.lower()):
+                if file_name.lower().endswith(suffix.lower()):
                     file_path = os.path.join(root, file_name)\
                         .replace(settings['data_network_directory'], settings['data_pg_server_local_directory'])
-                    table = file_name.lower().replace(prefix + "_", "", 1).replace("_psv.psv", "")
+
+                    table = file_name.lower().split("_")[file_name_part]
 
                     # if a non-Windows Postgres server OS - fix file path
                     if settings['data_pg_server_local_directory'][0:1] == "/":
                         file_path = file_path.replace("\\", "/")
-                        # logger.info(file_path
 
-                    sql = "COPY {0}.{1} FROM '{2}' DELIMITER '|' CSV HEADER;"\
+                    sql = "COPY {0}.{1} FROM '{2}' DELIMITER ',' CSV HEADER;" \
+                          "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY (aus_code_2016);" \
+                          "ALTER TABLE {0}.{1} CLUSTER ON {1}_pkey;" \
+                          "ANALYSE {0}.{1}" \
                         .format(settings['data_schema'], table, file_path)
 
                     sql_list.append(sql)
 
     return sql_list
-
-
-# index raw gnaf using multiprocessing
-def index_data(settings):
-    # Step 5 of 7 : create indexes
-    start_time = datetime.now()
-
-    raw_sql_list = utils.open_sql_file("01-05-raw-gnaf-create-indexes.sql", settings).split("\n")
-    sql_list = []
-    for sql in raw_sql_list:
-        if sql[0:2] != "--" and sql[0:2] != "":
-            sql_list.append(sql)
-
-    utils.multiprocess_list("sql", sql_list, settings, logger)
-    logger.info("\t- Step 5 of 7 : indexes created: {0}".format(datetime.now() - start_time))
-
-
-# create raw gnaf primary & foreign keys (for data integrity) using multiprocessing
-def create_primary_foreign_keys(settings):
-    start_time = datetime.now()
-
-    key_sql = open(os.path.join(settings['sql_dir'], "01-06-raw-gnaf-create-primary-foreign-keys.sql"), "r").read()
-    key_sql_list = key_sql.split("--")
-    sql_list = []
-
-    for sql in key_sql_list:
-        sql = sql.strip()
-        if sql[0:6] == "ALTER ":
-            # add schema to tables names, in case raw gnaf schema not the default
-            sql = sql.replace("ALTER TABLE ONLY ", "ALTER TABLE ONLY " + settings['data_schema'] + ".")
-            sql_list.append(sql)
-
-    sql_list = []
-
-    # run queries in separate processes
-    utils.multiprocess_list("sql", sql_list, settings, logger)
-
-    logger.info("\t- Step 6 of 7 : primary & foreign keys created : {0}".format(datetime.now() - start_time))
-
-
-# analyse raw GNAF tables that have not stats - need actual row counts for QA at the end
-def analyse_data_tables(pg_cur, settings):
-    start_time = datetime.now()
-    
-    # get list of tables that haven't been analysed (i.e. that have no real row count)
-    sql = "SELECT nspname|| '.' || relname AS table_name " \
-          "FROM pg_class C LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)" \
-          "WHERE nspname = '{0}' AND relkind='r' AND reltuples = 0".format(settings['data_schema'])
-    pg_cur.execute(sql)
-
-    sql_list = []
-
-    for pg_row in pg_cur:
-        sql_list.append("ANALYZE {0}".format(pg_row[0]))
-
-    # run queries in separate processes
-    utils.multiprocess_list("sql", sql_list, settings, logger)
-
-    logger.info("\t- Step 7 of 7 : tables analysed : {0}".format(datetime.now() - start_time))
     
 
 # loads the admin bdy shapefiles using the shp2pgsql command line tool (part of PostGIS), using multiprocessing
