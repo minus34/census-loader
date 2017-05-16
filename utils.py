@@ -39,9 +39,17 @@ def run_csv_import_multiprocessing(args):
     pg_cur = pg_conn.cursor()
 
     try:
-        csv_file = io.StringIO(file_dict["path"])
+        csv_file_string = open(file_dict["path"], 'r').read().rstrip()
+
+        sql = "COPY {0}.{1} FROM stdin WITH CSV HEADER DELIMITER as ',' NULL as '..'"\
+            .format(settings['data_schema'], file_dict["table"])
+
+        csv_file = io.StringIO(csv_file_string)
         csv_file.seek(0)  # move position back to beginning of file before reading
-        pg_cur.copy_from(csv_file, "{0}.{1}".format(settings['data_schema'], file_dict["table"]), sep=",", null="..")
+
+        pg_cur.copy_expert(sql, csv_file)
+
+        # pg_cur.copy_from(csv_file, "{0}.{1}".format(settings['data_schema'], file_dict["table"]), sep=",", null="..")
 
         result = "SUCCESS"
     except Exception as ex:
