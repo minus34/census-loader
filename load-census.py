@@ -66,8 +66,10 @@ def main():
 
     # test runtime parameters:
     # --census-year=2011
-    # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2011_data
-    # --census-bdys-path=/Users/hugh.saalmans/tmp/abs_census_2016_boundaries
+    # --data-schema=census_2011_data
+    # --boundary-schema=census_2011_bdys
+    # --census-data-path=/Users/hugh.saalmans/minus34/data/abs_2011
+    # --census-bdys-path=/Users/hugh.saalmans/minus34/data/abs_2011
 
     # PART 1 - load census data from CSV files
     logger.info("")
@@ -75,7 +77,8 @@ def main():
     logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
     create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
     create_data_tables(pg_cur, settings)
-    populate_data_tables(settings['data_file_prefix'], settings['data_file_type'], 1, settings)
+    populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
+                         settings['table_name_part'], settings['bdy_name_part'], settings)
     index_data_tables(pg_cur, settings)
     # # set postgres search path back to the default
     # pg_cur.execute("SET search_path = public, pg_catalog")
@@ -156,10 +159,10 @@ def set_arguments():
 
     parser.add_argument(
         '--data-schema', default='census_' + census_year + '_data',
-        help='Schema name to store raw GNAF tables in. Defaults to \'census_' + census_year + '\'.')
+        help='Schema name to store raw GNAF tables in. Defaults to \'census_' + census_year + '_data\'.')
     parser.add_argument(
         '--boundary-schema', default='census_' + census_year + '_bdys',
-        help='Schema name to store raw admin boundary tables in. Defaults to \'census_' + census_year + '\'.')
+        help='Schema name to store raw admin boundary tables in. Defaults to \'census_' + census_year + '_bdys\'.')
 
     # directories
     parser.add_argument(
@@ -218,7 +221,8 @@ def get_settings(args):
         settings['metadata_file_type'] = ".xls"
         settings['data_file_prefix'] = "2016_Sample_"
         settings['data_file_type'] = ".csv"
-
+        settings['table_name_part'] = 2  # position in the data file name that equals it's destination table name
+        settings['bdy_name_part'] = 3  # position in the data file name that equals it's census boundary name
         settings['region_id_field'] = "aus_code_2016"
 
     elif settings['census_year'] == '2011':
@@ -226,7 +230,8 @@ def get_settings(args):
         settings['metadata_file_type'] = ".xlsx"
         settings['data_file_prefix'] = "2011Census_"
         settings['data_file_type'] = ".csv"
-
+        settings['table_name_part'] = 1  # position in the data file name that equals it's destination table name
+        settings['bdy_name_part'] = 3  # position in the data file name that equals it's census boundary name
         settings['region_id_field'] = "region_id"
     else:
         return None
@@ -393,10 +398,10 @@ def create_data_tables(pg_cur, settings):
     sql = "SELECT DISTINCT table_number FROM {0}.metadata_stats".format(settings['data_schema'])
     pg_cur.execute(sql)
 
-    rows = pg_cur.fetchall()
+    table_numbers = pg_cur.fetchall()
 
     # scroll through each table number and create it
-    for row in rows:
+    for row in table_numbers:
         table_number = row[0].lower()
 
         # get the census fields for the table
@@ -479,23 +484,33 @@ def index_data_tables(pg_cur, settings):
     rows = pg_cur.fetchall()
 
     # scroll through each table number and create it
+    sql_list1 = list()
+    sql_list2 = list()
+
     for row in rows:
         table_number = row[0].lower()
 
-        # remove duplicate records (these occur due to region IDs <state_id>99999499 that are duplicated by design)
+        # remove duplicate records and rceate primary keys
+        # (duplicates occur by design due to the region IDs '<state_id>99999499' being in )
         sql = "DELETE FROM {0}.{1} AS a USING (" \
               "SELECT MIN(ctid) as ctid, {2} FROM {0}.{1} GROUP BY {2} HAVING COUNT(*) > 1" \
               ") AS b WHERE a.{2} IN ('199999499', '299999499', '399999499', '499999499', '599999499', '699999499', " \
-              "'799999499', '899999499', '999999499') AND a.{2} = b.{2} AND a.ctid <> b.ctid"\
-            .format(settings['data_schema'], table_number, settings['region_id_field'])
-        pg_cur.execute(sql)
-
-        sql = "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY ({2});" \
+              "'799999499', '899999499', '999999499') AND a.{2} = b.{2} AND a.ctid <> b.ctid;" \
+              "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY ({2});" \
               "ALTER TABLE {0}.{1} CLUSTER ON {1}_pkey"\
             .format(settings['data_schema'], table_number, settings['region_id_field'])
-        pg_cur.execute(sql)
+        # pg_cur.execute(sql)
 
-        pg_cur.execute("VACUUM ANALYSE {0}.{1}".format(settings['data_schema'], table_number))
+        sql_list1.append(sql)
+
+        sql_list2.append("VACUUM ANALYSE {0}.{1}".format(settings['data_schema'], table_number))
+
+    utils.multiprocess_list("sql", sql_list1, settings, logger)
+    logger.info("\t\t- primary keys created : {0}".format(datetime.now() - start_time))
+    start_time = datetime.now()
+
+    utils.multiprocess_list("sql", sql_list2, settings, logger)
+    logger.info("\t\t- tables vacuum analysed : {0}".format(datetime.now() - start_time))
 
     logger.info("\t- Step 4 of 4 : primary keys created and tables vacuum analysed : {0}"
                 .format(datetime.now() - start_time))
