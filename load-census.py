@@ -85,14 +85,14 @@ def main():
     # pg_cur.execute("SET search_path = public, pg_catalog")
     logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
 
-    # # PART 2 - load census boundaries from Shapefiles
-    # logger.info("")
-    # start_time = datetime.now()
-    # logger.info("Part 2 of 3 : Start census boundary load : {0}".format(start_time))
-    # load_boundaries(pg_cur, settings)
-    # # prep_boundaries(pg_cur, settings)
-    # # create_boundaries_for_analysis(settings)
-    # logger.info("Part 2 of 3 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
+    # PART 2 - load census boundaries from Shapefiles
+    logger.info("")
+    start_time = datetime.now()
+    logger.info("Part 2 of 3 : Start census boundary load : {0}".format(start_time))
+    load_boundaries(pg_cur, settings)
+    # prep_boundaries(pg_cur, settings)
+    # create_boundaries_for_analysis(settings)
+    logger.info("Part 2 of 3 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
     # # PART 3 - create views
     # logger.info("")
@@ -262,7 +262,7 @@ def get_settings(args):
 
 
 def create_metadata_tables(pg_cur, prefix, suffix, settings):
-    # Step 1 of 4 : create metadata tables from Census Excel spreadsheets
+    # Step 1 of 2 : create metadata tables from Census Excel spreadsheets
     start_time = datetime.now()
 
     # create schema and set as search path
@@ -389,7 +389,7 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
     pg_cur.execute("VACUUM ANALYZE {0}.metadata_tables".format(settings['data_schema']))
     pg_cur.execute("VACUUM ANALYZE {0}.metadata_stats".format(settings['data_schema']))
 
-    logger.info("\t- Step 1 of 4 : metadata tables created : {0}".format(datetime.now() - start_time))
+    logger.info("\t- Step 1 of 2 : metadata tables created : {0}".format(datetime.now() - start_time))
 
 
 def create_data_tables(pg_cur, settings):
@@ -440,7 +440,7 @@ def create_data_tables(pg_cur, settings):
 
 # create stats tables and import data from CSV files using multiprocessing
 def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, settings):
-    # Step 3 of 4 : populate stats tables with CSV files using multiprocessing
+    # Step 2 of 2 : create & populate stats tables with CSV files using multiprocessing
     start_time = datetime.now()
 
     # get the file list and create sql copy statements
@@ -476,11 +476,11 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, setting
     # are there any files to load?
     if len(file_list) == 0:
         logger.fatal("No Census data CSV files found\nACTION: Check your 'data_network_directory' path")
-        logger.fatal("\t- Step 3 of 4 : table populate FAILED!")
+        logger.fatal("\t- Step 2 of 2 : stats table create & populate FAILED!")
     else:
         # load all files using multiprocessing
         multiprocess_csv_import(file_list, settings, logger)
-        logger.info("\t- Step 3 of 4 : tables populated : {0}".format(datetime.now() - start_time))
+        logger.info("\t- Step 2 of 2 : stats tables created & populated : {0}".format(datetime.now() - start_time))
 
 
 # takes a list of sql queries or command lines and runs them using multiprocessing
