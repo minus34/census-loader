@@ -38,6 +38,10 @@ def main():
     # get settings from arguments
     settings = get_settings(args)
 
+    if settings is None:
+        logger.fatal("Invalid Census Year\nACTION: Set value to 2011 or 2016")
+        return False
+
     # connect to Postgres
     try:
         pg_conn = psycopg2.connect(settings['pg_connect_string'])
@@ -60,17 +64,19 @@ def main():
 
     # START LOADING DATA
 
+    # test runtime parameters:
+    # --census-year=2011
+    # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2011_data
+    # --census-bdys-path=/Users/hugh.saalmans/tmp/abs_census_2016_boundaries
+
     # PART 1 - load census data from CSV files
     logger.info("")
     start_time = datetime.now()
     logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
-    # create_metadata_tables(pg_cur, "Sample_Metadata_", ".xls", settings)
-
-    # create_metadata_tables(pg_cur, "Metadata_", ".xlsx", settings)
-    # create_data_tables(pg_cur, settings)
-
-    # populate_data_tables("2016_Sample_", ".csv", 2, settings)
-    populate_data_tables("2011Census_", ".csv", 1, settings)
+    create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
+    create_data_tables(pg_cur, settings)
+    populate_data_tables(settings['data_file_prefix'], settings['data_file_type'], 1, settings)
+    index_data_tables(pg_cur, settings)
     # # set postgres search path back to the default
     # pg_cur.execute("SET search_path = public, pg_catalog")
     logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
@@ -120,6 +126,7 @@ def set_arguments():
         help='Maximum number of parallel processes to use for the data load. (Set it to the number of cores on the '
              'Postgres server minus 2, limit to 12 if 16+ cores - there is minimal benefit beyond 12). Defaults to 3.')
 
+
     # PG Options
     parser.add_argument(
         '--pghost',
@@ -144,7 +151,9 @@ def set_arguments():
     
     parser.add_argument(
         '--census-year', default=census_year,
-        help='Census year as YYYY. Defaults to last census \'' + census_year + '\'.')
+        help='Census year as YYYY. Valid values are \'2011\' or \'2016\'. '
+             'Defaults to last census \'' + census_year + '\'.')
+
     parser.add_argument(
         '--data-schema', default='census_' + census_year + '_data',
         help='Schema name to store raw GNAF tables in. Defaults to \'census_' + census_year + '\'.')
@@ -203,6 +212,26 @@ def get_settings(args):
     # set postgres script directory
     settings['sql_dir'] = os.path.join(os.path.dirname(os.path.realpath(__file__)), "postgres-scripts")
 
+    # set file name and field name defaults based on census year
+    if settings['census_year'] == '2016':
+        settings['metadata_file_prefix'] = "Sample_Metadata_"
+        settings['metadata_file_type'] = ".xls"
+        settings['data_file_prefix'] = "2016_Sample_"
+        settings['data_file_type'] = ".csv"
+
+        settings['region_id_field'] = "aus_code_2016"
+
+    elif settings['census_year'] == '2011':
+        settings['metadata_file_prefix'] = "Metadata_"
+        settings['metadata_file_type'] = ".xlsx"
+        settings['data_file_prefix'] = "2011Census_"
+        settings['data_file_type'] = ".csv"
+
+        settings['region_id_field'] = "region_id"
+    else:
+        return None
+
+
     # # set the list of admin bdys to create analysis tables for and to boundary tag with
     # admin_bdy_list = list()
     # admin_bdy_list.append(["state_bdys", "state_pid"])
@@ -227,7 +256,7 @@ def get_settings(args):
 
 
 def create_metadata_tables(pg_cur, prefix, suffix, settings):
-    # Step 1 of 3 : create metadata tables from Census Excel spreadsheets
+    # Step 1 of 4 : create metadata tables from Census Excel spreadsheets
     start_time = datetime.now()
 
     # create schema and set as search path
@@ -271,7 +300,7 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
     # are there any files to load?
     if len(file_list) == 0:
         logger.fatal("No Census metadata XLS files found\nACTION: Check your 'data_network_directory' path")
-        logger.fatal("\t- Step 3 of 3 : create metadata tables FAILED!")
+        logger.fatal("\t- Step 1 of 4 : create metadata tables FAILED!")
     else:
         # read in excel worksheets into pandas dataframes
         for file_dict in file_list:
@@ -330,28 +359,35 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
     pg_cur.execute("ALTER TABLE {0}.metadata_tables CLUSTER ON metadata_tables_pkey".format(settings['data_schema']))
     pg_cur.execute("ALTER TABLE {0}.metadata_stats CLUSTER ON metadata_stats_pkey".format(settings['data_schema']))
 
-    # add cell type field to cells table
-    pg_cur.execute("ALTER TABLE {0}.metadata_stats ADD COLUMN stat_type text".format(settings['data_schema']))
+    # # add cell type field to cells table
+    # pg_cur.execute("ALTER TABLE {0}.metadata_stats ADD COLUMN stat_type text".format(settings['data_schema']))
 
     # populate cell type field
-    pg_cur.execute("UPDATE {0}.metadata_stats "
-                   "SET stat_type = 'double precision' "
-                   "WHERE lower(long_id) like '%median%' OR lower(long_id) like '%average%'"
-                   .format(settings['data_schema']))
-    pg_cur.execute("UPDATE {0}.metadata_stats "
-                   "SET stat_type = 'integer' "
-                   "WHERE stat_type IS NULL"
-                   .format(settings['data_schema']))
+    # pg_cur.execute("UPDATE {0}.metadata_stats "
+    #                "SET stat_type = 'double precision' "
+    #                "WHERE lower(long_id) like '%median%' "
+    #                "OR lower(long_id) like '%average%' "
+    #                "OR lower(long_id) like '%percent%' "
+    #                "OR lower(long_id) like '%proportion%' "
+    #                .format(settings['data_schema']))
+    #
+    # pg_cur.execute("UPDATE {0}.metadata_stats "
+    #                "SET stat_type = 'integer' "
+    #                "WHERE stat_type IS NULL"
+    #                .format(settings['data_schema']))
+
+    # pg_cur.execute("UPDATE {0}.metadata_stats "
+    #                "SET stat_type = 'double precision'".format(settings['data_schema']))
 
     # update stats
-    pg_cur.execute("ANALYZE {0}.metadata_tables".format(settings['data_schema']))
-    pg_cur.execute("ANALYZE {0}.metadata_stats".format(settings['data_schema']))
+    pg_cur.execute("VACUUM ANALYZE {0}.metadata_tables".format(settings['data_schema']))
+    pg_cur.execute("VACUUM ANALYZE {0}.metadata_stats".format(settings['data_schema']))
 
-    logger.info("\t- Step 1 of 3 : metadata tables created : {0}".format(datetime.now() - start_time))
+    logger.info("\t- Step 1 of 4 : metadata tables created : {0}".format(datetime.now() - start_time))
 
 
 def create_data_tables(pg_cur, settings):
-    # Step 2 of 3 : create tables from metadata tables
+    # Step 2 of 4 : create tables from metadata tables
     start_time = datetime.now()
 
     sql = "SELECT DISTINCT table_number FROM {0}.metadata_stats".format(settings['data_schema'])
@@ -359,14 +395,18 @@ def create_data_tables(pg_cur, settings):
 
     rows = pg_cur.fetchall()
 
-    # scroll through eah table number and create it
+    # scroll through each table number and create it
     for row in rows:
         table_number = row[0].lower()
 
         # get the census fields for the table
         field_list = list()
 
-        sql = "SELECT sequential_id || ' ' || stat_type AS field " \
+        # sql = "SELECT sequential_id || ' ' || stat_type AS field " \
+        #       "FROM {0}.metadata_stats " \
+        #       "WHERE lower(table_number) LIKE '{1}%'" \
+        #     .format(settings['data_schema'], table_number)
+        sql = "SELECT sequential_id || ' double precision' AS field " \
               "FROM {0}.metadata_stats " \
               "WHERE lower(table_number) LIKE '{1}%'"\
             .format(settings['data_schema'], table_number)
@@ -383,18 +423,18 @@ def create_data_tables(pg_cur, settings):
 
             # create the table
             create_table_sql = "DROP TABLE IF EXISTS {0}.{1};" \
-                               "CREATE TABLE {0}.{1} (aus_code_2016 text, {2}) WITH (OIDS=FALSE);" \
+                               "CREATE TABLE {0}.{1} ({4} text, {2}) WITH (OIDS=FALSE);" \
                                "ALTER TABLE {0}.metadata_tables OWNER TO {3}"\
-                .format(settings['data_schema'], table_number, fields_string, settings['pg_user'])
+                .format(settings['data_schema'], table_number, fields_string, settings['pg_user'], settings['region_id_field'])
 
             pg_cur.execute(create_table_sql)
 
-    logger.info("\t- Step 2 of 3 : stats tables created : {0}".format(datetime.now() - start_time))
+    logger.info("\t- Step 2 of 4 : stats tables created : {0}".format(datetime.now() - start_time))
 
 
 # load raw gnaf authority & state tables using multiprocessing
 def populate_data_tables(prefix, suffix, file_name_part, settings):
-    # Step 3 of 3 : populate stats tables with CSV files using multiprocessing
+    # Step 3 of 4 : populate stats tables with CSV files using multiprocessing
     start_time = datetime.now()
 
     # get the file list and create sql copy statements
@@ -419,34 +459,46 @@ def populate_data_tables(prefix, suffix, file_name_part, settings):
 
                     file_list.append(file_dict)
 
-                    # sql = "COPY {0}.{1} FROM '{2}' DELIMITER ',' NULL '..' CSV HEADER;" \
-                    #       "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY (aus_code_2016);" \
-                    #       "ALTER TABLE {0}.{1} CLUSTER ON {1}_pkey;" \
-                    #       "ANALYSE {0}.{1}" \
-                    #     .format(settings['data_schema'], table, file_path)
-                    #
-                    # sql_list.append(sql)
-
     # are there any files to load?
     if len(file_list) == 0:
         logger.fatal("No Census data CSV files found\nACTION: Check your 'data_network_directory' path")
-        logger.fatal("\t- Step 3 of 3 : table populate FAILED!")
+        logger.fatal("\t- Step 3 of 4 : table populate FAILED!")
     else:
         # load all files using multiprocessing
         utils.multiprocess_csv_import(file_list, settings, logger)
-        logger.info("\t- Step 3 of 3 : tables populated : {0}".format(datetime.now() - start_time))
+        logger.info("\t- Step 3 of 4 : tables populated : {0}".format(datetime.now() - start_time))
 
 
+def index_data_tables(pg_cur, settings):
+    # Step 4 of 4 : add primary keys, vacuum & update stats
+    start_time = datetime.now()
 
+    sql = "SELECT DISTINCT table_number FROM {0}.metadata_stats".format(settings['data_schema'])
+    pg_cur.execute(sql)
 
+    rows = pg_cur.fetchall()
 
+    # scroll through each table number and create it
+    for row in rows:
+        table_number = row[0].lower()
 
+        # remove duplicate records (these occur due to region IDs <state_id>99999499 that are duplicated by design)
+        sql = "DELETE FROM {0}.{1} AS a USING (" \
+              "SELECT MIN(ctid) as ctid, {2} FROM {0}.{1} GROUP BY {2} HAVING COUNT(*) > 1" \
+              ") AS b WHERE a.{2} IN ('199999499', '299999499', '399999499', '499999499', '599999499', '699999499', " \
+              "'799999499', '899999499', '999999499') AND a.{2} = b.{2} AND a.ctid <> b.ctid"\
+            .format(settings['data_schema'], table_number, settings['region_id_field'])
+        pg_cur.execute(sql)
 
+        sql = "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY ({2});" \
+              "ALTER TABLE {0}.{1} CLUSTER ON {1}_pkey"\
+            .format(settings['data_schema'], table_number, settings['region_id_field'])
+        pg_cur.execute(sql)
 
+        pg_cur.execute("VACUUM ANALYSE {0}.{1}".format(settings['data_schema'], table_number))
 
-
-
-
+    logger.info("\t- Step 4 of 4 : primary keys created and tables vacuum analysed : {0}"
+                .format(datetime.now() - start_time))
 
 
 # loads the admin bdy shapefiles using the shp2pgsql command line tool (part of PostGIS), using multiprocessing
