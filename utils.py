@@ -8,59 +8,59 @@ import subprocess
 import sys
 
 
-# takes a list of sql queries or command lines and runs them using multiprocessing
-def multiprocess_csv_import(work_list, settings, logger):
-    pool = multiprocessing.Pool(processes=settings['max_concurrent_processes'])
+# # takes a list of sql queries or command lines and runs them using multiprocessing
+# def multiprocess_csv_import(work_list, settings, logger):
+#     pool = multiprocessing.Pool(processes=settings['max_concurrent_processes'])
+#
+#     num_jobs = len(work_list)
+#
+#     results = pool.imap_unordered(run_csv_import_multiprocessing, [[w, settings] for w in work_list])
+#
+#     pool.close()
+#     pool.join()
+#
+#     result_list = list(results)
+#     num_results = len(result_list)
+#
+#     if num_jobs > num_results:
+#         logger.warning("\t- A MULTIPROCESSING PROCESS FAILED WITHOUT AN ERROR\nACTION: Check the record counts")
+#
+#     for result in result_list:
+#         if result != "SUCCESS":
+#             logger.info(result)
 
-    num_jobs = len(work_list)
 
-    results = pool.imap_unordered(run_csv_import_multiprocessing, [[w, settings] for w in work_list])
-
-    pool.close()
-    pool.join()
-
-    result_list = list(results)
-    num_results = len(result_list)
-
-    if num_jobs > num_results:
-        logger.warning("\t- A MULTIPROCESSING PROCESS FAILED WITHOUT AN ERROR\nACTION: Check the record counts")
-
-    for result in result_list:
-        if result != "SUCCESS":
-            logger.info(result)
-
-
-def run_csv_import_multiprocessing(args):
-    file_dict = args[0]
-    settings = args[1]
-
-    pg_conn = psycopg2.connect(settings['pg_connect_string'])
-    pg_conn.autocommit = True
-    pg_cur = pg_conn.cursor()
-
-    try:
-        # read CSV into a string and clean whitespace
-        raw_string = open(file_dict["path"], 'r').read().rstrip()
-        clean_string = raw_string.lstrip().rstrip().replace(" ", "").replace("", "")
-
-        csv_file = io.StringIO(clean_string)
-        csv_file.seek(0)  # move position back to beginning of file before reading
-
-        sql = "COPY {0}.{1} FROM stdin WITH CSV HEADER DELIMITER as ',' NULL as '..'"\
-            .format(settings['data_schema'], file_dict["table"])
-
-        pg_cur.copy_expert(sql, csv_file)
-
-        # pg_cur.copy_from(csv_file, "{0}.{1}".format(settings['data_schema'], file_dict["table"]), sep=",", null="..")
-
-        result = "SUCCESS"
-    except Exception as ex:
-        result = "IMPORT CSV INTO POSTGRES FAILED! : {0} : {1}".format(file_dict["path"], ex)
-
-    pg_cur.close()
-    pg_conn.close()
-
-    return result
+# def run_csv_import_multiprocessing(args):
+#     file_dict = args[0]
+#     settings = args[1]
+#
+#     pg_conn = psycopg2.connect(settings['pg_connect_string'])
+#     pg_conn.autocommit = True
+#     pg_cur = pg_conn.cursor()
+#
+#     try:
+#         # read CSV into a string and clean whitespace
+#         raw_string = open(file_dict["path"], 'r').read().rstrip()
+#         clean_string = raw_string.lstrip().rstrip().replace(" ", "").replace("", "")
+#
+#         csv_file = io.StringIO(clean_string)
+#         csv_file.seek(0)  # move position back to beginning of file before reading
+#
+#         sql = "COPY {0}.{1} FROM stdin WITH CSV HEADER DELIMITER as ',' NULL as '..'"\
+#             .format(settings['data_schema'], file_dict["table"])
+#
+#         pg_cur.copy_expert(sql, csv_file)
+#
+#         # pg_cur.copy_from(csv_file, "{0}.{1}".format(settings['data_schema'], file_dict["table"]), sep=",", null="..")
+#
+#         result = "SUCCESS"
+#     except Exception as ex:
+#         result = "IMPORT CSV INTO POSTGRES FAILED! : {0} : {1}".format(file_dict["path"], ex)
+#
+#     pg_cur.close()
+#     pg_conn.close()
+#
+#     return result
 
 
 # takes a list of sql queries or command lines and runs them using multiprocessing

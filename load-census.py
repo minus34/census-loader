@@ -21,6 +21,7 @@
 import argparse
 import io
 import logging.config
+import multiprocessing
 import os
 import pandas  # module needs to be installed
 import psycopg2  # module needs to be installed (IMPORTANT: need to install 'xlrd' module for Pandas to read XLSX files)
@@ -68,7 +69,7 @@ def main():
     # --census-year=2011
     # --data-schema=census_2011_data
     # --boundary-schema=census_2011_bdys
-    # --census-data-path=/Users/hugh.saalmans/minus34/data/abs_2011
+    # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2011_data
     # --census-bdys-path=/Users/hugh.saalmans/minus34/data/abs_2011
 
     # PART 1 - load census data from CSV files
@@ -76,10 +77,10 @@ def main():
     start_time = datetime.now()
     logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
     create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
-    create_data_tables(pg_cur, settings)
+    # create_data_tables(pg_cur, settings)
     populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
                          settings['table_name_part'], settings['bdy_name_part'], settings)
-    index_data_tables(pg_cur, settings)
+    # index_data_tables(pg_cur, settings)
     # # set postgres search path back to the default
     # pg_cur.execute("SET search_path = public, pg_catalog")
     logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
@@ -437,8 +438,8 @@ def create_data_tables(pg_cur, settings):
     logger.info("\t- Step 2 of 4 : stats tables created : {0}".format(datetime.now() - start_time))
 
 
-# load raw gnaf authority & state tables using multiprocessing
-def populate_data_tables(prefix, suffix, file_name_part, settings):
+# create stats tables and import data from CSV files using multiprocessing
+def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, settings):
     # Step 3 of 4 : populate stats tables with CSV files using multiprocessing
     start_time = datetime.now()
 
@@ -456,11 +457,19 @@ def populate_data_tables(prefix, suffix, file_name_part, settings):
                     if settings['data_pg_server_local_directory'][0:1] == "/":
                         file_path = file_path.replace("\\", "/")
 
-                    table = file_name.lower().split("_")[file_name_part]
+                    file_name_components = file_name.lower().split("_")
+
+                    table = file_name_components[table_name_part]
+                    boundary = file_name_components[bdy_name_part]
+
+                    # manual fix for the Australia wide data - it has a different file name structure
+                    if "." in boundary:
+                        boundary = "aust"
 
                     file_dict = dict()
                     file_dict["path"] = file_path
                     file_dict["table"] = table
+                    file_dict["boundary"] = boundary
 
                     file_list.append(file_dict)
 
@@ -470,8 +479,117 @@ def populate_data_tables(prefix, suffix, file_name_part, settings):
         logger.fatal("\t- Step 3 of 4 : table populate FAILED!")
     else:
         # load all files using multiprocessing
-        utils.multiprocess_csv_import(file_list, settings, logger)
+        multiprocess_csv_import(file_list, settings, logger)
         logger.info("\t- Step 3 of 4 : tables populated : {0}".format(datetime.now() - start_time))
+
+
+# takes a list of sql queries or command lines and runs them using multiprocessing
+def multiprocess_csv_import(work_list, settings, logger):
+    pool = multiprocessing.Pool(processes=settings['max_concurrent_processes'])
+
+    num_jobs = len(work_list)
+
+    results = pool.imap_unordered(run_csv_import_multiprocessing, [[w, settings] for w in work_list])
+
+    pool.close()
+    pool.join()
+
+    result_list = list(results)
+    num_results = len(result_list)
+
+    if num_jobs > num_results:
+        logger.warning("\t- A MULTIPROCESSING PROCESS FAILED WITHOUT AN ERROR\nACTION: Check the record counts")
+
+    for result in result_list:
+        if result != "SUCCESS":
+            logger.info(result)
+
+
+def run_csv_import_multiprocessing(args):
+    file_dict = args[0]
+    settings = args[1]
+
+    pg_conn = psycopg2.connect(settings['pg_connect_string'])
+    pg_conn.autocommit = True
+    pg_cur = pg_conn.cursor()
+
+    # CREATE TABLE
+
+    # get the census fields for the table
+    field_list = list()
+
+    # sql = "SELECT sequential_id || ' ' || stat_type AS field " \
+    #       "FROM {0}.metadata_stats " \
+    #       "WHERE lower(table_number) LIKE '{1}%'" \
+    #     .format(settings['data_schema'], table_number)
+    sql = "SELECT sequential_id || ' double precision' AS field " \
+          "FROM {0}.metadata_stats " \
+          "WHERE lower(table_number) LIKE '{1}%'" \
+        .format(settings['data_schema'], file_dict["table"])
+    pg_cur.execute(sql)
+
+    fields = pg_cur.fetchall()
+
+    for field in fields:
+        field_list.append(field[0].lower())
+
+    fields_string = ",".join(field_list)
+
+    # create the table
+    table_name = file_dict["boundary"] + "_" + file_dict["table"]
+
+    create_table_sql = "DROP TABLE IF EXISTS {0}.{1};" \
+                       "CREATE TABLE {0}.{1} ({4} text, {2}) WITH (OIDS=FALSE);" \
+                       "ALTER TABLE {0}.metadata_tables OWNER TO {3}" \
+        .format(settings['data_schema'], table_name, fields_string,
+                settings['pg_user'], settings['region_id_field'])
+
+    pg_cur.execute(create_table_sql)
+
+    # IMPORT CSV FILE
+
+    try:
+        # read CSV into a string
+        raw_string = open(file_dict["path"], 'r').read()
+
+        # clean whitespace and non-ascii characters
+        clean_string = raw_string.lstrip().rstrip().replace(" ", "").replace("", "")
+
+        csv_file = io.StringIO(clean_string)
+        csv_file.seek(0)  # move position back to beginning of file before reading
+
+        sql = "COPY {0}.{1} FROM stdin WITH CSV HEADER DELIMITER as ',' NULL as '..'"\
+            .format(settings['data_schema'], table_name)
+
+        pg_cur.copy_expert(sql, csv_file)
+
+    except Exception as ex:
+        return "IMPORT CSV INTO POSTGRES FAILED! : {0} : {1}".format(file_dict["path"], ex)
+
+    # add primary key and vacuum index
+    sql = "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY ({2});" \
+          "ALTER TABLE {0}.{1} CLUSTER ON {1}_pkey" \
+        .format(settings['data_schema'], table_name, settings['region_id_field'])
+    pg_cur.execute(sql)
+
+    pg_cur.execute("VACUUM ANALYSE {0}.{1}".format(settings['data_schema'], table_name))
+
+    result = "SUCCESS"
+
+    pg_cur.close()
+    pg_conn.close()
+
+    return result
+
+
+
+
+
+
+
+
+
+
 
 
 def index_data_tables(pg_cur, settings):
