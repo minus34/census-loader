@@ -77,10 +77,8 @@ def main():
     start_time = datetime.now()
     logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
     create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
-    # create_data_tables(pg_cur, settings)
     populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
                          settings['table_name_part'], settings['bdy_name_part'], settings)
-    # index_data_tables(pg_cur, settings)
     # # set postgres search path back to the default
     # pg_cur.execute("SET search_path = public, pg_catalog")
     logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
@@ -392,52 +390,6 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
     logger.info("\t- Step 1 of 2 : metadata tables created : {0}".format(datetime.now() - start_time))
 
 
-def create_data_tables(pg_cur, settings):
-    # Step 2 of 4 : create tables from metadata tables
-    start_time = datetime.now()
-
-    sql = "SELECT DISTINCT table_number FROM {0}.metadata_stats".format(settings['data_schema'])
-    pg_cur.execute(sql)
-
-    table_numbers = pg_cur.fetchall()
-
-    # scroll through each table number and create it
-    for row in table_numbers:
-        table_number = row[0].lower()
-
-        # get the census fields for the table
-        field_list = list()
-
-        # sql = "SELECT sequential_id || ' ' || stat_type AS field " \
-        #       "FROM {0}.metadata_stats " \
-        #       "WHERE lower(table_number) LIKE '{1}%'" \
-        #     .format(settings['data_schema'], table_number)
-        sql = "SELECT sequential_id || ' double precision' AS field " \
-              "FROM {0}.metadata_stats " \
-              "WHERE lower(table_number) LIKE '{1}%'"\
-            .format(settings['data_schema'], table_number)
-        pg_cur.execute(sql)
-
-        fields = pg_cur.fetchall()
-
-        # only for sample files - remove for actual data
-        if len(fields) > 0:
-            for field in fields:
-                field_list.append(field[0].lower())
-
-            fields_string = ",".join(field_list)
-
-            # create the table
-            create_table_sql = "DROP TABLE IF EXISTS {0}.{1};" \
-                               "CREATE TABLE {0}.{1} ({4} text, {2}) WITH (OIDS=FALSE);" \
-                               "ALTER TABLE {0}.metadata_tables OWNER TO {3}"\
-                .format(settings['data_schema'], table_number, fields_string, settings['pg_user'], settings['region_id_field'])
-
-            pg_cur.execute(create_table_sql)
-
-    logger.info("\t- Step 2 of 4 : stats tables created : {0}".format(datetime.now() - start_time))
-
-
 # create stats tables and import data from CSV files using multiprocessing
 def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, settings):
     # Step 2 of 2 : create & populate stats tables with CSV files using multiprocessing
@@ -471,6 +423,7 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, setting
                     file_dict["table"] = table
                     file_dict["boundary"] = boundary
 
+                    # if boundary == "ced":  # for testing
                     file_list.append(file_dict)
 
     # are there any files to load?
@@ -553,7 +506,7 @@ def run_csv_import_multiprocessing(args):
         raw_string = open(file_dict["path"], 'r').read()
 
         # clean whitespace and non-ascii characters
-        clean_string = raw_string.lstrip().rstrip().replace(" ", "").replace("", "")
+        clean_string = raw_string.lstrip().rstrip().replace(" ", "").replace(r"", "")
 
         csv_file = io.StringIO(clean_string)
         csv_file.seek(0)  # move position back to beginning of file before reading
@@ -580,58 +533,6 @@ def run_csv_import_multiprocessing(args):
     pg_conn.close()
 
     return result
-
-
-
-
-
-
-
-
-
-
-
-
-def index_data_tables(pg_cur, settings):
-    # Step 4 of 4 : add primary keys, vacuum & update stats
-    start_time = datetime.now()
-
-    sql = "SELECT DISTINCT table_number FROM {0}.metadata_stats".format(settings['data_schema'])
-    pg_cur.execute(sql)
-
-    rows = pg_cur.fetchall()
-
-    # scroll through each table number and create it
-    sql_list1 = list()
-    sql_list2 = list()
-
-    for row in rows:
-        table_number = row[0].lower()
-
-        # remove duplicate records and rceate primary keys
-        # (duplicates occur by design due to the region IDs '<state_id>99999499' being in )
-        sql = "DELETE FROM {0}.{1} AS a USING (" \
-              "SELECT MIN(ctid) as ctid, {2} FROM {0}.{1} GROUP BY {2} HAVING COUNT(*) > 1" \
-              ") AS b WHERE a.{2} IN ('199999499', '299999499', '399999499', '499999499', '599999499', '699999499', " \
-              "'799999499', '899999499', '999999499') AND a.{2} = b.{2} AND a.ctid <> b.ctid;" \
-              "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY ({2});" \
-              "ALTER TABLE {0}.{1} CLUSTER ON {1}_pkey"\
-            .format(settings['data_schema'], table_number, settings['region_id_field'])
-        # pg_cur.execute(sql)
-
-        sql_list1.append(sql)
-
-        sql_list2.append("VACUUM ANALYSE {0}.{1}".format(settings['data_schema'], table_number))
-
-    utils.multiprocess_list("sql", sql_list1, settings, logger)
-    logger.info("\t\t- primary keys created : {0}".format(datetime.now() - start_time))
-    start_time = datetime.now()
-
-    utils.multiprocess_list("sql", sql_list2, settings, logger)
-    logger.info("\t\t- tables vacuum analysed : {0}".format(datetime.now() - start_time))
-
-    logger.info("\t- Step 4 of 4 : primary keys created and tables vacuum analysed : {0}"
-                .format(datetime.now() - start_time))
 
 
 # loads the admin bdy shapefiles using the shp2pgsql command line tool (part of PostGIS), using multiprocessing
@@ -668,7 +569,7 @@ def load_boundaries(pg_cur, settings):
     for root, dirs, files in os.walk(settings['boundaries_local_directory']):
         for file_name in files:
             file_name = file_name.lower()
-            
+
             if file_name.endswith(".shp"):
                 file_dict = dict()
                 file_dict['file_path'] = os.path.join(root, file_name)
@@ -676,7 +577,7 @@ def load_boundaries(pg_cur, settings):
                 if file_name.startswith("mb_"):
                     for state in settings['states']:
                         state = state.lower()
-                        
+
                         if state in file_name:
                             file_dict['pg_table'] = file_name.replace("_" + state + ".shp", "_aust", 1)
                 else:
@@ -687,7 +588,7 @@ def load_boundaries(pg_cur, settings):
                 # set to replace or append to table depending on whether this is the 1st state for that dataset
                 # (only applies to meshblocks in Census 2016)
                 table_list_add = False
-    
+
                 if file_dict['pg_table'] not in table_list:
                     table_list_add = True
 
