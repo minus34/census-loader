@@ -76,7 +76,7 @@ def main():
     logger.info("")
     start_time = datetime.now()
     logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
-    create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
+    # create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
     populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
                          settings['table_name_part'], settings['bdy_name_part'], settings)
     # # set postgres search path back to the default
@@ -423,8 +423,8 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, setting
                     file_dict["table"] = table
                     file_dict["boundary"] = boundary
 
-                    # if boundary == "ced":  # for testing
-                    file_list.append(file_dict)
+                    if boundary == "ced":  # for testing
+                    # file_list.append(file_dict)
 
     # are there any files to load?
     if len(file_list) == 0:
@@ -506,7 +506,7 @@ def run_csv_import_multiprocessing(args):
         raw_string = open(file_dict["path"], 'r').read()
 
         # clean whitespace and non-ascii characters
-        clean_string = raw_string.lstrip().rstrip().replace(" ", "").replace(r"", "")
+        clean_string = raw_string.lstrip().rstrip().replace(" ", "").replace("", "")
 
         csv_file = io.StringIO(clean_string)
         csv_file.seek(0)  # move position back to beginning of file before reading
