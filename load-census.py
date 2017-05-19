@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # *********************************************************************************************************************
 # load-census.py
 # *********************************************************************************************************************
@@ -76,21 +79,21 @@ def main():
     logger.info("")
     start_time = datetime.now()
     logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
-    # create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
+    create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
     populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
                          settings['table_name_part'], settings['bdy_name_part'], settings)
     # # set postgres search path back to the default
     # pg_cur.execute("SET search_path = public, pg_catalog")
     logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
 
-    # PART 2 - load census boundaries from Shapefiles
-    logger.info("")
-    start_time = datetime.now()
-    logger.info("Part 2 of 3 : Start census boundary load : {0}".format(start_time))
-    load_boundaries(pg_cur, settings)
-    # prep_boundaries(pg_cur, settings)
-    # create_boundaries_for_analysis(settings)
-    logger.info("Part 2 of 3 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
+    # # PART 2 - load census boundaries from Shapefiles
+    # logger.info("")
+    # start_time = datetime.now()
+    # logger.info("Part 2 of 3 : Start census boundary load : {0}".format(start_time))
+    # load_boundaries(pg_cur, settings)
+    # # prep_boundaries(pg_cur, settings)
+    # # create_boundaries_for_analysis(settings)
+    # logger.info("Part 2 of 3 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
     # # PART 3 - create views
     # logger.info("")
@@ -424,7 +427,7 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, setting
                     file_dict["boundary"] = boundary
 
                     if boundary == "ced":  # for testing
-                    # file_list.append(file_dict)
+                        file_list.append(file_dict)
 
     # are there any files to load?
     if len(file_list) == 0:
