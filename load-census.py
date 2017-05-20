@@ -79,21 +79,19 @@ def main():
     logger.info("")
     start_time = datetime.now()
     logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
-    # create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
+    create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
     populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
                          settings['table_name_part'], settings['bdy_name_part'], settings)
-    # # set postgres search path back to the default
-    # pg_cur.execute("SET search_path = public, pg_catalog")
     logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
 
-    # # PART 2 - load census boundaries from Shapefiles
-    # logger.info("")
-    # start_time = datetime.now()
-    # logger.info("Part 2 of 3 : Start census boundary load : {0}".format(start_time))
-    # load_boundaries(pg_cur, settings)
-    # # prep_boundaries(pg_cur, settings)
-    # # create_boundaries_for_analysis(settings)
-    # logger.info("Part 2 of 3 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
+    # PART 2 - load census boundaries from Shapefiles
+    logger.info("")
+    start_time = datetime.now()
+    logger.info("Part 2 of 3 : Start census boundary load : {0}".format(start_time))
+    load_boundaries(pg_cur, settings)
+    # prep_boundaries(pg_cur, settings)
+    # create_boundaries_for_analysis(settings)
+    logger.info("Part 2 of 3 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
     # # PART 3 - create views
     # logger.info("")
@@ -193,7 +191,7 @@ def get_settings(args):
     settings['max_concurrent_processes'] = args.max_processes
     settings['census_year'] = args.census_year
     # settings['states_to_load'] = args.states
-    settings['states'] = ["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"]
+    # settings['states'] = ["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"]
     settings['data_schema'] = args.data_schema
     settings['boundary_schema'] = args.boundary_schema
     settings['data_network_directory'] = args.census_data_path.replace("\\", "/")
@@ -221,6 +219,8 @@ def get_settings(args):
     if settings['census_year'] == '2016':
         settings['metadata_file_prefix'] = "Sample_Metadata_"
         settings['metadata_file_type'] = ".xls"
+        settings["census_metadata_dicts"] = [{"table": "metadata_tables", "first_row": "table number"},
+                                             {"table": "metadata_stats", "first_row": "sequential"}]
         settings['data_file_prefix'] = "2016_Sample_"
         settings['data_file_type'] = ".csv"
         settings['table_name_part'] = 2  # position in the data file name that equals it's destination table name
@@ -230,6 +230,8 @@ def get_settings(args):
     elif settings['census_year'] == '2011':
         settings['metadata_file_prefix'] = "Metadata_"
         settings['metadata_file_type'] = ".xlsx"
+        settings["census_metadata_dicts"] = [{"table": "metadata_tables", "first_row": "table number"},
+                                             {"table": "metadata_stats", "first_row": "sequential"}]
         settings['data_file_prefix'] = "2011Census_"
         settings['data_file_type'] = ".csv"
         settings['table_name_part'] = 1  # position in the data file name that equals it's destination table name
@@ -237,27 +239,6 @@ def get_settings(args):
         settings['region_id_field'] = "region_id"
     else:
         return None
-
-
-    # # set the list of admin bdys to create analysis tables for and to boundary tag with
-    # admin_bdy_list = list()
-    # admin_bdy_list.append(["state_bdys", "state_pid"])
-    # admin_bdy_list.append(["locality_bdys", "locality_pid"])
-    #
-    # # only process bdys if states to load have them
-    # if settings['states_to_load'] != ['OT']:
-    #     admin_bdy_list.append(["commonwealth_electorates", "ce_pid"])
-    # if settings['states_to_load'] != ['ACT']:
-    #     admin_bdy_list.append(["local_government_areas", "lga_pid"])
-    # if 'NT' in settings['states_to_load'] or 'SA' in settings['states_to_load'] \
-    #         or 'VIC' in settings['states_to_load'] or 'WA' in settings['states_to_load']:
-    #     admin_bdy_list.append(["local_government_wards", "ward_pid"])
-    # if settings['states_to_load'] != ['OT']:
-    #     admin_bdy_list.append(["state_lower_house_electorates", "se_lower_pid"])
-    # if 'TAS' in settings['states_to_load'] or 'VIC' in settings['states_to_load'] or
-    #     'WA' in settings['states_to_load']:
-    #     admin_bdy_list.append(["state_upper_house_electorates", "se_upper_pid"])
-    # settings['admin_bdy_list'] = admin_bdy_list
 
     return settings
 
@@ -285,9 +266,6 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
           "WITH (OIDS=FALSE);" \
           "ALTER TABLE {0}.metadata_stats OWNER TO {1}".format(settings['data_schema'], settings['pg_user'])
     pg_cur.execute(sql)
-
-    census_metadata_dicts = [{"table": "metadata_tables", "first_row": "table number"},
-                             {"table": "metadata_stats", "first_row": "sequential"}]
 
     # get a list of all files matching the metadata filename prefix
     file_list = list()
@@ -317,7 +295,7 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
             sheets = xl.sheet_names
             i = 0
 
-            for table_dict in census_metadata_dicts:
+            for table_dict in settings["census_metadata_dicts"]:
 
                 df = xl.parse(sheets[i])
 
@@ -426,8 +404,8 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, setting
                     file_dict["table"] = table
                     file_dict["boundary"] = boundary
 
-                    if boundary == "ced":  # for testing
-                        file_list.append(file_dict)
+                    # if boundary == "ced":  # for testing
+                    file_list.append(file_dict)
 
     # are there any files to load?
     if len(file_list) == 0:
