@@ -215,22 +215,6 @@ def split_sql_into_list(pg_cur, the_sql, table_schema, table_name, table_alias, 
         return None
 
 
-# get latest PSMA release version as YYYYMM, as of the date provided
-def get_psma_version(date):
-    month = date.month
-    year = date.year
-
-    if month == 1:
-        return str(year - 1) + '11'
-    elif 2 <= month < 5:
-        return str(year) + '02'
-    elif 5 <= month < 8:
-        return str(year) + '05'
-    elif 8 <= month < 11:
-        return str(year) + '08'
-    else:
-        return str(year) + '11'
-
 def check_python_version(logger):
     # get python and psycopg2 version
     python_version = sys.version.split("(")[0].strip()

@@ -395,7 +395,7 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, setting
                     table = file_name_components[table_name_part]
                     boundary = file_name_components[bdy_name_part]
 
-                    # manual fix for the Australia wide data - it has a different file name structure
+                    # manual fix for the Australia wide data - has a different file name structure
                     if "." in boundary:
                         boundary = "aust"
 
