@@ -309,7 +309,7 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
                         df_clean = df.drop(df.index[0:j+1])
                         first_row = True
 
-                        # drop excess columns in unclean spreadsheets
+                        # drop excess columns in unclean Excel worksheets
                         if table_dict["table"] == "metadata_stats":
                             try:
                                 df_clean.drop(df.columns[[6, 7, 8]], axis=1, inplace=True)
@@ -320,9 +320,14 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
                         tsv_file = io.StringIO()
                         df_clean.to_csv(tsv_file, sep="\t", index=False, header=False)
                         tsv_file.seek(0)  # move position back to beginning of file before reading
-                        pg_cur.copy_from(tsv_file, "{0}.{1}"
-                                         .format(settings['data_schema'], table_dict["table"]),
-                                         sep="\t", null="")
+
+                        # # import into Postgres
+                        # pg_cur.copy_from(tsv_file, "{0}.{1}"
+                        #                  .format(settings['data_schema'], table_dict["table"]),
+                        #                  sep="\t", null="")
+                        sql = "COPY {0}.{1} FROM stdin WITH CSV DELIMITER as '\t' NULL as ''" \
+                            .format(settings['data_schema'], table_dict["table"])
+                        pg_cur.copy_expert(sql, tsv_file)
 
                     j += 1
 
@@ -383,7 +388,7 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, setting
             if file_name.lower().startswith(prefix.lower()):
                 if file_name.lower().endswith(suffix.lower()):
                     file_path = os.path.join(root, file_name)
-                        # .replace(settings['data_directory'], settings['data_pg_server_local_directory'])
+                    # .replace(settings['data_directory'], settings['data_pg_server_local_directory'])
 
                     # # if a non-Windows Postgres server OS - fix file path
                     # if settings['data_pg_server_local_directory'][0:1] == "/":
@@ -488,12 +493,13 @@ def run_csv_import_multiprocessing(args):
         # clean whitespace and non-ascii characters
         clean_string = raw_string.lstrip().rstrip().replace(" ", "").replace("\x1A", "")
 
+        # convert to in memory stream
         csv_file = io.StringIO(clean_string)
         csv_file.seek(0)  # move position back to beginning of file before reading
 
+        # import into Postgres
         sql = "COPY {0}.{1} FROM stdin WITH CSV HEADER DELIMITER as ',' NULL as '..'"\
             .format(settings['data_schema'], table_name)
-
         pg_cur.copy_expert(sql, csv_file)
 
     except Exception as ex:
