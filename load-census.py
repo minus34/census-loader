@@ -170,9 +170,9 @@ def set_arguments():
         help='Path to source census data tables (*.csv files). '
              'This directory must be accessible by the Postgres server, and the local path to the directory for the '
              'server must be set via the local-server-dir argument if it differs from this path.')
-    parser.add_argument(
-        '--local-server-dir',
-        help='Local path on server corresponding to census-data-path, if different to census-data-path.')
+    # parser.add_argument(
+    #     '--local-server-dir',
+    #     help='Local path on server corresponding to census-data-path, if different to census-data-path.')
     parser.add_argument(
         '--census-bdys-path', required=True, help='Local path to source admin boundary files.')
 
@@ -194,12 +194,11 @@ def get_settings(args):
     # settings['states'] = ["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"]
     settings['data_schema'] = args.data_schema
     settings['boundary_schema'] = args.boundary_schema
-    settings['data_network_directory'] = args.census_data_path.replace("\\", "/")
-
-    if args.local_server_dir:
-        settings['data_pg_server_local_directory'] = args.local_server_dir.replace("\\", "/")
-    else:
-        settings['data_pg_server_local_directory'] = settings['data_network_directory']
+    settings['data_directory'] = args.census_data_path.replace("\\", "/")
+    # if args.local_server_dir:
+    #     settings['data_pg_server_local_directory'] = args.local_server_dir.replace("\\", "/")
+    # else:
+    #     settings['data_pg_server_local_directory'] = settings['data_directory']
     settings['boundaries_local_directory'] = args.census_bdys_path.replace("\\", "/")
 
     # create postgres connect string
@@ -270,7 +269,7 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
     # get a list of all files matching the metadata filename prefix
     file_list = list()
 
-    for root, dirs, files in os.walk(settings['data_network_directory']):
+    for root, dirs, files in os.walk(settings['data_directory']):
         for file_name in files:
             if file_name.lower().startswith(prefix.lower()):
                 if file_name.lower().endswith(suffix.lower()):
@@ -284,7 +283,7 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
 
     # are there any files to load?
     if len(file_list) == 0:
-        logger.fatal("No Census metadata XLS files found\nACTION: Check your 'data_network_directory' path")
+        logger.fatal("No Census metadata XLS files found\nACTION: Check your '--census-data-path' value")
         logger.fatal("\t- Step 1 of 4 : create metadata tables FAILED!")
     else:
         # read in excel worksheets into pandas dataframes
@@ -379,16 +378,16 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, setting
     # get the file list and create sql copy statements
     file_list = []
     # get a dictionary of all files matching the filename prefix
-    for root, dirs, files in os.walk(settings['data_network_directory']):
+    for root, dirs, files in os.walk(settings['data_directory']):
         for file_name in files:
             if file_name.lower().startswith(prefix.lower()):
                 if file_name.lower().endswith(suffix.lower()):
-                    file_path = os.path.join(root, file_name)\
-                        .replace(settings['data_network_directory'], settings['data_pg_server_local_directory'])
+                    file_path = os.path.join(root, file_name)
+                        # .replace(settings['data_directory'], settings['data_pg_server_local_directory'])
 
-                    # if a non-Windows Postgres server OS - fix file path
-                    if settings['data_pg_server_local_directory'][0:1] == "/":
-                        file_path = file_path.replace("\\", "/")
+                    # # if a non-Windows Postgres server OS - fix file path
+                    # if settings['data_pg_server_local_directory'][0:1] == "/":
+                    #     file_path = file_path.replace("\\", "/")
 
                     file_name_components = file_name.lower().split("_")
 
@@ -409,7 +408,7 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, setting
 
     # are there any files to load?
     if len(file_list) == 0:
-        logger.fatal("No Census data CSV files found\nACTION: Check your 'data_network_directory' path")
+        logger.fatal("No Census data CSV files found\nACTION: Check your '--census-data-path' value")
         logger.fatal("\t- Step 2 of 2 : stats table create & populate FAILED!")
     else:
         # load all files using multiprocessing
