@@ -3,13 +3,13 @@ A quick way to get started with Australian Bureau of Statistics (ABS) Census 201
 
 ### There are 3 options for loading the data
 1. [Run](https://github.com/minus34/census-loader#option-1---run-loadgnafpy) the load-census Python script and build the database schemas in a single step
-2. [Build](https://github.com/minus34/census-loader#option-2---build-the-database-in-a-docker-environment) the database in a docker environment
-3. [Download](https://github.com/minus34/census-loader#option-3---load-pg_dump-files) the Census Postgres dump files and restore them in your database. __Note: Census 2016 data and ASGS boundaries only__
+2. [Build](https://github.com/minus34/census-loader#option-2---build-the-database-in-a-docker-environment) the database in a docker environment. __UNTESTED__
+3. [Download](https://github.com/minus34/census-loader#option-3---load-pg_dump-files) the Postgres dump files and restore them in your database. __Note: Census 2016 data and ASGS boundaries only__
 
 ## Option 1 - Run load-census.py
 Running the Python script takes 10-15 minutes on a Postgres server configured for performance.
 
-My benchmarks are:
+Benchmarks are:
 - 3 year old, 32 core Windows server with SSDs = 10 mins
 - MacBook Pro = 15 mins
 
@@ -17,13 +17,13 @@ My benchmarks are:
 To get a good load time you'll need to configure your Postgres server for performance. There's a good guide [here](http://revenant.ca/www/postgis/workshop/tuning.html), noting it's a few years old and some of the memory parameters can be beefed up if you have the RAM.
 
 ### Pre-requisites
-- Postgres 9.6+ with PostGIS 2.2+ (tested on 9.6 on macOS Sierra & Windows 10)
+- Postgres 9.6+ with PostGIS 2.2+ (tested on 9.6 on macOS Sierra and Windows 10)
 - Add the Postgres bin directory to your system PATH
 - Python 3.x with Psycopg2 2.6+
 
 ### Process
 1. Download [ABS Census 2016 CSV Files](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/2079.02016)
-2. Download [ABS 2016 Australian Statistical Geography Standard (ASGS) boundaries](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/1270.0.55.001July%202016) (**download the ESRI Shapefile versions**)
+2. Download [ABS 2016 Australian Statistical Geography Standard (ASGS) boundaries](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/1270.0.55.001July%202016) (**IMPORTANT - download the ESRI Shapefile versions**)
 3. Unzip the Census CSV files to a directory on your Postgres server
 4. Alter security on the directory to grant Postgres read access
 5. Unzip the ASGS boundaries to a local directory
@@ -68,7 +68,9 @@ When using the resulting data from this process - you will need to adhere to the
 
 ## Option 2 - Build the database in a docker environment
 
-Create a Docker container with GNAF and the Admin Bdys ready to go, so they can be deployed anywhere.
+__IMPORTANT: THIS IS UNTESTED__
+
+Create a Docker container with Census data and ASGS boundaries ready to go, so they can be deployed anywhere.
 
 ### Process
 1. Download [ABS Census 2016 CSV Files](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/2079.02016)
@@ -94,15 +96,7 @@ Should take 15 minutes.
 
 ### Data Licenses
 
-Incorporates or developed using G-NAF ©PSMA Australia Limited licensed by the Commonwealth of Australia under the [Open Geo-coded National Address File (G-NAF) End User Licence Agreement](http://data.gov.au/dataset/19432f89-dc3a-4ef3-b943-5326ef1dbecc/resource/09f74802-08b1-4214-a6ea-3591b2753d30/download/20160226---EULA---Open-G-NAF.pdf).
-
-Incorporates or developed using Administrative Boundaries ©PSMA Australia Limited licensed by the Commonwealth of Australia under [Creative Commons Attribution 4.0 International licence (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
+Source: [Australian Bureau of Statistics](http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material)
 
 ## DATA CUSTOMISATION
-GNAF and the Admin Bdys have been customised to remove some of the known, minor limitations with the data. The most notable are:
-- All addresses link to a gazetted locality that has a boundary. Those small number of addresses that don't in raw GNAF have had their locality_pid changed to a gazetted equivalent
-- Localities have had address and street counts added to them
-- Suburb-Locality bdys have been flattened into a single continuous layer of localities - South Australian Hundreds have been removed and ACT districts have been added where there are no gazetted localities
-- The Melbourne, VIC locality has been split into Melbourne, 3000 and Melbourne 3004 localities (the new locality PIDs are VIC 1634_1 & VIC 1634_2). The split occurs at the Yarra River (based on the postcodes in the Melbourne addresses)
-- A postcode boundaries layer has been created using the postcodes in the address tables. Whilst this closely emulates the official PSMA postcode boundaries, there are several hundred addresses that are in the wrong postcode bdy. Do not treat this data as authoritative
 
