@@ -254,13 +254,13 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
         pg_cur.execute("SET search_path = {0}".format(settings['data_schema'],))
 
     # create metadata tables
-    sql = "DROP TABLE IF EXISTS {0}.metadata_tables;" \
+    sql = "DROP TABLE IF EXISTS {0}.metadata_tables CASCADE;" \
           "CREATE TABLE {0}.metadata_tables (table_number text, table_name text, table_description text) " \
           "WITH (OIDS=FALSE);" \
           "ALTER TABLE {0}.metadata_tables OWNER TO {1}".format(settings['data_schema'], settings['pg_user'])
     pg_cur.execute(sql)
 
-    sql = "DROP TABLE IF EXISTS {0}.metadata_stats;" \
+    sql = "DROP TABLE IF EXISTS {0}.metadata_stats CASCADE;" \
           "CREATE TABLE {0}.metadata_stats (sequential_id text, short_id text, long_id text, " \
           "table_number text, profile_table text, column_heading_description text) " \
           "WITH (OIDS=FALSE);" \
@@ -472,7 +472,7 @@ def run_csv_import_multiprocessing(args):
     # create the table
     table_name = file_dict["boundary"] + "_" + file_dict["table"]
 
-    create_table_sql = "DROP TABLE IF EXISTS {0}.{1};" \
+    create_table_sql = "DROP TABLE IF EXISTS {0}.{1} CASCADE;" \
                        "CREATE TABLE {0}.{1} ({4} text, {2}) WITH (OIDS=FALSE);" \
                        "ALTER TABLE {0}.metadata_tables OWNER TO {3}" \
         .format(settings['data_schema'], table_name, fields_string,
@@ -961,7 +961,7 @@ def create_qa_tables(pg_cur, settings):
         i += 1
 
         # create qa table of rows counts
-        sql = "DROP TABLE IF EXISTS {0}.qa;" \
+        sql = "DROP TABLE IF EXISTS {0}.qa ;" \
               "CREATE TABLE {0}.qa (table_name text, aus integer, act integer, nsw integer, " \
               "nt integer, ot integer, qld integer, sa integer, tas integer, vic integer, wa integer) " \
               "WITH (OIDS=FALSE);" \

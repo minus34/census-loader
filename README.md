@@ -1,16 +1,16 @@
 # census-loader
-A quick way to get started with ABS Census 2016 data
+A quick way to get started with Australian Bureau of Statistics (ABS) Census 2011 or 2016 data
 
 ### There are 3 options for loading the data
 1. [Run](https://github.com/minus34/census-loader#option-1---run-loadgnafpy) the load-census Python script and build the database schemas in a single step
 2. [Build](https://github.com/minus34/census-loader#option-2---build-the-database-in-a-docker-environment) the database in a docker environment
-3. [Download](https://github.com/minus34/census-loader#option-3---load-pg_dump-files) the GNAF and/or Admin Bdys Postgres dump files & restore them in your database
+3. [Download](https://github.com/minus34/census-loader#option-3---load-pg_dump-files) the Census Postgres dump files and restore them in your database. __Note: Census 2016 data and ASGS boundaries only__
 
 ## Option 1 - Run load-census.py
 Running the Python script takes 10-15 minutes on a Postgres server configured for performance.
 
 My benchmarks are:
-- 3 year old, 32 core Windows server with SSDs = ~45 mins
+- 3 year old, 32 core Windows server with SSDs = 10 mins
 - MacBook Pro = 15 mins
 
 ### Performance
@@ -26,18 +26,18 @@ To get a good load time you'll need to configure your Postgres server for perfor
 2. Download [ABS 2016 Australian Statistical Geography Standard (ASGS) boundaries](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/1270.0.55.001July%202016) (**download the ESRI Shapefile versions**)
 3. Unzip the Census CSV files to a directory on your Postgres server
 4. Alter security on the directory to grant Postgres read access
-5. Unzip rthe ASGS boundaries to a local directory
+5. Unzip the ASGS boundaries to a local directory
 6. Create the target database (if required)
-7. Check the available and required arguments by running load-census.py with the `-h` argument (see command line examples below)
-8. Run the script, come back in 15 minutes and enjoy!
+7. Check the optional and required arguments by running load-census.py with the `-h` argument (see command line examples below)
+8. Run the script, come back in 10-15 minutes and enjoy!
 
 ### Command Line Options
 The behaviour of census-loader can be controlled by specifying various command line options to the script. Supported arguments are:
 
 #### Required Arguments
-* `--gnaf-tables-path` specifies the path to the extracted source GNAF tables (eg *.psv files). This should match the extracted directory which contains the subfolders `Authority Code` and `Standard`. __This directory must be accessible by the Postgres server__, and the corresponding local path for the server to this directory may need to be set via the `local-server-dir` argument
-* `--local-server-dir` specifies the local path on the Postgres server corresponding to `gnaf-tables-path`. If the server is running locally this argument can be omitted.
-* `--admin-bdys-path` specifies the path to the extracted source admin boundary files. This path should contain a subfolder named `Administrative Boundaries`. Unlike `gnaf-tables-path`, this path does not necessarily have to be accessible to the remote Postgres server.
+* `--census-data-path` specifies the path to the extracted Census metadata and data tables (eg *.xlsx and *.csv files). __This directory must be accessible by the Postgres server__, and the corresponding local path for the server to this directory may need to be set via the `local-server-dir` argument
+* `--local-server-dir` specifies the local path on the Postgres server corresponding to `census-data-path`. If the server is running locally this argument can be omitted.
+* `--census-bdys-path` specifies the path to the extracted ASGS boundary files. Unlike `census-data-path`, this path does not necessarily have to be accessible to the remote Postgres server.
 
 #### Postgres Parameters
 * `--pghost` the host name for the Postgres server. This defaults to the `PGHOST` environment variable if set, otherwise defaults to `localhost`.
@@ -47,43 +47,24 @@ The behaviour of census-loader can be controlled by specifying various command l
 * `--pgpassword` password for accessing the Postgres server. This defaults to the `PGPASSWORD` environment variable if set, otherwise `password`.
 
 #### Optional Arguments
-* `--psma-version` PSMA version number in YYYYMM format. Defaults to current year and last release month. e.g. `201611`.
-* `--raw-gnaf-schema` schema name to store raw GNAF tables in. Defaults to `raw_gnaf_<psma_version>`.
-* `--raw-admin-schema` schema name to store raw admin boundary tables in. Defaults to `raw_admin_bdys_<psma_version>`.
-* `--gnaf-schema` destination schema name to store final GNAF tables in. Defaults to `gnaf_<psma_version>`.
-* `--admin-schema` destination schema name to store final admin boundary tables in. Defaults to `admin_bdys_<psma_version>`.
-* `--states` space separated list of states to load, eg `--states VIC TAS`. Defaults to loading all states.
-* `--prevacuum` forces the database to be vacuumed after dropping tables. Defaults to off, and specifying this option will slow the import process.
-* `--raw-fk` creates both primary & foreign keys for the raw GNAF tables. Defaults to off, and will slow the import process if specified. Use this option
-if you intend to utilise the raw GNAF tables as anything more then a temporary import step. Note that the final processed tables will always have appropriate
-primary and foreign keys set.
-* `--raw-unlogged` creates unlogged raw GNAF tables, speeding up the import. Defaults to off. Only specify this option if you don't care about the raw data tables after the import - they will be lost if the server crashes!
-* `--max-processes` specifies the maximum number of parallel processes to use for the data load. Set this to the number of cores on the Postgres server minus 2, but limit to 12 if 16+ cores - there is minimal benefit beyond 12. Defaults to 6.
-* `--boundary-tag` tags all addresses with some of the key admin boundary IDs for creating aggregates and choropleth maps.
+* `--census-year` Year of the ABS Census data to load. Valid values are `2011` and `2016` Defaults to `2016`.
+* `--raw-gnaf-schema` schema name to store raw GNAF tables in. Defaults to `raw_gnaf_<census_year>`.
+* `--raw-admin-schema` schema name to store raw admin boundary tables in. Defaults to `raw_admin_bdys_<census_year>`.
+* `--max-processes` specifies the maximum number of parallel processes to use for the data load. Set this to the number of cores on the Postgres server minus 2, but limit to 12 if 16+ cores - there is minimal benefit beyond 12. Defaults to 3.
 
 ### Example Command Line Arguments
-* Local Postgres server: `python load-gnaf.py --gnaf-tables-path="C:\temp\psma_201602\G-NAF" --admin-bdys-path="C:\temp\psma_201602\Administrative Boundaries"` Loads the GNAF tables to a Postgres server running locally. GNAF archives have been extracted to the folder `C:\temp\psma_201602\G-NAF`, and admin boundaries have been extracted to the `C:\temp\psma_201602\Administrative Boundaries` folder.
-* Remote Postgres server: `python load-gnaf.py --gnaf-tables-path="\\svr\shared\gnaf" --local-server-dir="f:\shared\gnaf" --admin-bdys-path="c:\temp\unzipped\AdminBounds_ESRI"` Loads the GNAF tables which have been extracted to the shared folder `\\svr\shared\gnaf`. This shared folder corresponds to the local `f:\shared\gnaf` folder on the Postgres server. Admin boundaries have been extracted to the `c:\temp\unzipped\AdminBounds_ESRI` folder.
-* Loading only selected states: `python load-gnaf.py --states VIC TAS NT ...` Loads only the data for Victoria, Tasmania and Northern Territory
-
-### Advanced
-You can load the Admin Boundaries without GNAF. To do this: comment out steps 1, 3 & 4 in def main.
-
-Note: you can't load GNAF without the Admin Bdys due to dependencies required to split Melbourne and to fix non-boundary locality_pids on addresses.
+* Local Postgres server: `python load-census.py --census-data-path="C:\temp\census_2016_data" --census-bdys-path="C:\temp\census_2016_boundaries"` Loads the Census data to a Postgres server running locally. Census data archives have been extracted to the folder `C:\temp\census_2016_data`, and ASGS boundaries have been extracted to the `C:\temp\census_2016_boundaries` folder.
+* Remote Postgres server: `python load-census.py --census-data-path="\\svr\shared\census_2016_data" --local-server-dir="F:\shared\census_2016_data" --census-bdys-path="C:\temp\census_2016_boundaries"` Loads the Census data which have been extracted to the shared folder `\\svr\shared\census_2016_data`. This shared folder corresponds to the local `F:\shared\census_2016_data` folder on the Postgres server. ASGS boundaries have been extracted to the `C:\temp\census_2016_boundaries` folder.
 
 ### Attribution
-When using the resulting data from this process - you will need to adhere to the attribution requirements on the data.gov.au pages for [GNAF](http://data.gov.au/dataset/geocoded-national-address-file-g-naf) and the [Admin Bdys](http://data.gov.au/dataset/psma-administrative-boundaries), as part of the open data licensing requirements.
+When using the resulting data from this process - you will need to adhere to the ABS data attribution requirements for the [Census and ASGS data](http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material), as per the Creative Commons (Attribution) license.
 
 ### WARNING:
 - The scripts will DROP ALL TABLES and recreate them using CASCADE; meaning you'll LOSE YOUR VIEWS if you have created any! If you want to keep the existing data - you'll need to change the schema names in the script or use a different database
-- All raw GNAF tables can be created UNLOGGED to speed up the data load. This will make them UNRECOVERABLE if your database is corrupted. You can run these scripts again to recreate them. If you think this sounds ok - set the unlogged_tables flag to True for a slightly faster load
-- Boundary tagging (on by default) will add 15-60 minutes to the process if you have PostGIS 2.2. If you have PostGIS 2.1 or lower - it can take HOURS as the boundary tables can't be optimised!
 
 ### IMPORTANT:
-- Whilst you can choose which 4 schemas to load the data into, I haven't QA'd every permutation. Stick with the defaults if you have limited Postgres experience 
-- If you're not running the Python script on the Postgres server, you'll need to have access to a network path to the GNAF files on the database server (to create the list of files to process). The alternative is to have a local copy of the raw files
-- The 'create tables' sql script will add the PostGIS extension to the database in the public schema, you don't need to add it to your database
-- There is an option to VACUUM the database at the start after dropping the existing GNAF/Admin Bdy tables - this doesn't really do anything outside of repeated testing. (I was too lazy to take it out of the code as it meant renumbering all the SQL files and I'd like to go to bed now) 
+- Whilst you can choose which 2 schemas to load the data into, I haven't QA'd all permutations. Stick with the defaults if you have limited Postgres experience 
+- If you're not running the Python script on the Postgres server, you'll need to have access to a network path to the Census data files on the database server (to create the list of files to process). The alternative is to have a local copy of the CSV files
 
 ## Option 2 - Build the database in a docker environment
 
@@ -99,15 +80,15 @@ Create a Docker container with GNAF and the Admin Bdys ready to go, so they can 
 ## Option 3 - Load PG_DUMP Files
 Download Postgres dump files and restore them in your database.
 
-Should take 15-60 minutes.
+Should take 15 minutes.
 
 ### Pre-requisites
-- Postgres 9.6 with PostGIS 2.2+
-- A knowledge of [Postgres pg_restore parameters](http://www.postgresql.org/docs/9.5/static/app-pgrestore.html)
+- Postgres 9.6+ with PostGIS 2.2+
+- A knowledge of [Postgres pg_restore parameters](http://www.postgresql.org/docs/9.6/static/app-pgrestore.html)
 
 ### Process
-1. Download [gnaf-201702.dmp](http://minus34.com/opendata/psma-201702/gnaf-201702.dmp) (~1.6Gb)
-2. Download [admin-bdys-201702.dmp](http://minus34.com/opendata/psma-201702/admin-bdys-201702.dmp) (~2.0Gb)
+1. Download [census-boundaries-2016.dmp](http://minus34.com/opendata/census-2016/census-data-2016.dmp) (~1.6Gb)
+2. Download [census-boundaries-2016.dmp](http://minus34.com/opendata/census-2016/census-boundaries-2016.dmp) (~2.0Gb)
 3. Edit the restore-gnaf-admin-bdys.bat or .sh script in the supporting-files folder for your database parameters and for the location of pg_restore
 5. Run the script, come back in 15-60 minutes and enjoy!
 
