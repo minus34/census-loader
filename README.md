@@ -71,9 +71,9 @@ When using the resulting data from this process - you will need to adhere to the
 Create a Docker container with GNAF and the Admin Bdys ready to go, so they can be deployed anywhere.
 
 ### Process
-1. Download [PSMA GNAF from data.gov.au](http://data.gov.au/dataset/geocoded-national-address-file-g-naf)
-2. Download [PSMA Administrative Boundaries from data.gov.au](http://data.gov.au/dataset/psma-administrative-boundaries) (download the ESRI Shapefile version)
-3. Unzip GNAF and the Admin Bdys in the data/ directory of this repository
+1. Download [ABS Census 2016 CSV Files](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/2079.02016)
+2. Download [ABS 2016 ASGS boundaries](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/1270.0.55.001July%202016) (**download the ESRI Shapefile versions**)
+3. Unzip Census data and ASGS boundaries in the data/ directory of this repository
 4. Run docker-compose: `docker-compose up`. The database will be built.
 5. Use the constructed database as you wish.
 

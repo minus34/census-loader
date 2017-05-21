@@ -26,8 +26,8 @@ import io
 import logging.config
 import multiprocessing
 import os
-import pandas  # module needs to be installed
-import psycopg2  # module needs to be installed (IMPORTANT: need to install 'xlrd' module for Pandas to read XLSX files)
+import pandas  # module needs to be installed (IMPORTANT: need to install 'xlrd' module for Pandas to read XLSX files)
+import psycopg2  # module needs to be installed
 import utils
 
 from datetime import datetime
