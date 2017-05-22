@@ -190,7 +190,7 @@ def get_settings(args):
     settings['max_concurrent_processes'] = args.max_processes
     settings['census_year'] = args.census_year
     # settings['states_to_load'] = args.states
-    # settings['states'] = ["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"]
+    settings['states'] = ["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"]
     settings['data_schema'] = args.data_schema
     settings['boundary_schema'] = args.boundary_schema
     settings['data_directory'] = args.census_data_path.replace("\\", "/")
@@ -518,6 +518,7 @@ def create_display_boundaries(pg_cur, settings):
         sql = "DROP TABLE IF EXISTS {0}.{1} CASCADE;" \
               "SELECT * INTO {0}.{1} FROM {2}.{3};" \
               "UPDATE {0}.{1} SET geom = ST_Multi(ST_Buffer(ST_SnapToGrid(geom, {4}), 0.0));" \
+              "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY (gid);" \
               "CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);" \
               "ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx"\
             .format(pg_schema, pg_table, settings['boundary_schema'], input_pg_table, precision)
@@ -531,6 +532,7 @@ def create_display_boundaries(pg_cur, settings):
     utils.multiprocess_list("sql", sql_list2, settings, logger)
 
     logger.info("\t- Step 2 of 2 : display census boundaries created : {0}".format(datetime.now() - start_time))
+
 
 def create_boundaries_for_analysis(settings):
     # Step 3 of 3 : create admin bdy tables optimised for spatial analysis
