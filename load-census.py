@@ -24,7 +24,6 @@
 import argparse
 import io
 import logging.config
-import multiprocessing
 import os
 import pandas  # module needs to be installed (IMPORTANT: need to install 'xlrd' module for Pandas to read XLSX files)
 import psycopg2  # module needs to be installed
@@ -75,22 +74,21 @@ def main():
     # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2011_data
     # --census-bdys-path=/Users/hugh.saalmans/minus34/data/abs_2011
 
-    # PART 1 - load census data from CSV files
-    logger.info("")
-    start_time = datetime.now()
-    logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
-    create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
-    populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
-                         settings['table_name_part'], settings['bdy_name_part'], settings)
-    logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
-
-    # PART 2 - load census boundaries from Shapefiles
-    logger.info("")
+    # # PART 1 - load census data from CSV files
+    # logger.info("")
+    # start_time = datetime.now()
+    # logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
+    # create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
+    # populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
+    #                      settings['table_name_part'], settings['bdy_name_part'], settings)
+    # logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
+    #
+    # # PART 2 - load census boundaries from Shapefiles
+    # logger.info("")
     start_time = datetime.now()
     logger.info("Part 2 of 3 : Start census boundary load : {0}".format(start_time))
-    load_boundaries(pg_cur, settings)
-    # prep_boundaries(pg_cur, settings)
-    # create_boundaries_for_analysis(settings)
+    # load_boundaries(pg_cur, settings)
+    create_display_boundaries(pg_cur, settings)
     logger.info("Part 2 of 3 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
     # # PART 3 - create views
@@ -387,13 +385,8 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, setting
         for file_name in files:
             if file_name.lower().startswith(prefix.lower()):
                 if file_name.lower().endswith(suffix.lower()):
+
                     file_path = os.path.join(root, file_name)
-                    # .replace(settings['data_directory'], settings['data_pg_server_local_directory'])
-
-                    # # if a non-Windows Postgres server OS - fix file path
-                    # if settings['data_pg_server_local_directory'][0:1] == "/":
-                    #     file_path = file_path.replace("\\", "/")
-
                     file_name_components = file_name.lower().split("_")
 
                     table = file_name_components[table_name_part]
@@ -417,134 +410,19 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, setting
         logger.fatal("\t- Step 2 of 2 : stats table create & populate FAILED!")
     else:
         # load all files using multiprocessing
-        multiprocess_csv_import(file_list, settings, logger)
+        utils.multiprocess_csv_import(file_list, settings, logger)
         logger.info("\t- Step 2 of 2 : stats tables created & populated : {0}".format(datetime.now() - start_time))
-
-
-# takes a list of sql queries or command lines and runs them using multiprocessing
-def multiprocess_csv_import(work_list, settings, logger):
-    pool = multiprocessing.Pool(processes=settings['max_concurrent_processes'])
-
-    num_jobs = len(work_list)
-
-    results = pool.imap_unordered(run_csv_import_multiprocessing, [[w, settings] for w in work_list])
-
-    pool.close()
-    pool.join()
-
-    result_list = list(results)
-    num_results = len(result_list)
-
-    if num_jobs > num_results:
-        logger.warning("\t- A MULTIPROCESSING PROCESS FAILED WITHOUT AN ERROR\nACTION: Check the record counts")
-
-    for result in result_list:
-        if result != "SUCCESS":
-            logger.info(result)
-
-
-def run_csv_import_multiprocessing(args):
-    file_dict = args[0]
-    settings = args[1]
-
-    pg_conn = psycopg2.connect(settings['pg_connect_string'])
-    pg_conn.autocommit = True
-    pg_cur = pg_conn.cursor()
-
-    # CREATE TABLE
-
-    # get the census fields for the table
-    field_list = list()
-
-    # sql = "SELECT sequential_id || ' ' || stat_type AS field " \
-    #       "FROM {0}.metadata_stats " \
-    #       "WHERE lower(table_number) LIKE '{1}%'" \
-    #     .format(settings['data_schema'], table_number)
-    sql = "SELECT sequential_id || ' double precision' AS field " \
-          "FROM {0}.metadata_stats " \
-          "WHERE lower(table_number) LIKE '{1}%'" \
-        .format(settings['data_schema'], file_dict["table"])
-    pg_cur.execute(sql)
-
-    fields = pg_cur.fetchall()
-
-    for field in fields:
-        field_list.append(field[0].lower())
-
-    fields_string = ",".join(field_list)
-
-    # create the table
-    table_name = file_dict["boundary"] + "_" + file_dict["table"]
-
-    create_table_sql = "DROP TABLE IF EXISTS {0}.{1} CASCADE;" \
-                       "CREATE TABLE {0}.{1} ({4} text, {2}) WITH (OIDS=FALSE);" \
-                       "ALTER TABLE {0}.metadata_tables OWNER TO {3}" \
-        .format(settings['data_schema'], table_name, fields_string,
-                settings['pg_user'], settings['region_id_field'])
-
-    pg_cur.execute(create_table_sql)
-
-    # IMPORT CSV FILE
-
-    try:
-        # read CSV into a string
-        raw_string = open(file_dict["path"], 'r').read()
-
-        # clean whitespace and non-ascii characters
-        clean_string = raw_string.lstrip().rstrip().replace(" ", "").replace("\x1A", "")
-
-        # convert to in memory stream
-        csv_file = io.StringIO(clean_string)
-        csv_file.seek(0)  # move position back to beginning of file before reading
-
-        # import into Postgres
-        sql = "COPY {0}.{1} FROM stdin WITH CSV HEADER DELIMITER as ',' NULL as '..'"\
-            .format(settings['data_schema'], table_name)
-        pg_cur.copy_expert(sql, csv_file)
-
-    except Exception as ex:
-        return "IMPORT CSV INTO POSTGRES FAILED! : {0} : {1}".format(file_dict["path"], ex)
-
-    # add primary key and vacuum index
-    sql = "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY ({2});" \
-          "ALTER TABLE {0}.{1} CLUSTER ON {1}_pkey" \
-        .format(settings['data_schema'], table_name, settings['region_id_field'])
-    pg_cur.execute(sql)
-
-    pg_cur.execute("VACUUM ANALYSE {0}.{1}".format(settings['data_schema'], table_name))
-
-    result = "SUCCESS"
-
-    pg_cur.close()
-    pg_conn.close()
-
-    return result
 
 
 # loads the admin bdy shapefiles using the shp2pgsql command line tool (part of PostGIS), using multiprocessing
 def load_boundaries(pg_cur, settings):
+    # Step 1 of 2 : load census boundaries
     start_time = datetime.now()
-
-    # drop existing views
-    # pg_cur.execute(utils.open_sql_file("02-01-drop-admin-bdy-views.sql", settings))
 
     # create schema
     if settings['boundary_schema'] != "public":
         pg_cur.execute("CREATE SCHEMA IF NOT EXISTS {0} AUTHORIZATION {1}"
                        .format(settings['boundary_schema'], settings['pg_user']))
-
-    # # set psql connect string and password
-    # psql_str = "psql -U {0} -d {1} -h {2} -p {3}"\
-    #     .format(settings['pg_user'], settings['pg_db'], settings['pg_host'], settings['pg_port'])
-    #
-    # password_str = ''
-    # if not os.getenv("PGPASSWORD"):
-    #     if platform.system() == "Windows":
-    #         password_str = "SET"
-    #     else:
-    #         password_str = "export"
-    #
-    #     password_str += " PGPASSWORD={0}&&".format(settings['pg_password'])
 
     # get file list
     table_list = list()
@@ -606,52 +484,47 @@ def load_boundaries(pg_cur, settings):
             utils.import_shapefile_to_postgres(pg_cur, shp['file_path'], shp['pg_table'], shp['pg_schema'],
                                                shp['delete_table'], True)
 
-        logger.info("\t- Step 1 of 3 : raw census boundaries loaded : {0}".format(datetime.now() - start_time))
+        logger.info("\t- Step 1 of 2 : census boundaries loaded : {0}".format(datetime.now() - start_time))
 
 
-def prep_boundaries(pg_cur, settings):
-    # Step 2 of 3 : create admin bdy tables read to be used
+def create_display_boundaries(pg_cur, settings):
+    # Step 2 of 2 : create display optimised version of the main census boundaries (ste > sa4 > sa3 > sa2 > sa1 > mb)
     start_time = datetime.now()
 
-    if settings['boundaries_schema'] != "public":
+    # display boundaries schema name
+    pg_schema = "{0}_display".format(settings['boundary_schema'])
+
+    # create schema
+    if settings['boundary_schema'] != "public":
         pg_cur.execute("CREATE SCHEMA IF NOT EXISTS {0} AUTHORIZATION {1}"
-                       .format(settings['boundaries_schema'], settings['pg_user']))
+                       .format(pg_schema, settings['pg_user']))
 
-    # create tables using multiprocessing - using flag in file to split file up into sets of statements
-    sql_list = utils.open_sql_file("02-02a-prep-admin-bdys-tables.sql", settings).split("-- # --")
-    sql_list = sql_list + utils.open_sql_file("02-02b-prep-census-2011-bdys-tables.sql", settings).split("-- # --")
-    sql_list = sql_list + utils.open_sql_file("02-02c-prep-census-2016-bdys-tables.sql", settings).split("-- # --")
+    # process boundaries and precisions for all tiled map zoom levels
+    sql_list = list()
+    sql_list2 = list()
+    zoom_level = 1
 
-    # # Account for bdys that are not in states to load - not yet working
-    # for sql in sql_list:
-    #     if settings['states_to_load'] == ['OT'] and '.commonwealth_electorates ' in sql:
-    #         sql_list.remove(sql)
-    #
-    #     if settings['states_to_load'] == ['ACT'] and '.local_government_areas ' in sql:
-    #         sql_list.remove(sql)
-    #
-    #     logger.info(settings['states_to_load']
-    #
-    #     if not ('NT' in settings['states_to_load'] or 'SA' in settings['states_to_load']
-    #             or 'VIC' in settings['states_to_load'] or 'WA' in settings['states_to_load']) \
-    #             and '.local_government_wards ' in sql:
-    #         sql_list.remove(sql)
-    #
-    #     if settings['states_to_load'] == ['OT'] and '.state_lower_house_electorates ' in sql:
-    #         sql_list.remove(sql)
-    #
-    #     if not ('TAS' in settings['states_to_load'] or 'VIC' in settings['states_to_load']
-    #             or 'WA' in settings['states_to_load']) and '.state_upper_house_electorates ' in sql:
-    #         sql_list.remove(sql)
+    while zoom_level < 19:
+        display_zoom = str(zoom_level).zfill(2)
+        boundary_name = utils.get_boundary_name(zoom_level)
+        input_pg_table = "{0}_{1}_aust".format(boundary_name, settings["census_year"])
+        pg_table = "zoom_{0}_{1}_{2}_aust".format(display_zoom, boundary_name, settings["census_year"])
+        decimal_places = utils.get_decimal_places(zoom_level)
+
+        sql = "DROP TABLE IF EXISTS {0}.{1} CASCADE;" \
+              "SELECT * INTO {0}.{1} FROM {2}.{3};" \
+              "UPDATE {0}.{1} SET geom = ST_Multi(ST_Buffer(ST_SnapToGrid(geom, {4}), 0.0));" \
+              "CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);" \
+              "ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx"\
+            .format(pg_schema, pg_table, settings['boundary_schema'], input_pg_table, decimal_places)
+        sql_list.append(sql)
+
+        sql_list2.append("VACUUM ANALYZE {0}.{1}".format(pg_schema, pg_table))
+
+        zoom_level += 1
 
     utils.multiprocess_list("sql", sql_list, settings, logger)
-
-    # Special case - remove custom outback bdy if South Australia not requested
-    if 'SA' not in settings['states_to_load']:
-        pg_cur.execute(utils.prep_sql("DELETE FROM admin_bdys.locality_bdys WHERE locality_pid = 'SA999999'", settings))
-        pg_cur.execute(utils.prep_sql("VACUUM ANALYZE admin_bdys.locality_bdys", settings))
-
-    logger.info("\t- Step 2 of 3 : admin boundaries prepped : {0}".format(datetime.now() - start_time))
+    utils.multiprocess_list("sql", sql_list2, settings, logger)
 
 
 def create_boundaries_for_analysis(settings):
