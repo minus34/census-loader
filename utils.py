@@ -1,4 +1,4 @@
-import io
+# import io
 import multiprocessing
 import math
 import os
@@ -6,6 +6,57 @@ import platform
 import psycopg2
 import subprocess
 import sys
+
+
+# get the boundary name that suits each (tiled map) zoom level
+def get_boundary_name(zoom_level):
+
+    if zoom_level < 6:
+        boundary_name = "ste"
+
+    elif zoom_level < 9:
+        boundary_name = "sa4"
+
+    elif zoom_level < 11:
+        boundary_name = "sa3"
+
+    elif zoom_level < 14:
+        boundary_name = "sa2"
+
+    elif zoom_level < 16:
+        boundary_name = "sa1"
+
+    else:
+        boundary_name = "mb"
+
+    return boundary_name
+
+
+# maximum number of decimal places for boundary coordinates - improves display performance
+def get_decimal_places(zoom_level):
+
+    # rough metres to degrees conversation, using spherical WGS84 datum radius for simplicity and speed
+    metres2degrees = (2.0 * math.pi * 6378137.0) / 360.0
+
+    # default Google/Bing map tile scales
+    metres_per_pixel = 156543.03390625 / math.pow(2.0, float(zoom_level))
+
+    # the tolerance for thinning data and limiting decimal places in GeoJSON responses
+    degrees_per_pixel = metres_per_pixel / metres2degrees
+
+    scale_string = "{:10.9f}".format(degrees_per_pixel).split(".")[1]
+    places = 1
+
+    trigger = "0"
+
+    # find how many zero decimal places there are. e.g. 0.00001234 = 4 zeros
+    for c in scale_string:
+        if c == trigger:
+            places += 1
+        else:
+            trigger = "don't do anything else"  # used to cleanly exit the loop
+
+    return places
 
 
 # # takes a list of sql queries or command lines and runs them using multiprocessing
