@@ -24,6 +24,7 @@
 import argparse
 import io
 import logging.config
+import math
 import os
 import pandas  # module needs to be installed (IMPORTANT: need to install 'xlrd' module for Pandas to read XLSX files)
 import psycopg2  # module needs to be installed
@@ -509,14 +510,17 @@ def create_display_boundaries(pg_cur, settings):
         boundary_name = utils.get_boundary_name(zoom_level)
         input_pg_table = "{0}_{1}_aust".format(boundary_name, settings["census_year"])
         pg_table = "zoom_{0}_{1}_{2}_aust".format(display_zoom, boundary_name, settings["census_year"])
+
         decimal_places = utils.get_decimal_places(zoom_level)
+        # precision = math.exp(1e-5)
+        precision = float("0." + str(1).zfill(decimal_places))
 
         sql = "DROP TABLE IF EXISTS {0}.{1} CASCADE;" \
               "SELECT * INTO {0}.{1} FROM {2}.{3};" \
               "UPDATE {0}.{1} SET geom = ST_Multi(ST_Buffer(ST_SnapToGrid(geom, {4}), 0.0));" \
               "CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);" \
               "ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx"\
-            .format(pg_schema, pg_table, settings['boundary_schema'], input_pg_table, decimal_places)
+            .format(pg_schema, pg_table, settings['boundary_schema'], input_pg_table, precision)
         sql_list.append(sql)
 
         sql_list2.append("VACUUM ANALYZE {0}.{1}".format(pg_schema, pg_table))
@@ -526,6 +530,7 @@ def create_display_boundaries(pg_cur, settings):
     utils.multiprocess_list("sql", sql_list, settings, logger)
     utils.multiprocess_list("sql", sql_list2, settings, logger)
 
+    logger.info("\t- Step 2 of 2 : display census boundaries created : {0}".format(datetime.now() - start_time))
 
 def create_boundaries_for_analysis(settings):
     # Step 3 of 3 : create admin bdy tables optimised for spatial analysis
