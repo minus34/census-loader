@@ -1,17 +1,22 @@
 "use strict";
 
-var restUrl = "../get-data";
+var metadataUrl = "../get-metadata";
+var dataUrl = "../get-data";
+
 var map;
 var info;
+var themer;
 var geojsonLayer;
 
+var numClasses = 7 // number of classes (i.e colours) in map theme
 var minZoom = 4;
 var maxZoom = 16;
 var zoomLevel = 10;
 
 var census;
-var stats;
+var statsArray;
 var currentStat;
+var currentStatName;
 var currentStatType;
 
 var colours = ['#f6d2a9','#f5b78e','#f19c7c','#ea8171','#dd686c','#ca5268','#b13f64']
@@ -19,7 +24,7 @@ var colours = ['#f6d2a9','#f5b78e','#f19c7c','#ea8171','#dd686c','#ca5268','#b13
 // get querystring values
 
 //Code from http://forum.jquery.com/topic/getting-value-from-a-querystring
-// ***this goes on the global scope
+
 // get querystring as an array split on "&"
 var querystring = location.search.replace('?', '').split('&');
 
@@ -37,73 +42,74 @@ for (var i = 0; i < querystring.length; i++) {
 
 // get/set values from querystring
 if (queryObj["census"] === undefined) {
-  census = "2016";
+    census = "2016";
 } else {
-  census = queryObj["stats"];
-  // TODO: check census value is valid
+    census = queryObj["stats"];
+    // TODO: check census value is valid
 }
 if (queryObj["stats"] === undefined) {
-  statArray = ["B3"]; // total_persons
+    statsArray = ["b3"]; // total_persons
 } else {
-  statArray = queryObj["stats"].split(",");
+    statsArray = queryObj["stats"].lower().split(",");
 }
 
 function init() {
-	//Initialize the map on the "map" div
+    //Initialize the map on the "map" div
     map = new L.Map('map', { preferCanvas: true });
 
-	// acknowledge the data provider
-	map.attributionControl.addAttribution('Census data &copy; <a href="http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material">ABS</a>');
+    // acknowledge the data provider
+    map.attributionControl.addAttribution('Census data &copy; <a href="http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material">ABS</a>');
 
     // load CARTO basemap tiles
-	var tiles = L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-			attribution : '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
-			subdomains : 'abcd',
-			minZoom : minZoom,
-			maxZoom : maxZoom
-		}).addTo(map);
+    var tiles = L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+        attribution : '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+        subdomains : 'abcd',
+        minZoom : minZoom,
+        maxZoom : maxZoom
+    }).addTo(map);
 
-	// set the view to a given center and zoom
-	map.setView(new L.LatLng(-33.85, 151.15), zoomLevel);
+    // set the view to a given center and zoom
+    map.setView(new L.LatLng(-33.85, 151.15), zoomLevel);
 
-    // add bookmark control to map
     // get bookmarks
-	var storage = {
-		getAllItems : function (callback) {
-			$.getJSON('bookmarks.json',
-				function (json) {
-				callback(json);
-			});
-		}
-	};
-	var bmControl = new L.Control.Bookmarks({
+    var storage = {
+        getAllItems : function (callback) {
+            $.getJSON('bookmarks.json',
+                function (json) {
+                    callback(json);
+            });
+        }
+    };
+    
+    // add bookmark control to map
+    var bmControl = new L.Control.Bookmarks({
         position : 'topleft',
         localStorage : false,
         storage : storage
     }).addTo(map);
 
-	// add control that shows info on mouseover
-	info = L.control();
-	info.onAdd = function (map) {
-		this._div = L.DomUtil.create('div', 'info');
-		this.update();
-		return this._div;
-	};
-	info.update = function (props) {
-        this._div.innerHTML = (props ? '<b>$' + props.dollardiff.toLocaleString(['en-AU']) + '</b> difference' : 'pick a hex');
+    // add control that shows info on mouseover
+    info = L.control();
+    info.onAdd = function (map) {
+        this._div = L.DomUtil.create('div', 'info');
+        this.update();
+        return this._div;
+    };
+    info.update = function (props) {
+//        var typePrefix;
+//        var typeSuffix;
+//      this._div.innerHTML = (props ? '<b>'typePrefix + props[currentStat].toLocaleString(['en-AU']) + typeSuffix'</b> ' + currentStatName : 'pick a boundary');
+        this._div.innerHTML = "Test pattern";
     };
     info.addTo(map);
 
     // add radio buttons to choose stat to theme the map
-    var themer = L.control({
+    themer = L.control({
         position : 'bottomright'
     });
     themer.onAdd = function (map) {
         var div = L.DomUtil.create('div', 'info themer');
-        div.innerHTML = '<h4>Profitability<br/>Metric</h4>' +
-            '<div><input id="radio1" type="radio" name="radio" value="count"><label for="radio1"><span><span></span></span>Policies</label></div>' +
-            '<div><input id="radio2" type="radio" name="radio" value="ratestrength" checked="checked"><label for="radio2"><span><span></span></span>Rate strength</label></div>' +
-            '<div><input id="radio3" type="radio" name="radio" value="dollardiff"><label for="radio3"><span><span></span></span>$ Difference</label></div>'
+        div.innerHTML = "<h4>Layers<br/>go here</h4>"
         return div;
     };
     themer.addTo(map);
@@ -111,119 +117,161 @@ function init() {
     // event to trigger the map theme to change
     $("input:radio[name=radio]").click(function () {
         valueType = $(this).val();
-        //Reload the boundaries - NEEDS TO BE REPLACED WITH A MORE EFFICIENT WAY
-        getBoundaries();
+        // reload the data - NEEDS TO BE REPLACED WITH A MORE EFFICIENT WAY
+        getData();
     });
 
-    //Get a new set of boundaries when map panned or zoomed
-    //TO DO: Handle map movement due to popup
+    // get a new set of data when map panned or zoomed
+    // TODO: Handle map movement due to popup
     map.on('moveend', function (e) {
         // map.closePopup();
-        getBoundaries();
+        getData();
     });
 
     // map.on('zoomend', function (e) {
     //     map.closePopup();
-    //     //getBoundaries();
+    //     //getData();
     // });
 
-    //Get the first set of boundaries
-    getBoundaries();
+    // get the first lot of data
+    getMetadata();
 }
 
-function getBoundaries() {
+function getMetadata(){
 
-	console.time("got boundaries");
+    console.time("got metadata");
 
-	// get zoom level
-	zoomLevel = map.getZoom();
-	//    console.log("Zoom level = " + zoomLevel.toString());
+    // get zoom level
+    zoomLevel = map.getZoom();
 
-	//restrict to the zoom levels that have data
-	if (zoomLevel < minZoom) {
-		zoomLevel = minZoom;
-	}
-	if (zoomLevel > maxZoom) {
-		zoomLevel = maxZoom;
+    // build URL with querystring
+    var ua = [];
+    ua.push(dataUrl);
+    ua.push("?z=");
+    ua.push((zoomLevel).toString());
+    ua.push("&census=");
+    ua.push(census);
+    ua.push("&stats=");
+    ua.push(statsArray.join());
+
+    var reqStr = ua.join('');
+
+    console.log(reqStr);
+
+    //Fire off AJAX request
+    $.getJSON(reqStr, gotMetadata);
+
+}
+
+function gotMetadata(json) {
+
+    console.timeEnd("got metadata");
+
+    var metadata = JSON.parse(json);
+
+
+//        div.innerHTML = '<h4>Profitability<br/>Metric</h4>' +
+//            '<div><input id="radio1" type="radio" name="radio" value="count"><label for="radio1"><span><span></span></span>Policies</label></div>' +
+//            '<div><input id="radio2" type="radio" name="radio" value="ratestrength" checked="checked"><label for="radio2"><span><span></span></span>Rate strength</label></div>' +
+//            '<div><input id="radio3" type="radio" name="radio" value="dollardiff"><label for="radio3"><span><span></span></span>$ Difference</label></div>'
+
+//    // now get the data
+//    getData()
+}
+
+function getData() {
+
+    console.time("got boundaries");
+
+    // get zoom level
+    zoomLevel = map.getZoom();
+    //    console.log("Zoom level = " + zoomLevel.toString());
+
+    //restrict to the zoom levels that have data
+    if (zoomLevel < minZoom) {
+        zoomLevel = minZoom;
+    }
+    if (zoomLevel > maxZoom) {
+        zoomLevel = maxZoom;
     }
 
-	// get map extents
-	var bb = map.getBounds();
-	var sw = bb.getSouthWest();
-	var ne = bb.getNorthEast();
+    // get map extents
+    var bb = map.getBounds();
+    var sw = bb.getSouthWest();
+    var ne = bb.getNorthEast();
 
-	// build URL with querystring
-	var ua = [];
-	ua.push(restUrl);
-	ua.push("?ml=");
-	ua.push(sw.lng.toString());
-	ua.push("&mb=");
-	ua.push(sw.lat.toString());
-	ua.push("&mr=");
-	ua.push(ne.lng.toString());
-	ua.push("&mt=");
-	ua.push(ne.lat.toString());
-	ua.push("&z=");
-	ua.push((zoomLevel).toString());
-	//    ua.push("&t=");
-	//    ua.push(valueType);
+    // build URL with querystring
+    var ua = [];
+    ua.push(dataUrl);
+    ua.push("?ml=");
+    ua.push(sw.lng.toString());
+    ua.push("&mb=");
+    ua.push(sw.lat.toString());
+    ua.push("&mr=");
+    ua.push(ne.lng.toString());
+    ua.push("&mt=");
+    ua.push(ne.lat.toString());
+    ua.push("&z=");
+    ua.push((zoomLevel).toString());
+    //    ua.push("&t=");
+    //    ua.push(valueType);
 
-	var reqStr = ua.join('');
+    var reqStr = ua.join('');
 
-	//Fire off AJAX request
-	$.getJSON(reqStr, loadBdysNew);
+    //Fire off AJAX request
+    $.getJSON(reqStr, gotData);
 }
 
-function loadBdysNew(json) {
-	console.timeEnd("got boundaries");
-	console.time("parsed GeoJSON");
+function gotData(json) {
+    console.timeEnd("got boundaries");
+    console.time("parsed GeoJSON");
 
-	if (json !== null) {
+    if (json !== null) {
         if(geojsonLayer !== undefined) {
-			geojsonLayer.clearLayers();
-		}
+            geojsonLayer.clearLayers();
+        }
 
         geojsonLayer = L.geoJson(json, {
             style : style,
             onEachFeature : onEachFeature
         }).addTo(map);
-	} else {
-	    alert("No data returned!")
-	}
+    } else {
+        alert("No data returned!")
+    }
 
-	console.timeEnd("parsed GeoJSON");
+    console.timeEnd("parsed GeoJSON");
 }
 
 function style(feature) {
 
-	var renderVal;
-	var colours;
+    var renderVal;
+    var colours;
 
-	switch (valueType) {
-	case "count":
-		colours = countColours;
-		renderVal = parseInt(feature.properties.count);
-		break;
+    switch (valueType) {
+    case "count":
+        colours = countColours;
+        renderVal = parseInt(feature.properties.count);
+        break;
     case "dollardiff":
         colours = rateStrengthColours;
         renderVal = parseInt(feature.properties.dollardiff);
         break;
     case "ratestrength":
         colours = rateStrengthColours;
-		renderVal = parseFloat(feature.properties.ratestrength);
-		break;
-	default:
-		colours = rateStrengthColours;
-		renderVal = parseFloat(feature.properties.ratestrength);
-	}
+        renderVal = parseFloat(feature.properties.ratestrength);
+        break;
+    default:
+        colours = rateStrengthColours;
+        renderVal = parseFloat(feature.properties.ratestrength);
+    }
 
-	return {
-		weight : 0,
-		opacity : 0.0,
-		color : '#666',
-		fillOpacity : getOpacity(parseInt(feature.properties.count)),
-		fillColor : getColor(renderVal, colours)
-	};
+    return {
+        weight : 0,
+        opacity : 0.0,
+        color : '#666',
+        fillOpacity : getOpacity(parseInt(feature.properties.count)),
+        fillColor : getColor(renderVal, colours)
+    };
 
     // fillOpacity : getOpacity(renderVal),
 
@@ -297,7 +345,7 @@ function getColor(d, colours) {
             d > 0.7 ? colours[5] :
                       colours[6];
         break;
-	default:
+    default:
         return d > 1.7 ? colours[0] :
             d > 1.5 ? colours[1] :
                 d > 1.3 ? colours[2] :
@@ -305,77 +353,77 @@ function getColor(d, colours) {
                         d > 0.9 ? colours[4] :
                             d > 0.7 ? colours[5] :
                                 colours[6];
-	}
+    }
 }
 
 // get color depending on ratio of count versus max value
 function getOpacity(d) {
 
-	switch (valueType) {
-	case "count":
-		return d > 500 ? 0.7 :
-		d > 250 ? 0.6 :
-		d > 100 ? 0.5 :
-		d > 50 ? 0.4 :
-		d > 25 ? 0.3 :
-		d > 0 ? 0.2 :
-				0.1;
-		break;
-	// case "difference":
-	//     zoomDiff = 11 - zoomLevel;
-	//     if (zoomDiff > 0) {
-	 //        d = d / Math.pow(4, zoomDiff)
-	//     }
-	//
-	// 	return d > 500 ? 0.7 :
-	// 	d > 200 ? 0.6 :
-	// 	d > 100 ? 0.5 :
-	// 	d > 50 ? 0.4 :
-	// 	d > 25 ? 0.3 :
-	// 	d > 0 ? 0.2 :
-	// 	        0.1;
-	// 	break;
-	default:
-		return d > 500 ? 0.7 :
-		d > 200 ? 0.6 :
-		d > 100 ? 0.5 :
-		d > 50 ? 0.4 :
-		d > 25 ? 0.3 :
-		d > 0 ? 0.2 :
-				0.1;
-	}
+    switch (valueType) {
+    case "count":
+        return d > 500 ? 0.7 :
+        d > 250 ? 0.6 :
+        d > 100 ? 0.5 :
+        d > 50 ? 0.4 :
+        d > 25 ? 0.3 :
+        d > 0 ? 0.2 :
+                0.1;
+        break;
+    // case "difference":
+    //     zoomDiff = 11 - zoomLevel;
+    //     if (zoomDiff > 0) {
+     //        d = d / Math.pow(4, zoomDiff)
+    //     }
+    //
+    //     return d > 500 ? 0.7 :
+    //     d > 200 ? 0.6 :
+    //     d > 100 ? 0.5 :
+    //     d > 50 ? 0.4 :
+    //     d > 25 ? 0.3 :
+    //     d > 0 ? 0.2 :
+    //             0.1;
+    //     break;
+    default:
+        return d > 500 ? 0.7 :
+        d > 200 ? 0.6 :
+        d > 100 ? 0.5 :
+        d > 50 ? 0.4 :
+        d > 25 ? 0.3 :
+        d > 0 ? 0.2 :
+                0.1;
+    }
 }
 
 function onEachFeature(feature, layer) {
-	layer.on({
+    layer.on({
         mouseover : highlightFeature,
         mouseout : resetHighlight
-	});
+    });
 }
 
 function highlightFeature(e) {
-	var layer = e.target;
+    var layer = e.target;
 
-	// console.log(layer);
+    // console.log(layer);
 
-	layer.setStyle({
-		weight : 2,
-		opacity : 0.9,
-		fillOpacity : 0.7
-	});
+    layer.setStyle({
+        weight : 2,
+        opacity : 0.9,
+        fillOpacity : 0.7
+    });
 
-	if (!L.Browser.ie && !L.Browser.opera) {
-		layer.bringToFront();
-	}
+    if (!L.Browser.ie && !L.Browser.opera) {
+        layer.bringToFront();
+    }
 
-	info.update(layer.feature.properties);
+    info.update(layer.feature.properties);
 }
 
 function resetHighlight(e) {
-	geojsonLayer.resetStyle(e.target);
-	info.update();
+    geojsonLayer.resetStyle(e.target);
+    info.update();
 }
 
 // function zoomToFeature(e) {
-// 	map.fitBounds(e.target.getBounds());
+//     map.fitBounds(e.target.getBounds());
 // }

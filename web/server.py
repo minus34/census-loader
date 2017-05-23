@@ -73,8 +73,95 @@ def homepage():
     return render_template('index.html')
 
 
+@app.route("/get-metadata")
+def get_metadata():
+    full_start_time = datetime.now()
+    start_time = datetime.now()
+
+    # Get parameters from querystring
+    zoom_level = int(request.args.get('z'))
+    # census = request.args.get('census')
+    stats = request.args.get('stats').lower()
+
+    # get the boundary table name from zoom level
+    table_name = utils.get_boundary_name(zoom_level)
+
+    # get stats tuple for query input
+    stats_tuple = ast.literal_eval(stats)
+
+    # the query
+    sql = "SELECT sequential_id AS id, table_number AS table, replace(long_id, '_', '') AS desc, " \
+          "column_heading_description AS type " \
+          "FROM {0}.metadata_stats " \
+          "WHERE sequential_id IN %s " \
+          "ORDER BY sequential_id"
+
+    with get_db_cursor() as pg_cur:
+        print("Connected to database in {0}".format(datetime.now() - start_time))
+        start_time = datetime.now()
+
+        # try:
+        pg_cur.execute(sql, (stats_tuple,))
+        # except psycopg2.Error:
+        #     return "I can't SELECT : " + sql
+
+        # print("Ran query in {0}".format(datetime.now() - start_time))
+        # start_time = datetime.now()
+
+        # Retrieve the results of the query
+        rows = pg_cur.fetchall()
+        # row_count = pg_cur.rowcount
+
+        # Get the column names returned
+        col_names = [desc[0] for desc in pg_cur.description]
+
+    print("Got records from Postgres in {0}".format(datetime.now() - start_time))
+    start_time = datetime.now()
+
+    # # Find the index of the column that holds the geometry
+    # geom_index = col_names.index("geometry")
+
+    # output is the main content, row_output is the content from each record returned
+    output_dict = dict()
+    output_dict["type"] = "StatsCollection"
+
+    i = 0
+    feature_array = list()
+
+    # For each row returned...
+    for row in rows:
+        feature_dict = dict()
+        feature_dict["type"] = "Stat"
+
+        properties_dict = dict()
+
+        # For each field returned, assemble the feature and properties dictionaries
+        for col in col_names:
+            if col == 'geometry':
+                feature_dict["geometry"] = ast.literal_eval(row[col])
+            elif col == 'id':
+                feature_dict["id"] = row[col]
+            else:
+                properties_dict[col] = row[col]
+
+        feature_dict["properties"] = properties_dict
+
+        feature_array.append(feature_dict)
+
+        # start over
+        i += 1
+
+    # Assemble the GeoJSON
+    output_dict["features"] = feature_array
+
+    print("Parsed records into JSON in {1}".format(i, datetime.now() - start_time))
+    print("Returned {0} records  {1}".format(i, datetime.now() - full_start_time))
+
+    return Response(json.dumps(output_dict), mimetype='application/json')
+
+
 @app.route("/get-data")
-def bdys():
+def get_data():
     full_start_time = datetime.now()
     start_time = datetime.now()
 
@@ -89,7 +176,7 @@ def bdys():
     # get the number of decimal places for the output GeoJSON to reduce response size & speed up rendering
     decimal_places = utils.get_decimal_places(zoom_level)
 
-    # get the boundary table name
+    # get the boundary table name from zoom level
     table_name = utils.get_boundary_name(zoom_level)
 
     with get_db_cursor() as pg_cur:
