@@ -1,18 +1,52 @@
 "use strict";
 
 var restUrl = "../get-data";
-var map = null;
-var info = null;
-var geojsonLayer = null;
+var map;
+var info;
+var geojsonLayer;
 
 var minZoom = 4;
 var maxZoom = 16;
 var zoomLevel = 10;
 
+var census;
+var stats;
 var currentStat;
 var currentStatType;
 
 var colours = ['#f6d2a9','#f5b78e','#f19c7c','#ea8171','#dd686c','#ca5268','#b13f64']
+
+// get querystring values
+
+//Code from http://forum.jquery.com/topic/getting-value-from-a-querystring
+// ***this goes on the global scope
+// get querystring as an array split on "&"
+var querystring = location.search.replace('?', '').split('&');
+
+// declare object
+var queryObj = {};
+
+// loop through each name-value pair and populate object
+for (var i = 0; i < querystring.length; i++) {
+    // get name and value
+    var name = querystring[i].split('=')[0];
+    var value = querystring[i].split('=')[1];
+    // populate object
+    queryObj[name] = value;
+}
+
+// get/set values from querystring
+if (queryObj["census"] === undefined) {
+  census = "2016";
+} else {
+  census = queryObj["stats"];
+  // TODO: check census value is valid
+}
+if (queryObj["stats"] === undefined) {
+  statArray = ["B3"]; // total_persons
+} else {
+  statArray = queryObj["stats"].split(",");
+}
 
 function init() {
 	//Initialize the map on the "map" div
@@ -101,22 +135,24 @@ function getBoundaries() {
 
 	console.time("got boundaries");
 
-	//Get zoom level
+	// get zoom level
 	zoomLevel = map.getZoom();
 	//    console.log("Zoom level = " + zoomLevel.toString());
 
 	//restrict to the zoom levels that have data
-	if (zoomLevel < minZoom)
+	if (zoomLevel < minZoom) {
 		zoomLevel = minZoom;
-	if (zoomLevel > maxZoom)
+	}
+	if (zoomLevel > maxZoom) {
 		zoomLevel = maxZoom;
+    }
 
-	//Get map extents
+	// get map extents
 	var bb = map.getBounds();
 	var sw = bb.getSouthWest();
 	var ne = bb.getNorthEast();
 
-	//Build URL with querystring - selects census bdy attributes, stats and the census boundary geometries as minimised GeoJSON objects
+	// build URL with querystring
 	var ua = [];
 	ua.push(restUrl);
 	ua.push("?ml=");
@@ -143,34 +179,16 @@ function loadBdysNew(json) {
 	console.time("parsed GeoJSON");
 
 	if (json !== null) {
-        // L.glify.shapes({
-        //     map: map,
-        //     click: function (feature, details) {
-        //         //set up a standalone popup (use a popup as a layer)
-        //         /*L.popup()
-        //          .setLatLng(point)
-        //          .setContent("You clicked the point at longitude:" + point.lng + ', latitude:' + point.lat)
-        //          .openOn(map);*/
-        //         console.log('hello');
-        //     },
-        //     data: json
-        // });
-
-        try {
+        if(geojsonLayer !== undefined) {
 			geojsonLayer.clearLayers();
-		} catch (err) {
-			//dummy
 		}
 
-		// TO FIX: ERRORS NOT BEING TRAPPED
-		// try {
-			geojsonLayer = L.geoJson(json, {
-					style : style,
-					onEachFeature : onEachFeature
-				}).addTo(map);
-		// } catch (err) {
-		// 	alert("Couldn't get data!");
-		// }
+        geojsonLayer = L.geoJson(json, {
+            style : style,
+            onEachFeature : onEachFeature
+        }).addTo(map);
+	} else {
+	    alert("No data returned!")
 	}
 
 	console.timeEnd("parsed GeoJSON");
