@@ -1,3 +1,4 @@
+import argparse
 import io
 import multiprocessing
 import math
@@ -6,6 +7,129 @@ import platform
 import psycopg2
 import subprocess
 import sys
+
+
+# set the command line arguments for the script
+def set_arguments():
+    parser = argparse.ArgumentParser(
+        description='A quick way to load the complete GNAF and PSMA Admin Boundaries into Postgres, '
+                    'simplified and ready to use as reference data for geocoding, analysis and visualisation.')
+
+    parser.add_argument(
+        '--max-processes', type=int, default=3,
+        help='Maximum number of parallel processes to use for the data load. (Set it to the number of cores on the '
+             'Postgres server minus 2, limit to 12 if 16+ cores - there is minimal benefit beyond 12). Defaults to 3.')
+
+    # PG Options
+    parser.add_argument(
+        '--pghost',
+        help='Host name for Postgres server. Defaults to PGHOST environment variable if set, otherwise localhost.')
+    parser.add_argument(
+        '--pgport', type=int,
+        help='Port number for Postgres server. Defaults to PGPORT environment variable if set, otherwise 5432.')
+    parser.add_argument(
+        '--pgdb',
+        help='Database name for Postgres server. Defaults to PGDATABASE environment variable if set, '
+             'otherwise utils.')
+    parser.add_argument(
+        '--pguser',
+        help='Username for Postgres server. Defaults to PGUSER environment variable if set, otherwise postgres.')
+    parser.add_argument(
+        '--pgpassword',
+        help='Password for Postgres server. Defaults to PGPASSWORD environment variable if set, '
+             'otherwise \'password\'.')
+
+    # schema names for the census data & boundary tables
+    census_year = '2016'
+
+    parser.add_argument(
+        '--census-year', default=census_year,
+        help='Census year as YYYY. Valid values are \'2011\' or \'2016\'. '
+             'Defaults to last census \'' + census_year + '\'.')
+
+    parser.add_argument(
+        '--data-schema', default='census_' + census_year + '_data',
+        help='Schema name to store raw GNAF tables in. Defaults to \'census_' + census_year + '_data\'.')
+    parser.add_argument(
+        '--boundary-schema', default='census_' + census_year + '_bdys',
+        help='Schema name to store raw admin boundary tables in. Defaults to \'census_' + census_year + '_bdys\'.')
+
+    # directories
+    parser.add_argument(
+        '--census-data-path', required=True,
+        help='Path to source census data tables (*.csv files). '
+             'This directory must be accessible by the Postgres server, and the local path to the directory for the '
+             'server must be set via the local-server-dir argument if it differs from this path.')
+    # parser.add_argument(
+    #     '--local-server-dir',
+    #     help='Local path on server corresponding to census-data-path, if different to census-data-path.')
+    parser.add_argument(
+        '--census-bdys-path', required=True, help='Local path to source admin boundary files.')
+
+    # # states to load
+    # parser.add_argument('--states', nargs='+', choices=["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"],
+    #                     default=["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"],
+    #                     help='List of states to load data for. Defaults to all states.')
+
+    return parser.parse_args()
+
+
+# create the dictionary of settings
+def get_settings(args):
+    settings = dict()
+
+    settings['max_concurrent_processes'] = args.max_processes
+    settings['census_year'] = args.census_year
+    # settings['states_to_load'] = args.states
+    settings['states'] = ["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"]
+    settings['data_schema'] = args.data_schema
+    settings['boundary_schema'] = args.boundary_schema
+    settings['data_directory'] = args.census_data_path.replace("\\", "/")
+    # if args.local_server_dir:
+    #     settings['data_pg_server_local_directory'] = args.local_server_dir.replace("\\", "/")
+    # else:
+    #     settings['data_pg_server_local_directory'] = settings['data_directory']
+    settings['boundaries_local_directory'] = args.census_bdys_path.replace("\\", "/")
+
+    # create postgres connect string
+    settings['pg_host'] = args.pghost or os.getenv("PGHOST", "localhost")
+    settings['pg_port'] = args.pgport or os.getenv("PGPORT", 5432)
+    settings['pg_db'] = args.pgdb or os.getenv("PGDATABASE", "geo")
+    settings['pg_user'] = args.pguser or os.getenv("PGUSER", "postgres")
+    settings['pg_password'] = args.pgpassword or os.getenv("PGPASSWORD", "password")
+
+    settings['pg_connect_string'] = "dbname='{0}' host='{1}' port='{2}' user='{3}' password='{4}'".format(
+        settings['pg_db'], settings['pg_host'], settings['pg_port'], settings['pg_user'], settings['pg_password'])
+
+    # set postgres script directory
+    settings['sql_dir'] = os.path.join(os.path.dirname(os.path.realpath(__file__)), "postgres-scripts")
+
+    # set file name and field name defaults based on census year
+    if settings['census_year'] == '2016':
+        settings['metadata_file_prefix'] = "Sample_Metadata_"
+        settings['metadata_file_type'] = ".xls"
+        settings["census_metadata_dicts"] = [{"table": "metadata_tables", "first_row": "table number"},
+                                             {"table": "metadata_stats", "first_row": "sequential"}]
+        settings['data_file_prefix'] = "2016_Sample_"
+        settings['data_file_type'] = ".csv"
+        settings['table_name_part'] = 2  # position in the data file name that equals it's destination table name
+        settings['bdy_name_part'] = 3  # position in the data file name that equals it's census boundary name
+        settings['region_id_field'] = "aus_code_2016"
+
+    elif settings['census_year'] == '2011':
+        settings['metadata_file_prefix'] = "Metadata_"
+        settings['metadata_file_type'] = ".xlsx"
+        settings["census_metadata_dicts"] = [{"table": "metadata_tables", "first_row": "table number"},
+                                             {"table": "metadata_stats", "first_row": "sequential"}]
+        settings['data_file_prefix'] = "2011Census_"
+        settings['data_file_type'] = ".csv"
+        settings['table_name_part'] = 1  # position in the data file name that equals it's destination table name
+        settings['bdy_name_part'] = 3  # position in the data file name that equals it's census boundary name
+        settings['region_id_field'] = "region_id"
+    else:
+        return None
+
+    return settings
 
 
 # get the boundary name that suits each (tiled map) zoom level
@@ -412,12 +536,12 @@ def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_
     # convert the Shapefile to SQL statements
     try:
         process = subprocess.Popen(shp2pgsql_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        sqlobj, err = process.communicate()
+        sql_obj, err = process.communicate()
     except:
         return "Importing {0} - Couldn't convert Shapefile to SQL".format(file_path)
 
     # prep Shapefile SQL
-    sql = sqlobj.decode("utf-8")  # this is required for Python 3
+    sql = sql_obj.decode("utf-8")  # this is required for Python 3
     sql = sql.replace("Shapefile type: ", "-- Shapefile type: ")
     sql = sql.replace("Postgis type: ", "-- Postgis type: ")
     sql = sql.replace("SELECT DropGeometryColumn", "-- SELECT DropGeometryColumn")
