@@ -52,9 +52,13 @@ The behaviour of census-loader can be controlled by specifying various command l
 * `--max-processes` specifies the maximum number of parallel processes to use for the data load. Set this to the number of cores on the Postgres server minus 2, but limit to 12 if 16+ cores - there is minimal benefit beyond 12. Defaults to 3.
 
 ### Example Command Line Arguments
-`python load-census.py --census-year=2011 --max-processes=6 --census-data-path="C:\temp\census_2016_data" --census-bdys-path="C:\temp\census_2016_boundaries"`
+`python load-census.py --census-data-path="C:\temp\census_2016_data" --census-bdys-path="C:\temp\census_2016_boundaries"`
 
-Loads the 2011 Census data using a maximum of 6 parallel processes. Census data archives have been extracted to the folder `C:\temp\census_2016_data`, and ASGS boundaries have been extracted to the `C:\temp\census_2016_boundaries` folder.
+Loads the 2016 Census data using a maximum of 3 parallel processes into the default schemas. Census data archives have been extracted to the folder `C:\temp\census_2016_data`, and ASGS boundaries have been extracted to the `C:\temp\census_2016_boundaries` folder.
+
+`python load-census.py --census-year=2011 --max-processes=6 --data-schema=census_2011_data --boundary-schema=census_2011_bdys --census-data-path="C:\temp\census_2011_data" --census-bdys-path="C:\temp\census_2011_boundaries"`
+
+Loads the 2011 Census data using a maximum of 6 parallel processes into renamed schemas. Census data archives have been extracted to the folder `C:\temp\census_2011_data`, and ASGS boundaries have been extracted to the `C:\temp\census_2011_boundaries` folder.
 
 ### Attribution
 When using the resulting data from this process - you will need to adhere to the ABS data attribution requirements for the [Census and ASGS data](http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material), as per the Creative Commons (Attribution) license.
