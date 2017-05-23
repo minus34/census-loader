@@ -80,14 +80,18 @@ def get_metadata():
 
     # Get parameters from querystring
     zoom_level = int(request.args.get('z'))
+    num_classes = int(request.args.get('n'))
     # census = request.args.get('census')
     stats = request.args.get('stats').upper().split(",")
 
     # get the boundary table name from zoom level
-    table_name = utils.get_boundary_name(zoom_level)
+    boundary_name = utils.get_boundary_name(zoom_level)
 
     # get stats tuple for query input
     stats_tuple = tuple(stats)
+
+    # get percentile fraction
+    percentile_fraction = 1.0 / float(num_classes)
 
     # stat metadata query
     sql = "SELECT sequential_id AS id, lower(table_number) AS table, replace(long_id, '_', ' ') AS desc, " \
@@ -136,7 +140,21 @@ def get_metadata():
         for col in col_names:
             feature_dict[col] = row[col]
 
-            # get the values for the
+        # get the values for the classes
+        field_array = list()
+        current_fraction = percentile_fraction
+
+        for j in range(1, num_classes):
+            field_array.append("percentile_disc({0}) within group (order by {1}) as val{2}")\
+                .format(current_fraction, feature_dict["id"], j)
+
+            current_fraction += percentile_fraction
+
+        sql = "SELECT " + ",".join(field_array) + " FROM {0}.{1}_{2}"\
+            .format(settings["data_schema"], boundary_name, feature_dict["table"])
+
+        print(sql)
+
 
 
 

@@ -162,7 +162,6 @@ function getMetadata(){
 
     //Fire off AJAX request
     $.getJSON(reqStr, gotMetadata);
-
 }
 
 function gotMetadata(json) {
