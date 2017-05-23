@@ -1,0 +1,23 @@
+data:
+  image: python:3.6
+  volumes:
+    - ./:/app
+    - ./data:/data
+
+# shares volume with other images so we can use COPY
+db:
+  image: mdillon/postgis:9.6
+  environment:
+    - POSTGRES_USER=census
+    - POSTGRES_PASSWORD=census
+  volumes_from:
+    - data
+
+loader:
+  build: .
+  volumes_from:
+    - data
+  links:
+   - db
+  ports:
+    - "9000"
