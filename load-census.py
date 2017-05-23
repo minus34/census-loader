@@ -210,6 +210,8 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
     # clean up invalid rows
     pg_cur.execute("DELETE FROM {0}.metadata_tables WHERE table_number IS NULL".format(settings['data_schema']))
 
+    # TODO: get rid of _Person_Persons and replace with _Persons in metadata_stats
+
     # add primary keys
     pg_cur.execute("ALTER TABLE {0}.metadata_tables ADD CONSTRAINT metadata_tables_pkey PRIMARY KEY (table_number)"
                    .format(settings['data_schema']))

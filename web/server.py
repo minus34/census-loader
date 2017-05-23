@@ -81,20 +81,20 @@ def get_metadata():
     # Get parameters from querystring
     zoom_level = int(request.args.get('z'))
     # census = request.args.get('census')
-    stats = request.args.get('stats').lower()
+    stats = request.args.get('stats').upper().split(",")
 
     # get the boundary table name from zoom level
     table_name = utils.get_boundary_name(zoom_level)
 
     # get stats tuple for query input
-    stats_tuple = ast.literal_eval(stats)
+    stats_tuple = tuple(stats)
 
-    # the query
-    sql = "SELECT sequential_id AS id, table_number AS table, replace(long_id, '_', '') AS desc, " \
+    # stat metadata query
+    sql = "SELECT sequential_id AS id, lower(table_number) AS table, replace(long_id, '_', ' ') AS desc, " \
           "column_heading_description AS type " \
           "FROM {0}.metadata_stats " \
           "WHERE sequential_id IN %s " \
-          "ORDER BY sequential_id"
+          "ORDER BY sequential_id".format(settings["data_schema"],)
 
     with get_db_cursor() as pg_cur:
         print("Connected to database in {0}".format(datetime.now() - start_time))
@@ -131,28 +131,24 @@ def get_metadata():
     # For each row returned...
     for row in rows:
         feature_dict = dict()
-        feature_dict["type"] = "Stat"
-
-        properties_dict = dict()
 
         # For each field returned, assemble the feature and properties dictionaries
         for col in col_names:
-            if col == 'geometry':
-                feature_dict["geometry"] = ast.literal_eval(row[col])
-            elif col == 'id':
-                feature_dict["id"] = row[col]
-            else:
-                properties_dict[col] = row[col]
+            feature_dict[col] = row[col]
 
-        feature_dict["properties"] = properties_dict
+            # get the values for the
+
+
 
         feature_array.append(feature_dict)
 
-        # start over
         i += 1
 
-    # Assemble the GeoJSON
-    output_dict["features"] = feature_array
+
+
+
+    # Assemble the JSON
+    output_dict["stats"] = feature_array
 
     print("Parsed records into JSON in {1}".format(i, datetime.now() - start_time))
     print("Returned {0} records  {1}".format(i, datetime.now() - full_start_time))

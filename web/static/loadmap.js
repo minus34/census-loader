@@ -149,6 +149,8 @@ function getMetadata(){
     ua.push(dataUrl);
     ua.push("?z=");
     ua.push((zoomLevel).toString());
+    ua.push("?n=");
+    ua.push((numClasses).toString());
     ua.push("&census=");
     ua.push(census);
     ua.push("&stats=");
