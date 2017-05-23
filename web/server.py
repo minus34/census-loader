@@ -96,10 +96,10 @@ def bdys():
         print("Connected to database in {0}".format(datetime.now() - start_time))
         start_time = datetime.now()
 
-        sql = "SELECT gid AS id, count, rate_strength::float AS rateStrength, dollar_diff AS dollardiff, " \
-              "ST_AsGeoJSON(geom, {0}) AS geometry FROM {1}.{2} " \
-              "WHERE geom && ST_MakeEnvelope({3}, {4}, {5}, {6}, 4326)" \
-            .format(decimal_places, settings['data_schema'], table_name, map_left, map_bottom, map_right, map_top)
+        sql = "SELECT bdy.gid AS id, " \
+              "ST_AsGeoJSON(bdy.geom, {0}) AS geometry FROM {1}.{2} " \
+              "WHERE bdy.geom && ST_MakeEnvelope({3}, {4}, {5}, {6}, 4283)" \
+            .format(decimal_places, settings['boundary_schema'], table_name, map_left, map_bottom, map_right, map_top)
 
         try:
             pg_cur.execute(sql)
