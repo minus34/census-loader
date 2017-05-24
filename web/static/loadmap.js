@@ -70,7 +70,7 @@ function init() {
     map.attributionControl.addAttribution('Census data &copy; <a href="http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material">ABS</a>');
 
     // load CARTO basemap tiles
-    var tiles = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+    var tiles = L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
         attribution : '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
         subdomains : 'abcd',
         minZoom : minZoom,
@@ -177,14 +177,14 @@ function init() {
     });
 }
 
-function getCurrentStatMetadata() {
-
-    currentStatClasses = ;
-    currentStatId = ;
-    currentStatType = ;
-    currentStatDescription = ;
-
-}
+//function getCurrentStatMetadata() {
+//
+//    currentStatClasses = ;
+//    currentStatId = ;
+//    currentStatType = ;
+//    currentStatDescription = ;
+//
+//}
 
 
 //function gotMetadata(json) {
@@ -273,9 +273,9 @@ function style(feature) {
 
     return {
         weight : 0,
-        opacity : 0.0,
-        color : '#666',
-        fillOpacity : 0.6,
+        opacity : 0.2,
+        color : getColor(renderVal),
+        fillOpacity : 0.5,
         fillColor : getColor(renderVal)
     };
 

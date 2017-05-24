@@ -395,7 +395,7 @@ def create_display_boundaries(pg_cur, settings):
 
         decimal_places = utils.get_decimal_places(zoom_level)
         # precision = math.exp(1e-5)
-        precision = float("0." + str(1).zfill(decimal_places))
+        precision = float("0." + str(1).zfill(decimal_places)) / 2
 
         # sql = "DROP TABLE IF EXISTS {0}.{1} CASCADE;" \
         #       "SELECT * INTO {0}.{1} FROM {2}.{3};" \
