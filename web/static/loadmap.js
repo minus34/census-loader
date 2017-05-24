@@ -65,7 +65,7 @@ function init() {
     map.attributionControl.addAttribution('Census data &copy; <a href="http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material">ABS</a>');
 
     // load CARTO basemap tiles
-    var tiles = L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+    var tiles = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
         attribution : '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
         subdomains : 'abcd',
         minZoom : minZoom,
@@ -221,7 +221,7 @@ function getData() {
 
     var requestString = ua.join('');
 
-    console.log(requestString);
+//    console.log(requestString);
 
     //Fire off AJAX request
     $.getJSON(requestString, gotData);
@@ -248,34 +248,16 @@ function gotData(json) {
 }
 
 function style(feature) {
+    var renderVal = parseInt(feature.properties[currentStat.id.toLowerCase()]);
 
-    var renderVal;
-    var colours;
-
-    switch (valueType) {
-    case "count":
-        colours = countColours;
-        renderVal = parseInt(feature.properties.count);
-        break;
-    case "dollardiff":
-        colours = rateStrengthColours;
-        renderVal = parseInt(feature.properties.dollardiff);
-        break;
-    case "ratestrength":
-        colours = rateStrengthColours;
-        renderVal = parseFloat(feature.properties.ratestrength);
-        break;
-    default:
-        colours = rateStrengthColours;
-        renderVal = parseFloat(feature.properties.ratestrength);
-    }
+    console.log(renderVal)
 
     return {
         weight : 0,
         opacity : 0.0,
         color : '#666',
-        fillOpacity : getOpacity(parseInt(feature.properties.count)),
-        fillColor : getColor(renderVal, colours)
+        fillOpacity : 0.6,
+        fillColor : getColor(renderVal)
     };
 
     // fillOpacity : getOpacity(renderVal),
@@ -283,82 +265,18 @@ function style(feature) {
 }
 
 // get color depending on ratio of count versus max value
-function getColor(d, colours) {
+function getColor(d) {
+    var classes = currentStat.classes
 
-    var zoomDiff = 13 - currentZoomLevel;
+    console.log(classes)
 
-    switch (valueType) {
-        case "count":
-            if (zoomDiff > 0) {
-                d = d / Math.pow(4, zoomDiff);
-            }
-
-            return d > 500 ? colours[6] :
-                d > 200 ? colours[5] :
-                    d > 100 ? colours[4] :
-                        d > 50 ? colours[3] :
-                            d > 25 ? colours[2] :
-                                d > 0 ? colours[1] :
-                                    colours[0];
-            break;
-
-        case "dollardiff":
-            // if (zoomDiff > 0) {
-            //     d = d / Math.pow(4, zoomDiff);
-            // }
-
-            // var colour;
-            //
-            // if (d >= -25000 && d < -16000) {
-            //     colour = colours[6]
-            // } else if (d >= -16000 && d < -8000) {
-            //     colour = colours[5]
-            // } else if (d >= -8000 && d < 0) {
-            //     colour = colours[4]
-            // } else if (d = 0) {
-            //     colour = colours[3]
-            // } else if (d > 0 && d < 15000) {
-            //     colour = colours[2]
-            // } else if (d >= 12500 && d < 30000) {
-            //     colour = colours[1]
-            // } else {
-            //     colour = colours[0]
-            // }
-            //
-            // return colour;
-
-            // 41226, "min": -24078
-            //
-
-            var values = dollarDiffMinMax[currentZoomLevel.toString()];
-
-            return d > values[0] ? colours[6] :
-                d > values[1] ? colours[5] :
-                    d > values[2] ? colours[4] :
-                        d > values[3] ? colours[3] :
-                            d > values[4] ? colours[2] :
-                                d > values[5] ? colours[1] :
-                                    colours[0];
-            break;
-
-    case "ratestrength":
-        return d > 1.7 ? colours[0] :
-            d > 1.5 ? colours[1] :
-            d > 1.3 ? colours[2] :
-            d > 1.1 ? colours[3] :
-            d > 0.9 ? colours[4] :
-            d > 0.7 ? colours[5] :
-                      colours[6];
-        break;
-    default:
-        return d > 1.7 ? colours[0] :
-            d > 1.5 ? colours[1] :
-                d > 1.3 ? colours[2] :
-                    d > 1.1 ? colours[3] :
-                        d > 0.9 ? colours[4] :
-                            d > 0.7 ? colours[5] :
-                                colours[6];
-    }
+    return  d > classes[6] ? colours[6] :
+            d > classes[5] ? colours[5] :
+            d > classes[4] ? colours[4] :
+            d > classes[3] ? colours[3] :
+            d > classes[2] ? colours[2] :
+            d > classes[1] ? colours[1] :
+                             colours[0];
 }
 
 // get color depending on ratio of count versus max value
