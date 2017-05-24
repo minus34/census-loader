@@ -110,22 +110,71 @@ def get_settings(args):
         settings['metadata_file_type'] = ".xls"
         settings["census_metadata_dicts"] = [{"table": "metadata_tables", "first_row": "table number"},
                                              {"table": "metadata_stats", "first_row": "sequential"}]
+
         settings['data_file_prefix'] = "2016_Sample_"
         settings['data_file_type'] = ".csv"
         settings['table_name_part'] = 2  # position in the data file name that equals it's destination table name
         settings['bdy_name_part'] = 3  # position in the data file name that equals it's census boundary name
         settings['region_id_field'] = "aus_code_2016"
 
+        settings['bdy_table_dicts'] = [{"boundary": "add", "primary_key": "add_code16"},
+                                       {"boundary": "ced", "primary_key": "ced_code16"},
+                                       {"boundary": "gccsa", "primary_key": "gcc_code16"},
+                                       {"boundary": "iare", "primary_key": "iar_code16"},
+                                       {"boundary": "iloc", "primary_key": "ilo_code16"},
+                                       {"boundary": "ireg", "primary_key": "ire_code16"},
+                                       {"boundary": "lga", "primary_key": "lga_code16"},
+                                       {"boundary": "mb", "primary_key": "mb_code1611"},
+                                       {"boundary": "nrmr", "primary_key": "nrm_code16"},
+                                       {"boundary": "poa", "primary_key": "poa_code16"},
+                                       # {"boundary": "ra", "primary_key": "ra_code16"},
+                                       {"boundary": "sa1", "primary_key": "sa1_main16"},
+                                       {"boundary": "sa2", "primary_key": "sa2_main16"},
+                                       {"boundary": "sa3", "primary_key": "sa3_code16"},
+                                       {"boundary": "sa4", "primary_key": "sa4_code16"},
+                                       {"boundary": "sed", "primary_key": "sed_code16"},
+                                       # {"boundary": "sla", "primary_key": "sla_main"},
+                                       # {"boundary": "sos", "primary_key": "sos_code16"},
+                                       # {"boundary": "sosr", "primary_key": "sosr_code16"},
+                                       {"boundary": "ssc", "primary_key": "ssc_code16"},
+                                       {"boundary": "ste", "primary_key": "state_code16"},
+                                       # {"boundary": "sua", "primary_key": "sua_code16"},
+                                       {"boundary": "tr", "primary_key": "tr_code16"}]
+    # {"boundary": "ucl", "primary_key": "ucl_code16"}]
+
     elif settings['census_year'] == '2011':
         settings['metadata_file_prefix'] = "Metadata_"
         settings['metadata_file_type'] = ".xlsx"
         settings["census_metadata_dicts"] = [{"table": "metadata_tables", "first_row": "table number"},
                                              {"table": "metadata_stats", "first_row": "sequential"}]
+
         settings['data_file_prefix'] = "2011Census_"
         settings['data_file_type'] = ".csv"
         settings['table_name_part'] = 1  # position in the data file name that equals it's destination table name
         settings['bdy_name_part'] = 3  # position in the data file name that equals it's census boundary name
         settings['region_id_field'] = "region_id"
+
+        settings['bdy_table_dicts'] = [{"boundary": "ced", "primary_key": "ced_code"},
+                                       {"boundary": "gccsa", "primary_key": "gccsa_code"},
+                                       {"boundary": "iare", "primary_key": "iare_code"},
+                                       {"boundary": "iloc", "primary_key": "iloc_code"},
+                                       {"boundary": "ireg", "primary_key": "ireg_code"},
+                                       {"boundary": "lga", "primary_key": "lga_code"},
+                                       {"boundary": "mb", "primary_key": "mb_code11"},
+                                       {"boundary": "poa", "primary_key": "poa_code"},
+                                       {"boundary": "ra", "primary_key": "ra_code"},
+                                       {"boundary": "sa1", "primary_key": "sa1_7digit"},
+                                       {"boundary": "sa2", "primary_key": "sa2_main"},
+                                       {"boundary": "sa3", "primary_key": "sa3_code"},
+                                       {"boundary": "sa4", "primary_key": "sa4_code"},
+                                       {"boundary": "sed", "primary_key": "sed_code"},
+                                       {"boundary": "sla", "primary_key": "sla_main"},
+                                       {"boundary": "sos", "primary_key": "sos_code"},
+                                       {"boundary": "sosr", "primary_key": "sosr_code"},
+                                       {"boundary": "ssc", "primary_key": "ssc_code"},
+                                       {"boundary": "ste", "primary_key": "state_code"},
+                                       {"boundary": "sua", "primary_key": "sua_code"},
+                                       {"boundary": "ucl", "primary_key": "ucl_code"}]
     else:
         return None
 

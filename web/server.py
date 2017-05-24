@@ -90,13 +90,8 @@ def get_boundary_name():
 
 @app.route("/get-metadata")
 def get_metadata():
-    full_start_time = datetime.now()
-    start_time = datetime.now()
-
     # Get parameters from querystring
-    # zoom_level = int(request.args.get('z'))
     num_classes = int(request.args.get('n'))
-    # census = request.args.get('census')
     stats = request.args.get('stats').upper().split(",")
 
     # get stats tuple for query input
@@ -114,10 +109,7 @@ def get_metadata():
         if bdy_name not in boundary_names:
             boundary_names.append(bdy_name)
 
-    # # get the boundary table name from zoom level
-    # boundary_name = utils.get_boundary_name(zoom_level)
-
-    # stat metadata query
+    # stats metadata query
     sql = "SELECT sequential_id AS id, lower(table_number) AS table, replace(long_id, '_', ' ') AS description, " \
           "column_heading_description AS type " \
           "FROM {0}.metadata_stats " \
@@ -125,29 +117,13 @@ def get_metadata():
           "ORDER BY sequential_id".format(settings["data_schema"],)
 
     with get_db_cursor() as pg_cur:
-        print("Connected to database in {0}".format(datetime.now() - start_time))
-        start_time = datetime.now()
-
-        # try:
-        pg_cur.execute(sql, (stats_tuple,))
-        # except psycopg2.Error:
-        #     return "I can't SELECT : " + sql
-
-        # print("Ran query in {0}".format(datetime.now() - start_time))
-        # start_time = datetime.now()
+        try:
+            pg_cur.execute(sql, (stats_tuple,))
+        except psycopg2.Error:
+            return "I can't SELECT :\n\n" + sql
 
         # Retrieve the results of the query
         rows = pg_cur.fetchall()
-        # row_count = pg_cur.rowcount
-
-        # # Get the column names returned
-        # col_names = [desc[0] for desc in pg_cur.description]
-
-    print("Got records from Postgres in {0}".format(datetime.now() - start_time))
-    start_time = datetime.now()
-
-    # # Find the index of the column that holds the geometry
-    # geom_index = col_names.index("geometry")
 
     # output is the main content, row_output is the content from each record returned
     output_dict = dict()
@@ -198,9 +174,6 @@ def get_metadata():
     # Assemble the JSON
     output_dict["boundaries"] = boundaries_array
 
-    print("Parsed records into JSON in {1}".format(i, datetime.now() - start_time))
-    print("Returned {0} records  {1}".format(i, datetime.now() - full_start_time))
-
     return Response(json.dumps(output_dict), mimetype='application/json')
 
 
@@ -210,27 +183,33 @@ def get_data():
     start_time = datetime.now()
 
     # Get parameters from querystring
-    stats = request.args.get('stats')
+
     map_left = request.args.get('ml')
     map_bottom = request.args.get('mb')
     map_right = request.args.get('mr')
     map_top = request.args.get('mt')
+
+    stat_id = request.args.get('s')
+    table_id = request.args.get('t')
     zoom_level = int(request.args.get('z'))
 
     # get the number of decimal places for the output GeoJSON to reduce response size & speed up rendering
     decimal_places = utils.get_decimal_places(zoom_level)
 
     # get the boundary table name from zoom level
-    table_name = utils.get_boundary_name(zoom_level)
+    boundary_name = utils.get_boundary_name(zoom_level)
+
+    stat_table_name = boundary_name + "_" + table_id
+    boundary_table_name = boundary_name + "_" + table_id
 
     with get_db_cursor() as pg_cur:
         print("Connected to database in {0}".format(datetime.now() - start_time))
         start_time = datetime.now()
 
-        sql = "SELECT bdy.gid AS id, " \
-              "ST_AsGeoJSON(bdy.geom, {0}) AS geometry FROM {1}.{2} " \
-              "WHERE bdy.geom && ST_MakeEnvelope({3}, {4}, {5}, {6}, 4283)" \
-            .format(decimal_places, settings['boundary_schema'], table_name, map_left, map_bottom, map_right, map_top)
+        sql = "SELECT bdy.gid AS id, tab.{0}" \
+              "ST_AsGeoJSON(bdy.geom, {1}) AS geometry FROM {2}.{3} " \
+              "WHERE bdy.geom && ST_MakeEnvelope({4}, {5}, {6}, {7}, 4283)" \
+            .format(stat_id, decimal_places, settings['boundary_schema'], table_name, map_left, map_bottom, map_right, map_top)
 
         try:
             pg_cur.execute(sql)

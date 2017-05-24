@@ -54,7 +54,7 @@ if (queryObj["census"] === undefined) {
 if (queryObj["stats"] === undefined) {
     statsArray = ["b3"]; // total_persons
 } else {
-    statsArray = queryObj["stats"].lower().split(",");
+    statsArray = queryObj["stats"].toLowerCase().split(",");
 }
 
 function init() {
@@ -166,7 +166,7 @@ function init() {
         // get the first lot of data
         getData();
     });
-
+}
 
 //function gotMetadata(json) {
 //
@@ -213,7 +213,7 @@ function getData() {
     ua.push("&mt=");
     ua.push(ne.lat.toString());
     ua.push("&s=");
-    ua.push(currentStat.id);
+    ua.push(currentStat.id.toLowerCase());
     ua.push("&t=");
     ua.push(currentStat.table);
     ua.push("&z=");
