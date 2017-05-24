@@ -1,5 +1,6 @@
 "use strict";
 
+var bdyNamesUrl = "../get-bdy-names";
 var metadataUrl = "../get-metadata";
 var dataUrl = "../get-data";
 
@@ -54,6 +55,15 @@ if (queryObj["stats"] === undefined) {
 }
 
 function init() {
+
+    // get stats metadata, including map theme classes
+    getMetadata()
+
+    // get list of boundaries and the zoom levels they display at
+    var url = "${bdyNamesUrl}?min=${minZoom}&max=${maxZoom};
+    
+    console.log(url)
+
     //Initialize the map on the "map" div
     map = new L.Map('map', { preferCanvas: true });
 
@@ -147,12 +157,12 @@ function getMetadata(){
     // build URL with querystring
     var ua = [];
     ua.push(dataUrl);
-    ua.push("?z=");
-    ua.push((zoomLevel).toString());
+//    ua.push("?z=");
+//    ua.push((zoomLevel).toString());
     ua.push("?n=");
     ua.push((numClasses).toString());
-    ua.push("&census=");
-    ua.push(census);
+//    ua.push("&census=");
+//    ua.push(census);
     ua.push("&stats=");
     ua.push(statsArray.join());
 

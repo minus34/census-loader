@@ -73,6 +73,21 @@ def homepage():
     return render_template('index.html')
 
 
+@app.route("/get-bdy-names")
+def get_boundary_name():
+
+    # Get parameters from querystring
+    min = int(request.args.get('min'))
+    max = int(request.args.get('max'))
+
+    boundary_zoom_dict = dict()
+
+    for zoom_level in range(min, max + 1):
+        boundary_zoom_dict["{0}".format(zoom_level)] = utils.get_boundary_name(zoom_level)
+
+    return Response(json.dumps(boundary_zoom_dict), mimetype='application/json')
+
+
 @app.route("/get-metadata")
 def get_metadata():
     full_start_time = datetime.now()
