@@ -73,20 +73,20 @@ def main():
     # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2011_data
     # --census-bdys-path=/Users/hugh.saalmans/minus34/data/abs_2011
 
-    # PART 1 - load census data from CSV files
-    logger.info("")
-    start_time = datetime.now()
-    logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
-    create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
-    populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
-                         settings['table_name_part'], settings['bdy_name_part'], settings)
-    logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
-
-    # PART 2 - load census boundaries from Shapefiles
+    # # PART 1 - load census data from CSV files
+    # logger.info("")
+    # start_time = datetime.now()
+    # logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
+    # create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
+    # populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
+    #                      settings['table_name_part'], settings['bdy_name_part'], settings)
+    # logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
+    #
+    # # PART 2 - load census boundaries from Shapefiles
     logger.info("")
     start_time = datetime.now()
     logger.info("Part 2 of 3 : Start census boundary load : {0}".format(start_time))
-    load_boundaries(pg_cur, settings)
+    # load_boundaries(pg_cur, settings)
     create_display_boundaries(pg_cur, settings)
     logger.info("Part 2 of 3 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
@@ -383,6 +383,13 @@ def create_display_boundaries(pg_cur, settings):
     while zoom_level < 19:
         display_zoom = str(zoom_level).zfill(2)
         boundary_name = utils.get_boundary_name(zoom_level)
+
+        # get primary key name
+        primary_key = ""
+        for boundary_dict in settings['bdy_table_dicts']:
+            if boundary_dict["boundary"] == boundary_name:
+                primary_key = boundary_dict["primary_key"]
+
         input_pg_table = "{0}_{1}_aust".format(boundary_name, settings["census_year"])
         pg_table = "zoom_{0}_{1}_{2}_aust".format(display_zoom, boundary_name, settings["census_year"])
 
@@ -390,13 +397,21 @@ def create_display_boundaries(pg_cur, settings):
         # precision = math.exp(1e-5)
         precision = float("0." + str(1).zfill(decimal_places))
 
+        # sql = "DROP TABLE IF EXISTS {0}.{1} CASCADE;" \
+        #       "SELECT * INTO {0}.{1} FROM {2}.{3};" \
+        #       "UPDATE {0}.{1} SET geom = ST_Multi(ST_Buffer(ST_SnapToGrid(geom, {4}), 0.0));" \
+        #       "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY (gid);" \
+        #       "CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);" \
+        #       "ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx"\
+        #     .format(pg_schema, pg_table, settings['boundary_schema'], input_pg_table, precision)
         sql = "DROP TABLE IF EXISTS {0}.{1} CASCADE;" \
-              "SELECT * INTO {0}.{1} FROM {2}.{3};" \
-              "UPDATE {0}.{1} SET geom = ST_Multi(ST_Buffer(ST_SnapToGrid(geom, {4}), 0.0));" \
-              "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY (gid);" \
+              "SELECT {5}::text, " \
+              "ST_Multi(ST_Union(ST_Buffer(ST_SnapToGrid(geom, {4}), 0.0)))::geometry(MULTIPOLYGON) AS geom " \
+              "INTO {0}.{1} FROM {2}.{3} GROUP BY {5};" \
+              "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY ({5});" \
               "CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);" \
-              "ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx"\
-            .format(pg_schema, pg_table, settings['boundary_schema'], input_pg_table, precision)
+              "ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx" \
+            .format(pg_schema, pg_table, settings['boundary_schema'], input_pg_table, precision, primary_key)
         sql_list.append(sql)
 
         sql_list2.append("VACUUM ANALYZE {0}.{1}".format(pg_schema, pg_table))

@@ -199,6 +199,12 @@ def get_data():
     # get the boundary table name from zoom level
     boundary_name = utils.get_boundary_name(zoom_level)
 
+    # get boundary primary key name
+    boundary_primary_key = ""
+    for boundary_dict in settings['bdy_table_dicts']:
+        if boundary_dict["boundary"] == boundary_name:
+            boundary_primary_key = boundary_dict["primary_key"]
+
     stat_table_name = boundary_name + "_" + table_id
     boundary_table_name = boundary_name + "_" + table_id
 
@@ -206,10 +212,14 @@ def get_data():
         print("Connected to database in {0}".format(datetime.now() - start_time))
         start_time = datetime.now()
 
+        envelope_sql = "ST_MakeEnvelope({0}, {1}, {2}, {3}, 4283)".format(map_left, map_bottom, map_right, map_top)
+
         sql = "SELECT bdy.gid AS id, tab.{0}" \
-              "ST_AsGeoJSON(bdy.geom, {1}) AS geometry FROM {2}.{3} " \
-              "WHERE bdy.geom && ST_MakeEnvelope({4}, {5}, {6}, {7}, 4283)" \
-            .format(stat_id, decimal_places, settings['boundary_schema'], table_name, map_left, map_bottom, map_right, map_top)
+              "ST_AsGeoJSON(bdy.geom, {1}) AS geometry FROM {2}.{3} AS bdy" \
+              "INNER JOIN {4}.{5} AS tab ON bdy.{6} = tab.{7}" \
+              "WHERE bdy.geom && {8}" \
+            .format(stat_id, decimal_places, settings['boundary_schema'], boundary_table_name, settings['data_schema'],
+                    stat_table_name, boundary_primary_key, settings['region_id_field'], envelope_sql)
 
         try:
             pg_cur.execute(sql)
