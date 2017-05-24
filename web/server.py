@@ -79,13 +79,10 @@ def get_metadata():
     start_time = datetime.now()
 
     # Get parameters from querystring
-    zoom_level = int(request.args.get('z'))
+    # zoom_level = int(request.args.get('z'))
     num_classes = int(request.args.get('n'))
     # census = request.args.get('census')
     stats = request.args.get('stats').upper().split(",")
-
-    # get the boundary table name from zoom level
-    boundary_name = utils.get_boundary_name(zoom_level)
 
     # get stats tuple for query input
     stats_tuple = tuple(stats)
@@ -93,8 +90,20 @@ def get_metadata():
     # get percentile fraction
     percentile_fraction = 1.0 / float(num_classes)
 
+    # get all boundary names in all zoom levels
+    boundary_names = list()
+
+    for zoom_level in range(0, 16):
+        bdy_name = utils.get_boundary_name(zoom_level)
+
+        if bdy_name not in boundary_names:
+            boundary_names.append(bdy_name)
+
+    # # get the boundary table name from zoom level
+    # boundary_name = utils.get_boundary_name(zoom_level)
+
     # stat metadata query
-    sql = "SELECT sequential_id AS id, lower(table_number) AS table, replace(long_id, '_', ' ') AS desc, " \
+    sql = "SELECT sequential_id AS id, lower(table_number) AS table, replace(long_id, '_', ' ') AS description, " \
           "column_heading_description AS type " \
           "FROM {0}.metadata_stats " \
           "WHERE sequential_id IN %s " \
@@ -116,8 +125,8 @@ def get_metadata():
         rows = pg_cur.fetchall()
         # row_count = pg_cur.rowcount
 
-        # Get the column names returned
-        col_names = [desc[0] for desc in pg_cur.description]
+        # # Get the column names returned
+        # col_names = [desc[0] for desc in pg_cur.description]
 
     print("Got records from Postgres in {0}".format(datetime.now() - start_time))
     start_time = datetime.now()
@@ -128,45 +137,51 @@ def get_metadata():
     # output is the main content, row_output is the content from each record returned
     output_dict = dict()
     output_dict["type"] = "StatsCollection"
+    output_dict["classes"] = num_classes
 
-    i = 0
-    feature_array = list()
+    boundaries_array = list()
 
-    # For each row returned...
-    for row in rows:
-        feature_dict = dict()
+    # get metadata for all boundaries (for frontend performance)
+    for boundary_name in boundary_names:
+        boundary_dict = dict()
+        boundary_dict["boundary"] = boundary_name
 
-        # For each field returned, assemble the feature and properties dictionaries
-        for col in col_names:
-            feature_dict[col] = row[col]
+        i = 0
+        feature_array = list()
 
-        # get the values for the classes
-        field_array = list()
-        current_fraction = percentile_fraction
+        # For each row returned assemble a dictionary
+        for row in rows:
+            feature_dict = dict(row)
 
-        for j in range(1, num_classes):
-            field_array.append("percentile_disc({0}) within group (order by {1}) as val{2}")\
-                .format(current_fraction, feature_dict["id"], j)
+            # get the values for the classes
+            field_array = list()
+            current_fraction = percentile_fraction
 
-            current_fraction += percentile_fraction
+            # calculate the map classes
+            for j in range(0, num_classes):
+                field_array.append("percentile_disc({0}) within group (order by {1}) as \"{2}\""
+                                   .format(current_fraction, feature_dict["id"], j + 1))
 
-        sql = "SELECT " + ",".join(field_array) + " FROM {0}.{1}_{2}"\
-            .format(settings["data_schema"], boundary_name, feature_dict["table"])
+                current_fraction += percentile_fraction
 
-        print(sql)
+            sql = "SELECT " + ",".join(field_array) + " FROM {0}.{1}_{2}"\
+                .format(settings["data_schema"], boundary_name, feature_dict["table"])
 
+            with get_db_cursor() as pg_cur:
+                pg_cur.execute(sql)
+                classes = pg_cur.fetchone()
 
+                feature_dict["classes"] = dict(classes)
 
+            feature_array.append(feature_dict)
 
-        feature_array.append(feature_dict)
+            i += 1
 
-        i += 1
-
-
-
+        boundary_dict["stats"] = feature_array
+        boundaries_array.append(boundary_dict)
 
     # Assemble the JSON
-    output_dict["stats"] = feature_array
+    output_dict["boundaries"] = boundaries_array
 
     print("Parsed records into JSON in {1}".format(i, datetime.now() - start_time))
     print("Returned {0} records  {1}".format(i, datetime.now() - full_start_time))

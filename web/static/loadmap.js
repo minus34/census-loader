@@ -10,7 +10,7 @@ var geojsonLayer;
 
 var numClasses = 7 // number of classes (i.e colours) in map theme
 var minZoom = 4;
-var maxZoom = 16;
+var maxZoom = 15;
 var zoomLevel = 10;
 
 var census;
