@@ -4,6 +4,9 @@ var bdyNamesUrl = "../get-bdy-names";
 var metadataUrl = "../get-metadata";
 var dataUrl = "../get-data";
 
+var boundaryZooms;
+var statsMetadata;
+
 var map;
 var info;
 var themer;
@@ -12,20 +15,20 @@ var geojsonLayer;
 var numClasses = 7 // number of classes (i.e colours) in map theme
 var minZoom = 4;
 var maxZoom = 15;
-var zoomLevel = 10;
+var currentZoomLevel = 10;
 
 var census;
 var statsArray;
 var currentStat;
-var currentStatName;
-var currentStatType;
+//var currentStatName;
+//var currentStatType;
+var currentStats;
+var currentBoundary;
 
 var colours = ['#f6d2a9','#f5b78e','#f19c7c','#ea8171','#dd686c','#ca5268','#b13f64']
 
 // get querystring values
-
-//Code from http://forum.jquery.com/topic/getting-value-from-a-querystring
-
+// code from http://forum.jquery.com/topic/getting-value-from-a-querystring
 // get querystring as an array split on "&"
 var querystring = location.search.replace('?', '').split('&');
 
@@ -55,15 +58,6 @@ if (queryObj["stats"] === undefined) {
 }
 
 function init() {
-
-    // get stats metadata, including map theme classes
-    getMetadata()
-
-    // get list of boundaries and the zoom levels they display at
-    var url = "${bdyNamesUrl}?min=${minZoom}&max=${maxZoom};
-    
-    console.log(url)
-
     //Initialize the map on the "map" div
     map = new L.Map('map', { preferCanvas: true });
 
@@ -79,7 +73,7 @@ function init() {
     }).addTo(map);
 
     // set the view to a given center and zoom
-    map.setView(new L.LatLng(-33.85, 151.15), zoomLevel);
+    map.setView(new L.LatLng(-33.85, 151.15), currentZoomLevel);
 
     // get bookmarks
     var storage = {
@@ -135,6 +129,10 @@ function init() {
     // TODO: Handle map movement due to popup
     map.on('moveend', function (e) {
         // map.closePopup();
+        
+        // get zoom level
+        currentZoomLevel = map.getZoom();
+
         getData();
     });
 
@@ -143,67 +141,59 @@ function init() {
     //     //getData();
     // });
 
-    // get the first lot of data
-    getMetadata();
-}
+    // get list of boundaries and the zoom levels they display at
+    // and get stats metadata, including map theme classes
+    $.when(
+        $.getJSON(bdyNamesUrl + "?min=" +  + minZoom.toString() + "&max=" + maxZoom.toString()),
+        $.getJSON(metadataUrl + "?n=" +  + numClasses.toString() + "&stats=" + statsArray.join())
+    ).done(function(bdysResponse, metadataResponse) {
+        boundaryZooms = bdysResponse[0];
+        currentBoundary = boundaryZooms[currentZoomLevel.toString()];
+//        console.log(currentBoundary);
 
-function getMetadata(){
+        statsMetadata = metadataResponse[0];
+        var bdyStats = statsMetadata.boundaries
 
-    console.time("got metadata");
+        // loop through each boundary to get the current one
+        for (var i = 0; i < bdyStats.length; i++) {
+            if (bdyStats[i].boundary === currentBoundary) {
+                currentStats = bdyStats[i].stats;
+                currentStat = currentStats[0]; // pick the first stat in the URL to map first
+            }
+        }
+//        console.log(currentStats);
 
-    // get zoom level
-    zoomLevel = map.getZoom();
-
-    // build URL with querystring
-    var ua = [];
-    ua.push(dataUrl);
-//    ua.push("?z=");
-//    ua.push((zoomLevel).toString());
-    ua.push("?n=");
-    ua.push((numClasses).toString());
-//    ua.push("&census=");
-//    ua.push(census);
-    ua.push("&stats=");
-    ua.push(statsArray.join());
-
-    var reqStr = ua.join('');
-
-    console.log(reqStr);
-
-    //Fire off AJAX request
-    $.getJSON(reqStr, gotMetadata);
-}
-
-function gotMetadata(json) {
-
-    console.timeEnd("got metadata");
-
-    var metadata = JSON.parse(json);
+        // get the first lot of data
+        getData();
+    });
 
 
-//        div.innerHTML = '<h4>Profitability<br/>Metric</h4>' +
-//            '<div><input id="radio1" type="radio" name="radio" value="count"><label for="radio1"><span><span></span></span>Policies</label></div>' +
-//            '<div><input id="radio2" type="radio" name="radio" value="ratestrength" checked="checked"><label for="radio2"><span><span></span></span>Rate strength</label></div>' +
-//            '<div><input id="radio3" type="radio" name="radio" value="dollardiff"><label for="radio3"><span><span></span></span>$ Difference</label></div>'
-
-//    // now get the data
-//    getData()
-}
+//function gotMetadata(json) {
+//
+//    console.timeEnd("got metadata");
+//
+//    console.log(json);
+//
+//
+////        div.innerHTML = '<h4>Profitability<br/>Metric</h4>' +
+////            '<div><input id="radio1" type="radio" name="radio" value="count"><label for="radio1"><span><span></span></span>Policies</label></div>' +
+////            '<div><input id="radio2" type="radio" name="radio" value="ratestrength" checked="checked"><label for="radio2"><span><span></span></span>Rate strength</label></div>' +
+////            '<div><input id="radio3" type="radio" name="radio" value="dollardiff"><label for="radio3"><span><span></span></span>$ Difference</label></div>'
+//
+////    // now get the data
+////    getData()
+//}
 
 function getData() {
 
     console.time("got boundaries");
 
-    // get zoom level
-    zoomLevel = map.getZoom();
-    //    console.log("Zoom level = " + zoomLevel.toString());
-
     //restrict to the zoom levels that have data
-    if (zoomLevel < minZoom) {
-        zoomLevel = minZoom;
+    if (currentZoomLevel < minZoom) {
+        currentZoomLevel = minZoom;
     }
-    if (zoomLevel > maxZoom) {
-        zoomLevel = maxZoom;
+    if (currentZoomLevel > maxZoom) {
+        currentZoomLevel = maxZoom;
     }
 
     // get map extents
@@ -211,7 +201,7 @@ function getData() {
     var sw = bb.getSouthWest();
     var ne = bb.getNorthEast();
 
-    // build URL with querystring
+    // build URL
     var ua = [];
     ua.push(dataUrl);
     ua.push("?ml=");
@@ -222,15 +212,19 @@ function getData() {
     ua.push(ne.lng.toString());
     ua.push("&mt=");
     ua.push(ne.lat.toString());
+    ua.push("&s=");
+    ua.push(currentStat.id);
+    ua.push("&t=");
+    ua.push(currentStat.table);
     ua.push("&z=");
-    ua.push((zoomLevel).toString());
-    //    ua.push("&t=");
-    //    ua.push(valueType);
+    ua.push((currentZoomLevel).toString());
 
-    var reqStr = ua.join('');
+    var requestString = ua.join('');
+
+    console.log(requestString);
 
     //Fire off AJAX request
-    $.getJSON(reqStr, gotData);
+    $.getJSON(requestString, gotData);
 }
 
 function gotData(json) {
@@ -291,7 +285,7 @@ function style(feature) {
 // get color depending on ratio of count versus max value
 function getColor(d, colours) {
 
-    var zoomDiff = 13 - zoomLevel;
+    var zoomDiff = 13 - currentZoomLevel;
 
     switch (valueType) {
         case "count":
@@ -336,7 +330,7 @@ function getColor(d, colours) {
             // 41226, "min": -24078
             //
 
-            var values = dollarDiffMinMax[zoomLevel.toString()];
+            var values = dollarDiffMinMax[currentZoomLevel.toString()];
 
             return d > values[0] ? colours[6] :
                 d > values[1] ? colours[5] :
@@ -381,7 +375,7 @@ function getOpacity(d) {
                 0.1;
         break;
     // case "difference":
-    //     zoomDiff = 11 - zoomLevel;
+    //     zoomDiff = 11 - currentZoomLevel;
     //     if (zoomDiff > 0) {
      //        d = d / Math.pow(4, zoomDiff)
     //     }
