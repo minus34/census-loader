@@ -21,9 +21,14 @@ var census;
 var statsArray;
 var currentStat;
 //var currentStatName;
-//var currentStatType;
+
 var currentStats;
+
 var currentBoundary;
+var currentStatClasses;
+var currentStatId;
+var currentStatType;
+var currentStatDescription;
 
 var colours = ['#f6d2a9','#f5b78e','#f19c7c','#ea8171','#dd686c','#ca5268','#b13f64']
 
@@ -132,6 +137,10 @@ function init() {
         
         // get zoom level
         currentZoomLevel = map.getZoom();
+        currentBoundary = boundaryZooms[currentZoomLevel.toString()];
+
+        console.log(currentZoomLevel);
+        console.log(currentBoundary);
 
         getData();
     });
@@ -167,6 +176,16 @@ function init() {
         getData();
     });
 }
+
+function getCurrentStatMetadata() {
+
+    currentStatClasses = ;
+    currentStatId = ;
+    currentStatType = ;
+    currentStatDescription = ;
+
+}
+
 
 //function gotMetadata(json) {
 //
@@ -250,7 +269,7 @@ function gotData(json) {
 function style(feature) {
     var renderVal = parseInt(feature.properties[currentStat.id.toLowerCase()]);
 
-    console.log(renderVal)
+//    console.log(renderVal)
 
     return {
         weight : 0,
@@ -268,7 +287,7 @@ function style(feature) {
 function getColor(d) {
     var classes = currentStat.classes
 
-    console.log(classes)
+//    console.log(classes)
 
     return  d > classes[6] ? colours[6] :
             d > classes[5] ? colours[5] :
