@@ -23,6 +23,7 @@
 
 import io
 import logging.config
+import math
 import os
 import pandas  # module needs to be installed (IMPORTANT: need to install 'xlrd' module for Pandas to read XLSX files)
 import psycopg2  # module needs to be installed
@@ -393,13 +394,27 @@ def create_display_boundaries(pg_cur, settings):
         input_pg_table = "{0}_{1}_aust".format(boundary_name, settings["census_year"])
         pg_table = "zoom_{0}_{1}_{2}_aust".format(display_zoom, boundary_name, settings["census_year"])
 
-        decimal_places = utils.get_decimal_places(zoom_level)
+        # if boundary_name == "ste":
+        #     decimal_places = utils.get_decimal_places(zoom_level) + 1
+        # else:
+        #     decimal_places = utils.get_decimal_places(zoom_level) + 2
+
         # precision = math.exp(1e-5)
-        precision = float("0." + str(1).zfill(decimal_places))
+        # precision = float("0." + str(1).zfill(decimal_places))
+
+        # metres_per_pixel = 156543.03390625 / math.pow(1.5, float(zoom_level))
+        # precision = metres_per_pixel * 40
+
+        reverse_zoom_level = 17 - zoom_level
+        precision = 5 * math.pow(2, float(reverse_zoom_level))
 
         # "ST_AsGeoJSON(ST_Multi(ST_Union(ST_Buffer(ST_SnapToGrid(geom, {4}), 0.0))), {6})::jsonb AS geojson, " \
 
-        # sql = "DROP TABLE IF EXISTS {0}.{1} CASCADE;" \
+        # "ST_Multi(ST_Union(ST_SimplifyVW(geom, {4})))::geometry(MULTIPOLYGON) AS geom " \
+
+        # "ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {4}))), 4326)::geometry(MULTIPOLYGON) AS geom "
+
+            # sql = "DROP TABLE IF EXISTS {0}.{1} CASCADE;" \
         #       "SELECT * INTO {0}.{1} FROM {2}.{3};" \
         #       "UPDATE {0}.{1} SET geom = ST_Multi(ST_Buffer(ST_SnapToGrid(geom, {4}), 0.0));" \
         #       "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY (gid);" \
@@ -408,13 +423,13 @@ def create_display_boundaries(pg_cur, settings):
         #     .format(pg_schema, pg_table, settings['boundary_schema'], input_pg_table, precision)
         sql = "DROP TABLE IF EXISTS {0}.{1} CASCADE;" \
               "SELECT {5}::text, " \
-              "ST_Multi(ST_Union(ST_Buffer(ST_SnapToGrid(geom, {4}), 0.0)))::geometry(MULTIPOLYGON) AS geom " \
+              "ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {4}))), 4326)::geometry(MULTIPOLYGON) AS geom " \
               "INTO {0}.{1} FROM {2}.{3} GROUP BY {5};" \
               "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY ({5});" \
               "CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);" \
               "ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx" \
             .format(pg_schema, pg_table, settings['boundary_schema'], input_pg_table,
-                    precision, primary_key, decimal_places)
+                    precision, primary_key)
         sql_list.append(sql)
 
         sql_list2.append("VACUUM ANALYZE {0}.{1}".format(pg_schema, pg_table))

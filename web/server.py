@@ -216,7 +216,7 @@ def get_data():
         print("Connected to database in {0}".format(datetime.now() - start_time))
         start_time = datetime.now()
 
-        envelope_sql = "ST_MakeEnvelope({0}, {1}, {2}, {3}, 4283)".format(map_left, map_bottom, map_right, map_top)
+        envelope_sql = "ST_MakeEnvelope({0}, {1}, {2}, {3}, 4326)".format(map_left, map_bottom, map_right, map_top)
 
         # sql = "SELECT bdy.{6} AS id, tab.{0}, " \
         #       "bdy.geojson::text AS geometry FROM {2}.{3} AS bdy " \

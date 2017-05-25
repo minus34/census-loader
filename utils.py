@@ -187,16 +187,16 @@ def get_boundary_name(zoom_level):
     if zoom_level < 8:
         boundary_name = "ste"
 
-    elif zoom_level < 11:
+    elif zoom_level < 10:
         boundary_name = "sa4"
 
-    elif zoom_level < 13:
+    elif zoom_level < 12:
         boundary_name = "sa3"
 
-    elif zoom_level < 16:
+    elif zoom_level < 15:
         boundary_name = "sa2"
 
-    elif zoom_level < 18:
+    elif zoom_level < 17:
         boundary_name = "sa1"
 
     else:

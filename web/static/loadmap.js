@@ -14,7 +14,7 @@ var geojsonLayer;
 
 var numClasses = 7 // number of classes (i.e colours) in map theme
 var minZoom = 4;
-var maxZoom = 15;
+var maxZoom = 16;
 var currentZoomLevel = 10;
 
 var census;
@@ -272,8 +272,8 @@ function style(feature) {
 //    console.log(renderVal)
 
     return {
-        weight : 0,
-        opacity : 0.2,
+        weight : 1,
+        opacity : 0.3,
         color : getColor(renderVal),
         fillOpacity : 0.5,
         fillColor : getColor(renderVal)
@@ -369,3 +369,36 @@ function resetHighlight(e) {
 // function zoomToFeature(e) {
 //     map.fitBounds(e.target.getBounds());
 // }
+
+// fix for Apple Magic Mouse jumpiness
+var lastScroll = new Date().getTime();
+
+L.Map.ScrollWheelZoom.prototype._onWheelScroll = function (e) {
+  if (new Date().getTime() - lastScroll < 600) {
+    e.preventDefault();
+    return;
+  }
+  var delta = L.DomEvent.getWheelDelta(e);
+  var debounce = this._map.options.wheelDebounceTime;
+
+  if (delta >= -0.15 && delta <= 0.15) {
+    e.preventDefault();
+    return;
+  }
+  if (delta <= -0.25) delta = -0.25;
+  if (delta >= 0.25) delta = 0.25;
+  this._delta += delta;
+  this._lastMousePos = this._map.mouseEventToContainerPoint(e);
+
+  if (!this._startTime) {
+      this._startTime = +new Date();
+  }
+
+  var left = Math.max(debounce - (+new Date() - this._startTime), 0);
+
+  clearTimeout(this._timer);
+  lastScroll = new Date().getTime();
+  this._timer = setTimeout(L.bind(this._performZoom, this), left);
+
+  L.DomEvent.stop(e);
+}
