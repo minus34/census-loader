@@ -218,8 +218,12 @@ def get_data():
 
         envelope_sql = "ST_MakeEnvelope({0}, {1}, {2}, {3}, 4283)".format(map_left, map_bottom, map_right, map_top)
 
+        # sql = "SELECT bdy.{6} AS id, tab.{0}, " \
+        #       "bdy.geojson::text AS geometry FROM {2}.{3} AS bdy " \
+        #       "INNER JOIN {4}.{5} AS tab ON bdy.{6} = tab.{7} " \
+        #       "WHERE bdy.geom && {8}"\
         sql = "SELECT bdy.{6} AS id, tab.{0}, " \
-              "ST_AsGeoJSON(bdy.geom, {1}) AS geometry FROM {2}.{3} AS bdy " \
+              "ST_AsGeoJSON(bdy.geom, {1})::jsonb AS geometry FROM {2}.{3} AS bdy " \
               "INNER JOIN {4}.{5} AS tab ON bdy.{6} = tab.{7} " \
               "WHERE bdy.geom && {8}" \
             .format(stat_id, decimal_places, boundary_schema, boundary_table_name, settings['data_schema'],
@@ -263,7 +267,7 @@ def get_data():
         # For each field returned, assemble the feature and properties dictionaries
         for col in col_names:
             if col == 'geometry':
-                feature_dict["geometry"] = ast.literal_eval(row[col])
+                feature_dict["geometry"] = ast.literal_eval(str(row[col]))
             elif col == 'id':
                 feature_dict["id"] = row[col]
             else:
