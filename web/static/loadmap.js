@@ -9,15 +9,16 @@ var info;
 var themer;
 var geojsonLayer;
 
-var numClasses; // number of classes (i.e colours) in map theme
+var numClasses = 7; // number of classes (i.e colours) in map theme
 var minZoom = 4;
 var maxZoom = 16;
-var currentZoomLevel = 10;
+var currentZoomLevel;
 
 var statsArray;
 var currentStats;
 var boundaryZooms;
 var statsMetadata;
+var boundaryOverride;
 
 var currentBoundary;
 var currentStatClasses;
@@ -26,7 +27,7 @@ var currentStatTable;
 var currentStatType;
 var currentStatDescription;
 
-var colours = ['#f6d2a9','#f5b78e','#f19c7c','#ea8171','#dd686c','#ca5268','#b13f64']
+var colours = ['#fde0c5','#facba6','#f8b58b','#f59e72','#f2855d','#ef6a4c','#eb4a40']
 
 // get querystring values
 // code from http://forum.jquery.com/topic/getting-value-from-a-querystring
@@ -54,16 +55,33 @@ for (var i = 0; i < querystring.length; i++) {
 //}
 
 // get/set values from querystring
-if (queryObj["n"] === undefined) {
-    numClasses = 7;
-} else {
-    census = queryObj["n"];
+
+// auto-boundary override (for screenshots only! will create performance issues. e.g showing SA1's nationally!)
+if (queryObj["b"] !== undefined) {
+    boundaryOverride = queryObj["b"].toLowerCase();
 }
 
+// start zoom level
+if (queryObj["z"] === undefined) {
+    currentZoomLevel = 10;
+} else {
+    currentZoomLevel = queryObj["z"];
+}
+
+//// number of classes to theme the map - DOESN'T WORK YET
+//if (queryObj["n"] === undefined) {
+//    numClasses = 7;
+//} else {
+//    numClasses = queryObj["n"];
+//}
+
+// get the stat(s) - can include basic equations using + - * / and ()  e.g. B23 * (B45 + B678)
 if (queryObj["stats"] === undefined) {
     statsArray = ["b3"]; // total_persons
 } else {
-    statsArray = queryObj["stats"].toLowerCase().split(",");
+    statsArray = encodeURIComponent(queryObj["stats"].toLowerCase()).split("%2C"); // handle maths operators as well as plain stats
+
+    console.log(statsArray);
 }
 
 function init() {
@@ -137,16 +155,8 @@ function init() {
     // get a new set of data when map panned or zoomed
     // TODO: Handle map movement due to popup
     map.on('moveend', function (e) {
-
-        console.log("MOVEEND 1")
-
         getCurrentStatMetadata()
-
-        console.log("MOVEEND 2")
-
         getData();
-
-        console.log("MOVEEND 3")
     });
 
     // get list of boundaries and the zoom levels they display at
@@ -155,8 +165,18 @@ function init() {
         $.getJSON(bdyNamesUrl + "?min=" +  + minZoom.toString() + "&max=" + maxZoom.toString()),
         $.getJSON(metadataUrl + "?n=" +  + numClasses.toString() + "&stats=" + statsArray.join())
     ).done(function(bdysResponse, metadataResponse) {
-        boundaryZooms = bdysResponse[0];
+        if (boundaryOverride === undefined){
+            boundaryZooms = bdysResponse[0];
+        } else {
+            // create array of zoom levels with the override boundary id
+            boundaryZooms = {}
+            for (var j = minZoom; j <= maxZoom; j++) {
+                boundaryZooms[j.toString()] = boundaryOverride;
+            }
+        }
+
         currentBoundary = boundaryZooms[currentZoomLevel.toString()];
+//        console.log(boundaryZooms);
 //        console.log(currentBoundary);
 
         statsMetadata = metadataResponse[0].boundaries;
@@ -181,34 +201,34 @@ function init() {
 
 function getCurrentStatMetadata() {
 
-    console.log(currentZoomLevel);
-    console.log(currentBoundary);
-//    console.log(currentStats);
-    console.log(currentStatId);
-//    console.log(currentStatTable);
-    console.log(currentStatDescription);
-    console.log(currentStatClasses);
+//    console.log(currentZoomLevel);
+//    console.log(currentBoundary);
+////    console.log(currentStats);
+//    console.log(currentStatId);
+////    console.log(currentStatTable);
+//    console.log(currentStatDescription);
+//    console.log(currentStatClasses);
 
     // get new zoom level and boundary
     currentZoomLevel = map.getZoom();
     currentBoundary = boundaryZooms[currentZoomLevel.toString()];
 
-    console.log(currentZoomLevel);
-    console.log(currentBoundary);
+//    console.log(currentZoomLevel);
+//    console.log(currentBoundary);
 
     // loop through each boundary to get the new sets of stats metadata
     for (var i = 0; i < statsMetadata.length; i++) {
         if (statsMetadata[i].boundary === currentBoundary) {
             currentStats = statsMetadata[i].stats;
 
-            console.log(currentStats);
+//            console.log(currentStats);
 
             // loop through each stat to get the new classes
             for (var j = 0; j < currentStats.length; j++) {
                 if (currentStats[j].id.toLowerCase() === currentStatId) {
                     currentStatClasses = currentStats[j].classes;
 
-                    console.log(currentStatClasses);
+//                    console.log(currentStatClasses);
                 }
             }
         }
@@ -270,6 +290,8 @@ function getData() {
     ua.push(currentStatId);
     ua.push("&t=");
     ua.push(currentStatTable);
+    ua.push("&b=");
+    ua.push(currentBoundary);
     ua.push("&z=");
     ua.push((currentZoomLevel).toString());
 
@@ -308,9 +330,9 @@ function style(feature) {
 
     return {
         weight : 1,
-        opacity : 0.3,
+        opacity : 0.25,
         color : getColor(renderVal),
-        fillOpacity : 0.5,
+        fillOpacity : 0.45,
         fillColor : getColor(renderVal)
     };
 
@@ -343,6 +365,7 @@ function onEachFeature(feature, layer) {
     layer.on({
         mouseover : highlightFeature,
         mouseout : resetHighlight
+//        onclick : zoomToFeature
     });
 }
 
@@ -369,9 +392,9 @@ function resetHighlight(e) {
     info.update();
 }
 
-// function zoomToFeature(e) {
-//     map.fitBounds(e.target.getBounds());
-// }
+//function zoomToFeature(e) {
+//    map.fitBounds(e.target.getBounds());
+//}
 
 // fix for Apple Magic Mouse jumpiness
 var lastScroll = new Date().getTime();

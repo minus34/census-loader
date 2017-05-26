@@ -1,5 +1,11 @@
 # census-loader
-A quick way to get started with Australian Bureau of Statistics (ABS) Census 2011 or 2016 data
+A quick way to get started with Australian Bureau of Statistics (ABS) Census 2011 or 2016 data.
+
+**census-loader is 2 things:**
+1. A quick way to load the entire census into Postgres
+2. A map server for quickly visualising census data and trends
+
+
 
 ### There are 3 options for loading the data
 1. [Run](https://github.com/minus34/census-loader#option-1---run-loadgnafpy) the load-census Python script and build the database schemas in a single step

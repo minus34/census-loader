@@ -92,10 +92,18 @@ def get_boundary_name():
 def get_metadata():
     # Get parameters from querystring
     num_classes = int(request.args.get('n'))
-    stats = request.args.get('stats').upper().split(",")
+    raw_stats = request.args.get('stats')
+
+    equation_stats = raw_stats.lower().split(",")
+
+    search_stats = raw_stats.upper().replace(" ", "").replace("(", "").replace(")", "")\
+        .replace("+", ",").replace("-", ",").replace("/", ",").replace("*", ",").split(",")
+
+    print(equation_stats)
+    print(search_stats)
 
     # get stats tuple for query input
-    stats_tuple = tuple(stats)
+    search_stats_tuple = tuple(search_stats)
 
     # get percentile fraction
     percentile_fraction = 1.0 / float(num_classes)
@@ -109,7 +117,7 @@ def get_metadata():
         if bdy_name not in boundary_names:
             boundary_names.append(bdy_name)
 
-    # stats metadata query
+    # get stats metadata, including the all important table number
     sql = "SELECT sequential_id AS id, lower(table_number) AS table, replace(long_id, '_', ' ') AS description, " \
           "column_heading_description AS type " \
           "FROM {0}.metadata_stats " \
@@ -118,7 +126,7 @@ def get_metadata():
 
     with get_db_cursor() as pg_cur:
         try:
-            pg_cur.execute(sql, (stats_tuple,))
+            pg_cur.execute(sql, (search_stats_tuple,))
         except psycopg2.Error:
             return "I can't SELECT :\n\n" + sql
 
@@ -132,7 +140,7 @@ def get_metadata():
 
     boundaries_array = list()
 
-    # get metadata for all boundaries (for frontend performance)
+    # get metadata for all boundaries (done in one go for frontend performance)
     for boundary_name in boundary_names:
         boundary_dict = dict()
         boundary_dict["boundary"] = boundary_name
@@ -191,13 +199,14 @@ def get_data():
 
     stat_id = request.args.get('s')
     table_id = request.args.get('t')
+    boundary_name = request.args.get('b')
     zoom_level = int(request.args.get('z'))
 
     # get the number of decimal places for the output GeoJSON to reduce response size & speed up rendering
     decimal_places = utils.get_decimal_places(zoom_level)
 
     # get the boundary table name from zoom level
-    boundary_name = utils.get_boundary_name(zoom_level)
+    # boundary_name = utils.get_boundary_name(zoom_level)
 
     # get boundary primary key name
     boundary_primary_key = ""
