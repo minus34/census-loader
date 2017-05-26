@@ -386,56 +386,29 @@ def create_display_boundaries(pg_cur, settings):
 
     while zoom_level < 19:
         display_zoom = str(zoom_level).zfill(2)
-        # boundary_name = utils.get_boundary_name(zoom_level)
 
-        # get primary key name
-        primary_key = ""
         for boundary_dict in settings['bdy_table_dicts']:
             boundary_name = boundary_dict["boundary"]
-            primary_key = boundary_dict["primary_key"]
-
-            # if boundary_dict["boundary"] == boundary_name:
-            #     primary_key = boundary_dict["primary_key"]
+            id_field = boundary_dict["id_field"]
+            name_field = boundary_dict["name_field"]
+            area_field = boundary_dict["area_field"]
 
             input_pg_table = "{0}_{1}_aust".format(boundary_name, settings["census_year"])
             pg_table = "zoom_{0}_{1}_{2}_aust".format(display_zoom, boundary_name, settings["census_year"])
 
-            # if boundary_name == "ste":
-            #     decimal_places = utils.get_decimal_places(zoom_level) + 1
-            # else:
-            #     decimal_places = utils.get_decimal_places(zoom_level) + 2
-
-            # precision = math.exp(1e-5)
-            # precision = float("0." + str(1).zfill(decimal_places))
-
-            # metres_per_pixel = 156543.03390625 / math.pow(1.5, float(zoom_level))
-            # precision = metres_per_pixel * 40
-
+            # set precision for vector simplification
             reverse_zoom_level = 17 - zoom_level
             precision = 70 * math.pow(2, float(reverse_zoom_level))
 
-            # "ST_AsGeoJSON(ST_Multi(ST_Union(ST_Buffer(ST_SnapToGrid(geom, {4}), 0.0))), {6})::jsonb AS geojson, " \
-
-            # "ST_Multi(ST_Union(ST_SimplifyVW(geom, {4})))::geometry(MULTIPOLYGON) AS geom " \
-
-            # "ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {4}))), 4326)::geometry(MULTIPOLYGON) AS geom "
-
-                # sql = "DROP TABLE IF EXISTS {0}.{1} CASCADE;" \
-            #       "SELECT * INTO {0}.{1} FROM {2}.{3};" \
-            #       "UPDATE {0}.{1} SET geom = ST_Multi(ST_Buffer(ST_SnapToGrid(geom, {4}), 0.0));" \
-            #       "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY (gid);" \
-            #       "CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);" \
-            #       "ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx"\
-            #     .format(pg_schema, pg_table, settings['boundary_schema'], input_pg_table, precision)
             sql = "DROP TABLE IF EXISTS {0}.{1} CASCADE;" \
-                  "SELECT {5}::text, " \
+                  "SELECT {5}::text AS id, {6}::text AS name, SUM({7})::double precision AS area, " \
                   "ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {4}))), 4326)::geometry(MULTIPOLYGON) AS geom " \
-                  "INTO {0}.{1} FROM {2}.{3} GROUP BY {5};" \
-                  "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY ({5});" \
+                  "INTO {0}.{1} FROM {2}.{3} GROUP BY id, name;" \
+                  "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY (id);" \
                   "CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);" \
                   "ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx" \
                 .format(pg_schema, pg_table, settings['boundary_schema'], input_pg_table,
-                        precision, primary_key)
+                        precision, id_field, name_field, area_field)
             sql_list.append(sql)
 
             sql_list2.append("VACUUM ANALYZE {0}.{1}".format(pg_schema, pg_table))

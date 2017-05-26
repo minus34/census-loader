@@ -117,30 +117,31 @@ def get_settings(args):
         settings['bdy_name_part'] = 3  # position in the data file name that equals it's census boundary name
         settings['region_id_field'] = "aus_code_2016"
 
-        settings['bdy_table_dicts'] = [{"boundary": "add", "primary_key": "add_code16"},
-                                       {"boundary": "ced", "primary_key": "ced_code16"},
-                                       {"boundary": "gccsa", "primary_key": "gcc_code16"},
-                                       {"boundary": "iare", "primary_key": "iar_code16"},
-                                       {"boundary": "iloc", "primary_key": "ilo_code16"},
-                                       {"boundary": "ireg", "primary_key": "ire_code16"},
-                                       {"boundary": "lga", "primary_key": "lga_code16"},
-                                       {"boundary": "mb", "primary_key": "mb_code1611"},
-                                       {"boundary": "nrmr", "primary_key": "nrm_code16"},
-                                       {"boundary": "poa", "primary_key": "poa_code16"},
-                                       # {"boundary": "ra", "primary_key": "ra_code16"},
-                                       {"boundary": "sa1", "primary_key": "sa1_main16"},
-                                       {"boundary": "sa2", "primary_key": "sa2_main16"},
-                                       {"boundary": "sa3", "primary_key": "sa3_code16"},
-                                       {"boundary": "sa4", "primary_key": "sa4_code16"},
-                                       {"boundary": "sed", "primary_key": "sed_code16"},
-                                       # {"boundary": "sla", "primary_key": "sla_main"},
-                                       # {"boundary": "sos", "primary_key": "sos_code16"},
-                                       # {"boundary": "sosr", "primary_key": "sosr_code16"},
-                                       {"boundary": "ssc", "primary_key": "ssc_code16"},
-                                       {"boundary": "ste", "primary_key": "state_code16"},
-                                       # {"boundary": "sua", "primary_key": "sua_code16"},
-                                       {"boundary": "tr", "primary_key": "tr_code16"}]
-    # {"boundary": "ucl", "primary_key": "ucl_code16"}]
+        settings['bdy_table_dicts'] = \
+            [{"boundary": "add", "id_field": "add_code16", "name_field": "add_name16", "area_field": "areasqkm16"},
+             {"boundary": "ced", "id_field": "ced_code16", "name_field": "ced_name16", "area_field": "areasqkm16"},
+             {"boundary": "gccsa", "id_field": "gcc_code16", "name_field": "gcc_name16", "area_field": "areasqkm16"},
+             {"boundary": "iare", "id_field": "iar_code16", "name_field": "iar_name16", "area_field": "areasqkm16"},
+             {"boundary": "iloc", "id_field": "ilo_code16", "name_field": "ilo_name16", "area_field": "areasqkm16"},
+             {"boundary": "ireg", "id_field": "ire_code16", "name_field": "ire_name16", "area_field": "areasqkm16"},
+             {"boundary": "lga", "id_field": "lga_code16", "name_field": "lga_name16", "area_field": "areasqkm16"},
+             {"boundary": "mb", "id_field": "mb_code16", "name_field": "'MB ' || mb_code16", "area_field": "areasqkm16"},
+             {"boundary": "nrmr", "id_field": "nrm_code16", "name_field": "nrm_name16", "area_field": "areasqkm16"},
+             {"boundary": "poa", "id_field": "poa_code16", "name_field": "'POA ' || poa_name16", "area_field": "areasqkm16"},
+             # {"boundary": "ra", "id_field": "ra_code16", "name_field": "ra_name16", "area_field": "areasqkm16"},
+             {"boundary": "sa1", "id_field": "sa1_main16", "name_field": "'SA1 ' || sa1_main16", "area_field": "areasqkm16"},
+             {"boundary": "sa2", "id_field": "sa2_main16", "name_field": "sa2_name16", "area_field": "areasqkm16"},
+             {"boundary": "sa3", "id_field": "sa3_code16", "name_field": "sa3_name16", "area_field": "areasqkm16"},
+             {"boundary": "sa4", "id_field": "sa4_code16", "name_field": "sa4_name16", "area_field": "areasqkm16"},
+             {"boundary": "sed", "id_field": "sed_code16", "name_field": "sed_name16", "area_field": "areasqkm16"},
+             # {"boundary": "sla", "id_field": "sla_main", "name_field": "sla_name16", "area_field": "areasqkm16"},
+             # {"boundary": "sos", "id_field": "sos_code16", "name_field": "sos_name16", "area_field": "areasqkm16"},
+             # {"boundary": "sosr", "id_field": "sosr_code16", "name_field": "sosr_name16", "area_field": "areasqkm16"},
+             {"boundary": "ssc", "id_field": "ssc_code16", "name_field": "ssc_name16", "area_field": "areasqkm16"},
+             {"boundary": "ste", "id_field": "state_code16", "name_field": "state_name16", "area_field": "areasqkm16"},
+             # {"boundary": "sua", "id_field": "sua_code16", "name_field": "sua_name16", "area_field": "areasqkm16"},
+             {"boundary": "tr", "id_field": "tr_code16", "name_field": "tr_name16", "area_field": "areasqkm16"}]
+    # {"boundary": "ucl", "id_field": "ucl_code16", "name_field": "ucl_name16", "area_field": "areasqkm16"}]
 
     elif settings['census_year'] == '2011':
         settings['metadata_file_prefix'] = "Metadata_"
@@ -154,27 +155,54 @@ def get_settings(args):
         settings['bdy_name_part'] = 3  # position in the data file name that equals it's census boundary name
         settings['region_id_field'] = "region_id"
 
-        settings['bdy_table_dicts'] = [{"boundary": "ced", "primary_key": "ced_code"},
-                                       {"boundary": "gccsa", "primary_key": "gccsa_code"},
-                                       {"boundary": "iare", "primary_key": "iare_code"},
-                                       {"boundary": "iloc", "primary_key": "iloc_code"},
-                                       {"boundary": "ireg", "primary_key": "ireg_code"},
-                                       {"boundary": "lga", "primary_key": "lga_code"},
-                                       {"boundary": "mb", "primary_key": "mb_code11"},
-                                       {"boundary": "poa", "primary_key": "poa_code"},
-                                       {"boundary": "ra", "primary_key": "ra_code"},
-                                       {"boundary": "sa1", "primary_key": "sa1_7digit"},
-                                       {"boundary": "sa2", "primary_key": "sa2_main"},
-                                       {"boundary": "sa3", "primary_key": "sa3_code"},
-                                       {"boundary": "sa4", "primary_key": "sa4_code"},
-                                       {"boundary": "sed", "primary_key": "sed_code"},
-                                       {"boundary": "sla", "primary_key": "sla_main"},
-                                       {"boundary": "sos", "primary_key": "sos_code"},
-                                       {"boundary": "sosr", "primary_key": "sosr_code"},
-                                       {"boundary": "ssc", "primary_key": "ssc_code"},
-                                       {"boundary": "ste", "primary_key": "state_code"},
-                                       {"boundary": "sua", "primary_key": "sua_code"},
-                                       {"boundary": "ucl", "primary_key": "ucl_code"}]
+        settings['bdy_table_dicts'] = \
+            [{"boundary": "ced", "id_field": "ced_code", "name_field": "ced_name", "area_field": "area_sqkm"},
+             {"boundary": "gccsa", "id_field": "gccsa_code", "name_field": "gccsa_name", "area_field": "area_sqkm"},
+             {"boundary": "iare", "id_field": "iare_code", "name_field": "iare_name", "area_field": "area_sqkm"},
+             {"boundary": "iloc", "id_field": "iloc_code", "name_field": "iloc_name", "area_field": "area_sqkm"},
+             {"boundary": "ireg", "id_field": "ireg_code", "name_field": "ireg_name", "area_field": "area_sqkm"},
+             {"boundary": "lga", "id_field": "lga_code", "name_field": "lga_name", "area_field": "area_sqkm"},
+             {"boundary": "mb", "id_field": "mb_code11", "name_field": "'MB ' || mb_code11", "area_field": "albers_sqm / 1000000.0"},
+             {"boundary": "poa", "id_field": "poa_code", "name_field": "'POA ' || poa_name", "area_field": "area_sqkm"},
+             {"boundary": "ra", "id_field": "ra_code", "name_field": "ra_name", "area_field": "area_sqkm"},
+             {"boundary": "sa1", "id_field": "sa1_7digit", "name_field": "'SA1 ' || sa1_7digit", "area_field": "area_sqkm"},
+             {"boundary": "sa2", "id_field": "sa2_main", "name_field": "sa2_name", "area_field": "area_sqkm"},
+             {"boundary": "sa3", "id_field": "sa3_code", "name_field": "sa3_name", "area_field": "area_sqkm"},
+             {"boundary": "sa4", "id_field": "sa4_code", "name_field": "sa4_name", "area_field": "area_sqkm"},
+             {"boundary": "sed", "id_field": "sed_code", "name_field": "sed_name", "area_field": "area_sqkm"},
+             {"boundary": "sla", "id_field": "sla_main", "name_field": "sla_name", "area_field": "area_sqkm"},
+             {"boundary": "sos", "id_field": "sos_code", "name_field": "sos_name", "area_field": "area_sqkm"},
+             {"boundary": "sosr", "id_field": "sosr_code", "name_field": "sosr_name", "area_field": "area_sqkm"},
+             {"boundary": "ssc", "id_field": "ssc_code", "name_field": "ssc_name", "area_field": "area_sqkm"},
+             {"boundary": "ste", "id_field": "state_code", "name_field": "state_name", "area_field": "area_sqkm"},
+             {"boundary": "sua", "id_field": "sua_code", "name_field": "sua_name", "area_field": "area_sqkm"},
+             {"boundary": "ucl", "id_field": "ucl_code", "name_field": "ucl_name", "area_field": "area_sqkm"}]
+
+        # # set region names
+        # if boundary_name == "ste":
+        #     stat_name = "state_name"
+        # elif boundary_name == "poa":
+        #     stat_name = "'Postcode ' || poa_name"
+        # elif boundary_name == "sa1":
+        #     stat_name = "'SA1 ' || sa1_7digit"
+        # elif boundary_name == "mb":
+        #     stat_name = "'MB ' || mb_code11"
+        # else:
+        #     stat_name = "{0}_name".format(boundary_name)
+        #
+        # # set area field
+        # if boundary_name == "mb":
+        #     area_field = "albers_sqm / 1000000.0"
+        # else:
+        #     area_field = "area_sqkm"
+
+
+
+
+
+
+
+
     else:
         return None
 

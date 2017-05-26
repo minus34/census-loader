@@ -217,11 +217,11 @@ def get_data():
     # get the boundary table name from zoom level
     # boundary_name = utils.get_boundary_name(zoom_level)
 
-    # get boundary primary key name
-    boundary_primary_key = ""
-    for boundary_dict in settings['bdy_table_dicts']:
-        if boundary_dict["boundary"] == boundary_name:
-            boundary_primary_key = boundary_dict["primary_key"]
+    # # get boundary primary key name
+    # boundary_primary_key = ""
+    # for boundary_dict in settings['bdy_table_dicts']:
+    #     if boundary_dict["boundary"] == boundary_name:
+    #         boundary_primary_key = boundary_dict["primary_key"]
 
     display_zoom = str(zoom_level).zfill(2)
 
@@ -240,12 +240,12 @@ def get_data():
         #       "bdy.geojson::text AS geometry FROM {2}.{3} AS bdy " \
         #       "INNER JOIN {4}.{5} AS tab ON bdy.{6} = tab.{7} " \
         #       "WHERE bdy.geom && {8}"\
-        sql = "SELECT bdy.{6} AS id, tab.{0}, " \
+        sql = "SELECT bdy.id, bdy.name, bdy.area, tab.{0}, " \
               "ST_AsGeoJSON(bdy.geom, {1})::jsonb AS geometry FROM {2}.{3} AS bdy " \
-              "INNER JOIN {4}.{5} AS tab ON bdy.{6} = tab.{7} " \
-              "WHERE bdy.geom && {8}" \
+              "INNER JOIN {4}.{5} AS tab ON bdy.id = tab.{6} " \
+              "WHERE bdy.geom && {7}" \
             .format(stat_id, decimal_places, boundary_schema, boundary_table_name, settings['data_schema'],
-                    stat_table_name, boundary_primary_key, settings['region_id_field'], envelope_sql)
+                    stat_table_name, settings['region_id_field'], envelope_sql)
 
         try:
             pg_cur.execute(sql)

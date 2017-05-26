@@ -129,7 +129,7 @@ function init() {
 //        var typePrefix;
 //        var typeSuffix;
 //        this._div.innerHTML = (props ? '<b>' + typePrefix + props[currentStatId].toLocaleString(['en-AU']) + typeSuffix + '</b> ' + currentStatType : 'pick a boundary');
-        this._div.innerHTML = (props ? '<b>' + props[currentStatId].toLocaleString(['en-AU']) + '</b> ' + currentStatType : 'pick a boundary');
+        this._div.innerHTML = (props ? props.name + '<br/><b>' + props[currentStatId].toLocaleString(['en-AU']) + '</b> ' + currentStatType : 'pick a boundary');
     };
     info.addTo(map);
 
@@ -281,7 +281,7 @@ function getCurrentStatMetadata() {
         }
     }
 
-    console.log(currentStatClasses);
+//    console.log(currentStatClasses);
 }
 
 function getData() {
