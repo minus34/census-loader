@@ -133,6 +133,37 @@ function init() {
     };
     info.addTo(map);
 
+    // add radio buttons to choose mpa type: valume of stats, density (stat/area) or percent (normalised against B3 - total persons)
+    var chooseMapType = L.control({
+        position : 'bottomright'
+    });
+    chooseMapType.onAdd = function (map) {
+        this._div = L.DomUtil.create('div', 'info themer');
+        this._div.innerHTML = '<div><b>Map type </b>' +
+                              '<input id="m1" type="radio" name="mapType" value="volume" checked="checked"><label for="r1"><span><span></span></span>volume</label> ' +
+                              '<input id="m2" type="radio" name="mapType" value="density"><label for="r2"><span><span></span></span>density</label> ' +
+                              '<input id="m3" type="radio" name="mapType" value="percent"><label for="r3"><span><span></span></span>percent</label>' +
+                              '</div>';
+        return this._div;
+    };
+
+    // event to trigger the map theme change
+    $("input:radio[name=mapType]").click(function () {
+        currentStatId = $(this).val();
+        // update all stat metadata
+        getCurrentStatMetadata();
+
+//            // change styles for new stat - incompatible with current backend
+//            geojsonLayer.eachLayer(function (layer) {
+//                console.log(layer.feature);
+//
+//                layer.setStyle(style(layer.feature));
+//            });
+
+        // reload the data - NEEDS TO BE REPLACED WITH A MORE EFFICIENT WAY
+        getData();
+    });
+    chooseMapType.addTo(map);
     // add radio buttons to choose stat to theme the map
     themer = L.control({
         position : 'bottomright'
@@ -146,7 +177,7 @@ function init() {
         this._div.innerHTML = radioButtons;
 
         // event to trigger the map theme change
-        $("input:radio[name=radio]").click(function () {
+        $("input:radio[name=stat]").click(function () {
             currentStatId = $(this).val();
             // update all stat metadata
             getCurrentStatMetadata();
@@ -219,9 +250,9 @@ function setRadioButtons() {
         var description = currentStats[i].description;
 
         if (value == currentStatId) {
-            radioButtons += '<div><input id="r' + i.toString() + '" type="radio" name="radio" value="' + value + '" checked="checked"><label for="r' + i.toString() + '"><span><span></span></span>' + description + '</label></div>';
+            radioButtons += '<div><input id="r' + i.toString() + '" type="radio" name="stat" value="' + value + '" checked="checked"><label for="r' + i.toString() + '"><span><span></span></span>' + description + '</label></div>';
         } else {
-            radioButtons += '<div><input id="r' + i.toString() + '" type="radio" name="radio" value="' + value + '"><label for="r' + i.toString() + '"><span><span></span></span>' + description + '</label></div>';
+            radioButtons += '<div><input id="r' + i.toString() + '" type="radio" name="stat" value="' + value + '"><label for="r' + i.toString() + '"><span><span></span></span>' + description + '</label></div>';
         }
      }
 
