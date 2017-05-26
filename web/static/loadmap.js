@@ -139,15 +139,24 @@ function init() {
         position : 'bottomright'
     });
     themer.onAdd = function (map) {
-        var div = L.DomUtil.create('div', 'info themer');
-        div.innerHTML = "<h4>Layers<br/>go here</h4>"
-        return div;
+        this._div = L.DomUtil.create('div', 'info themer');
+        this.update();
+        return this._div;
+    };
+    themer.update = function (radioButtons) {
+        this._div.innerHTML = radioButtons;
     };
     themer.addTo(map);
 
     // event to trigger the map theme to change
     $("input:radio[name=radio]").click(function () {
-        valueType = $(this).val();
+        currentStatId = $(this).val();
+
+        console.log(currentStatId);
+
+        // update all stat metadata
+        getCurrentStatMetadata();
+
         // reload the data - NEEDS TO BE REPLACED WITH A MORE EFFICIENT WAY
         getData();
     });
@@ -194,9 +203,29 @@ function init() {
             }
         }
 
+        // create the radio buttons
+        setRadioButtons();
+
         // get the first lot of data
         getData();
     });
+}
+
+function setRadioButtons() {
+    var radioButtons = '<h4>Active stat</h4>';
+
+    for (var i = 0; i < currentStats.length; i++){
+        var value = currentStats[i].id.toLowerCase();
+        var description = currentStats[i].description;
+
+        if (value == currentStatId) {
+            radioButtons += '<div><input id="r' + i.toString() + '" type="radio" name="radio" value="' + value + '" checked="checked"><label for="r' + i.toString() + '"><span><span></span></span>' + description + '</label></div>';
+        } else {
+            radioButtons += '<div><input id="r' + i.toString() + '" type="radio" name="radio" value="' + value + '"><label for="r' + i.toString() + '"><span><span></span></span>' + description + '</label></div>';
+        }
+     }
+
+    themer.update(radioButtons);
 }
 
 function getCurrentStatMetadata() {
@@ -226,37 +255,15 @@ function getCurrentStatMetadata() {
             // loop through each stat to get the new classes
             for (var j = 0; j < currentStats.length; j++) {
                 if (currentStats[j].id.toLowerCase() === currentStatId) {
+                    currentStatTable = currentStats[j].table.toLowerCase();
+                    currentStatType = currentStats[j].type.toLowerCase();
                     currentStatClasses = currentStats[j].classes;
-
-//                    console.log(currentStatClasses);
+                    currentStatDescription = currentStats[j].description;
                 }
             }
         }
     }
-
-//        currentStatTable = currentStats[i].table.toLowerCase();
-//        currentStatType = currentStats[i].type.toLowerCase();
-//        currentStatClasses = currentStats[i].classes;
-//        currentStatDescription = currentStats[i].description;
-
 }
-
-
-//function gotMetadata(json) {
-//
-//    console.timeEnd("got metadata");
-//
-//    console.log(json);
-//
-//
-////        div.innerHTML = '<h4>Profitability<br/>Metric</h4>' +
-////            '<div><input id="radio1" type="radio" name="radio" value="count"><label for="radio1"><span><span></span></span>Policies</label></div>' +
-////            '<div><input id="radio2" type="radio" name="radio" value="ratestrength" checked="checked"><label for="radio2"><span><span></span></span>Rate strength</label></div>' +
-////            '<div><input id="radio3" type="radio" name="radio" value="dollardiff"><label for="radio3"><span><span></span></span>$ Difference</label></div>'
-//
-////    // now get the data
-////    getData()
-//}
 
 function getData() {
 

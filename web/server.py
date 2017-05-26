@@ -94,13 +94,16 @@ def get_metadata():
     num_classes = int(request.args.get('n'))
     raw_stats = request.args.get('stats')
 
-    equation_stats = raw_stats.lower().split(",")
-
+    # strip maths operators to get list of stats we need
     search_stats = raw_stats.upper().replace(" ", "").replace("(", "").replace(")", "")\
         .replace("+", ",").replace("-", ",").replace("/", ",").replace("*", ",").split(",")
 
-    print(equation_stats)
-    print(search_stats)
+    # TODO: add support for numbers in equations - need to strip them from search_stats list
+
+    # equation_stats = raw_stats.lower().split(",")
+
+    # print(equation_stats)
+    # print(search_stats)
 
     # get stats tuple for query input
     search_stats_tuple = tuple(search_stats)
