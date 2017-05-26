@@ -406,7 +406,7 @@ def create_display_boundaries(pg_cur, settings):
         # precision = metres_per_pixel * 40
 
         reverse_zoom_level = 17 - zoom_level
-        precision = 5 * math.pow(2, float(reverse_zoom_level))
+        precision = 70 * math.pow(2, float(reverse_zoom_level))
 
         # "ST_AsGeoJSON(ST_Multi(ST_Union(ST_Buffer(ST_SnapToGrid(geom, {4}), 0.0))), {6})::jsonb AS geojson, " \
 

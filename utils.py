@@ -184,13 +184,16 @@ def get_settings(args):
 # get the boundary name that suits each (tiled map) zoom level
 def get_boundary_name(zoom_level):
 
-    if zoom_level < 8:
+    if zoom_level < 7:
         boundary_name = "ste"
 
-    elif zoom_level < 10:
+    elif zoom_level < 9:
+        boundary_name = "sos"
+
+    elif zoom_level < 11:
         boundary_name = "sa4"
 
-    elif zoom_level < 12:
+    elif zoom_level < 13:
         boundary_name = "sa3"
 
     elif zoom_level < 15:

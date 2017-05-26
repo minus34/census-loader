@@ -4,29 +4,25 @@ var bdyNamesUrl = "../get-bdy-names";
 var metadataUrl = "../get-metadata";
 var dataUrl = "../get-data";
 
-var boundaryZooms;
-var statsMetadata;
-
 var map;
 var info;
 var themer;
 var geojsonLayer;
 
-var numClasses = 7 // number of classes (i.e colours) in map theme
+var numClasses; // number of classes (i.e colours) in map theme
 var minZoom = 4;
 var maxZoom = 16;
 var currentZoomLevel = 10;
 
-var census;
 var statsArray;
-var currentStat;
-//var currentStatName;
-
 var currentStats;
+var boundaryZooms;
+var statsMetadata;
 
 var currentBoundary;
 var currentStatClasses;
 var currentStatId;
+var currentStatTable;
 var currentStatType;
 var currentStatDescription;
 
@@ -49,13 +45,21 @@ for (var i = 0; i < querystring.length; i++) {
     queryObj[name] = value;
 }
 
+//// get/set values from querystring
+//if (queryObj["census"] === undefined) {
+//    census = "2016";
+//} else {
+//    census = queryObj["stats"];
+//    // TODO: check census value is valid
+//}
+
 // get/set values from querystring
-if (queryObj["census"] === undefined) {
-    census = "2016";
+if (queryObj["n"] === undefined) {
+    numClasses = 7;
 } else {
-    census = queryObj["stats"];
-    // TODO: check census value is valid
+    census = queryObj["n"];
 }
+
 if (queryObj["stats"] === undefined) {
     statsArray = ["b3"]; // total_persons
 } else {
@@ -107,8 +111,8 @@ function init() {
     info.update = function (props) {
 //        var typePrefix;
 //        var typeSuffix;
-//      this._div.innerHTML = (props ? '<b>'typePrefix + props[currentStat].toLocaleString(['en-AU']) + typeSuffix'</b> ' + currentStatName : 'pick a boundary');
-        this._div.innerHTML = "Test pattern";
+//        this._div.innerHTML = (props ? '<b>' + typePrefix + props[currentStatId].toLocaleString(['en-AU']) + typeSuffix + '</b> ' + currentStatType : 'pick a boundary');
+        this._div.innerHTML = (props ? '<b>' + props[currentStatId].toLocaleString(['en-AU']) + '</b> ' + currentStatType : 'pick a boundary');
     };
     info.addTo(map);
 
@@ -133,22 +137,17 @@ function init() {
     // get a new set of data when map panned or zoomed
     // TODO: Handle map movement due to popup
     map.on('moveend', function (e) {
-        // map.closePopup();
-        
-        // get zoom level
-        currentZoomLevel = map.getZoom();
-        currentBoundary = boundaryZooms[currentZoomLevel.toString()];
 
-        console.log(currentZoomLevel);
-        console.log(currentBoundary);
+        console.log("MOVEEND 1")
+
+        getCurrentStatMetadata()
+
+        console.log("MOVEEND 2")
 
         getData();
-    });
 
-    // map.on('zoomend', function (e) {
-    //     map.closePopup();
-    //     //getData();
-    // });
+        console.log("MOVEEND 3")
+    });
 
     // get list of boundaries and the zoom levels they display at
     // and get stats metadata, including map theme classes
@@ -160,31 +159,67 @@ function init() {
         currentBoundary = boundaryZooms[currentZoomLevel.toString()];
 //        console.log(currentBoundary);
 
-        statsMetadata = metadataResponse[0];
-        var bdyStats = statsMetadata.boundaries
+        statsMetadata = metadataResponse[0].boundaries;
 
         // loop through each boundary to get the current one
-        for (var i = 0; i < bdyStats.length; i++) {
-            if (bdyStats[i].boundary === currentBoundary) {
-                currentStats = bdyStats[i].stats;
-                currentStat = currentStats[0]; // pick the first stat in the URL to map first
+        for (var i = 0; i < statsMetadata.length; i++) {
+            if (statsMetadata[i].boundary === currentBoundary) {
+                currentStats = statsMetadata[i].stats;
+                currentStatId = currentStats[0].id.toLowerCase();
+                currentStatTable = currentStats[0].table.toLowerCase();
+                currentStatType = currentStats[0].type.toLowerCase();
+                currentStatClasses = currentStats[0].classes;
+                currentStatDescription = currentStats[0].description;
+//                currentStat = currentStats[0]; // pick the first stat in the URL to map first
             }
         }
-//        console.log(currentStats);
 
         // get the first lot of data
         getData();
     });
 }
 
-//function getCurrentStatMetadata() {
-//
-//    currentStatClasses = ;
-//    currentStatId = ;
-//    currentStatType = ;
-//    currentStatDescription = ;
-//
-//}
+function getCurrentStatMetadata() {
+
+    console.log(currentZoomLevel);
+    console.log(currentBoundary);
+//    console.log(currentStats);
+    console.log(currentStatId);
+//    console.log(currentStatTable);
+    console.log(currentStatDescription);
+    console.log(currentStatClasses);
+
+    // get new zoom level and boundary
+    currentZoomLevel = map.getZoom();
+    currentBoundary = boundaryZooms[currentZoomLevel.toString()];
+
+    console.log(currentZoomLevel);
+    console.log(currentBoundary);
+
+    // loop through each boundary to get the new sets of stats metadata
+    for (var i = 0; i < statsMetadata.length; i++) {
+        if (statsMetadata[i].boundary === currentBoundary) {
+            currentStats = statsMetadata[i].stats;
+
+            console.log(currentStats);
+
+            // loop through each stat to get the new classes
+            for (var j = 0; j < currentStats.length; j++) {
+                if (currentStats[j].id.toLowerCase() === currentStatId) {
+                    currentStatClasses = currentStats[j].classes;
+
+                    console.log(currentStatClasses);
+                }
+            }
+        }
+    }
+
+//        currentStatTable = currentStats[i].table.toLowerCase();
+//        currentStatType = currentStats[i].type.toLowerCase();
+//        currentStatClasses = currentStats[i].classes;
+//        currentStatDescription = currentStats[i].description;
+
+}
 
 
 //function gotMetadata(json) {
@@ -232,9 +267,9 @@ function getData() {
     ua.push("&mt=");
     ua.push(ne.lat.toString());
     ua.push("&s=");
-    ua.push(currentStat.id.toLowerCase());
+    ua.push(currentStatId);
     ua.push("&t=");
-    ua.push(currentStat.table);
+    ua.push(currentStatTable);
     ua.push("&z=");
     ua.push((currentZoomLevel).toString());
 
@@ -267,7 +302,7 @@ function gotData(json) {
 }
 
 function style(feature) {
-    var renderVal = parseInt(feature.properties[currentStat.id.toLowerCase()]);
+    var renderVal = parseInt(feature.properties[currentStatId]);
 
 //    console.log(renderVal)
 
@@ -285,56 +320,24 @@ function style(feature) {
 
 // get color depending on ratio of count versus max value
 function getColor(d) {
-    var classes = currentStat.classes
-
-//    console.log(classes)
-
-    return  d > classes[6] ? colours[6] :
-            d > classes[5] ? colours[5] :
-            d > classes[4] ? colours[4] :
-            d > classes[3] ? colours[3] :
-            d > classes[2] ? colours[2] :
-            d > classes[1] ? colours[1] :
-                             colours[0];
+    return  d > currentStatClasses[6] ? colours[6] :
+            d > currentStatClasses[5] ? colours[5] :
+            d > currentStatClasses[4] ? colours[4] :
+            d > currentStatClasses[3] ? colours[3] :
+            d > currentStatClasses[2] ? colours[2] :
+            d > currentStatClasses[1] ? colours[1] :
+                                        colours[0];
 }
 
-// get color depending on ratio of count versus max value
-function getOpacity(d) {
-
-    switch (valueType) {
-    case "count":
-        return d > 500 ? 0.7 :
-        d > 250 ? 0.6 :
-        d > 100 ? 0.5 :
-        d > 50 ? 0.4 :
-        d > 25 ? 0.3 :
-        d > 0 ? 0.2 :
-                0.1;
-        break;
-    // case "difference":
-    //     zoomDiff = 11 - currentZoomLevel;
-    //     if (zoomDiff > 0) {
-     //        d = d / Math.pow(4, zoomDiff)
-    //     }
-    //
-    //     return d > 500 ? 0.7 :
-    //     d > 200 ? 0.6 :
-    //     d > 100 ? 0.5 :
-    //     d > 50 ? 0.4 :
-    //     d > 25 ? 0.3 :
-    //     d > 0 ? 0.2 :
-    //             0.1;
-    //     break;
-    default:
-        return d > 500 ? 0.7 :
-        d > 200 ? 0.6 :
-        d > 100 ? 0.5 :
-        d > 50 ? 0.4 :
-        d > 25 ? 0.3 :
-        d > 0 ? 0.2 :
-                0.1;
-    }
-}
+//// get color depending on ratio of count versus max value
+//function getOpacity(d) {
+//    return d > 500 ? 0.7 :
+//        d > 250 ? 0.6 :
+//        d > 100 ? 0.5 :
+//        d > 50 ? 0.4 :
+//        d > 25 ? 0.3 :
+//        d > 0 ? 0.2 :
+//                0.1;
 
 function onEachFeature(feature, layer) {
     layer.on({
