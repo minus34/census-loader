@@ -100,6 +100,8 @@ def get_metadata():
 
     # TODO: add support for numbers in equations - need to strip them from search_stats list
 
+    # TODO: add support for density stats. eg B1 / areasqkm
+
     # equation_stats = raw_stats.lower().split(",")
 
     # print(equation_stats)
@@ -207,6 +209,10 @@ def get_data():
 
     # get the number of decimal places for the output GeoJSON to reduce response size & speed up rendering
     decimal_places = utils.get_decimal_places(zoom_level)
+
+    # TODO: add support for equations
+
+    # TODO: add support for density stats. eg B1 / areasqkm
 
     # get the boundary table name from zoom level
     # boundary_name = utils.get_boundary_name(zoom_level)

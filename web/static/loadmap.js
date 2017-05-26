@@ -80,8 +80,7 @@ if (queryObj["stats"] === undefined) {
     statsArray = ["b3"]; // total_persons
 } else {
     statsArray = encodeURIComponent(queryObj["stats"].toLowerCase()).split("%2C"); // handle maths operators as well as plain stats
-
-    console.log(statsArray);
+//    console.log(statsArray);
 }
 
 function init() {
@@ -103,7 +102,7 @@ function init() {
     map.setView(new L.LatLng(-33.85, 151.15), currentZoomLevel);
 
     // get bookmarks
-    var storage = {
+    var bmStorage = {
         getAllItems : function (callback) {
             $.getJSON('bookmarks.json',
                 function (json) {
@@ -116,7 +115,7 @@ function init() {
     var bmControl = new L.Control.Bookmarks({
         position : 'topleft',
         localStorage : false,
-        storage : storage
+        storage : bmStorage
     }).addTo(map);
 
     // add control that shows info on mouseover
@@ -145,21 +144,25 @@ function init() {
     };
     themer.update = function (radioButtons) {
         this._div.innerHTML = radioButtons;
+
+        // event to trigger the map theme change
+        $("input:radio[name=radio]").click(function () {
+            currentStatId = $(this).val();
+            // update all stat metadata
+            getCurrentStatMetadata();
+
+//            // change styles for new stat - incompatible with current backend
+//            geojsonLayer.eachLayer(function (layer) {
+//                console.log(layer.feature);
+//
+//                layer.setStyle(style(layer.feature));
+//            });
+
+            // reload the data - NEEDS TO BE REPLACED WITH A MORE EFFICIENT WAY
+            getData();
+        });
     };
     themer.addTo(map);
-
-    // event to trigger the map theme to change
-    $("input:radio[name=radio]").click(function () {
-        currentStatId = $(this).val();
-
-        console.log(currentStatId);
-
-        // update all stat metadata
-        getCurrentStatMetadata();
-
-        // reload the data - NEEDS TO BE REPLACED WITH A MORE EFFICIENT WAY
-        getData();
-    });
 
     // get a new set of data when map panned or zoomed
     // TODO: Handle map movement due to popup
@@ -185,9 +188,6 @@ function init() {
         }
 
         currentBoundary = boundaryZooms[currentZoomLevel.toString()];
-//        console.log(boundaryZooms);
-//        console.log(currentBoundary);
-
         statsMetadata = metadataResponse[0].boundaries;
 
         // loop through each boundary to get the current one
@@ -229,28 +229,14 @@ function setRadioButtons() {
 }
 
 function getCurrentStatMetadata() {
-
-//    console.log(currentZoomLevel);
-//    console.log(currentBoundary);
-////    console.log(currentStats);
-//    console.log(currentStatId);
-////    console.log(currentStatTable);
-//    console.log(currentStatDescription);
-//    console.log(currentStatClasses);
-
     // get new zoom level and boundary
     currentZoomLevel = map.getZoom();
     currentBoundary = boundaryZooms[currentZoomLevel.toString()];
-
-//    console.log(currentZoomLevel);
-//    console.log(currentBoundary);
 
     // loop through each boundary to get the new sets of stats metadata
     for (var i = 0; i < statsMetadata.length; i++) {
         if (statsMetadata[i].boundary === currentBoundary) {
             currentStats = statsMetadata[i].stats;
-
-//            console.log(currentStats);
 
             // loop through each stat to get the new classes
             for (var j = 0; j < currentStats.length; j++) {
@@ -263,6 +249,8 @@ function getCurrentStatMetadata() {
             }
         }
     }
+
+    console.log(currentStatClasses);
 }
 
 function getData() {
@@ -333,7 +321,8 @@ function gotData(json) {
 function style(feature) {
     var renderVal = parseInt(feature.properties[currentStatId]);
 
-//    console.log(renderVal)
+//    console.log(currentStatId);
+//    console.log(renderVal);
 
     return {
         weight : 1,
@@ -342,9 +331,6 @@ function style(feature) {
         fillOpacity : 0.45,
         fillColor : getColor(renderVal)
     };
-
-    // fillOpacity : getOpacity(renderVal),
-
 }
 
 // get color depending on ratio of count versus max value

@@ -211,7 +211,10 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
     # clean up invalid rows
     pg_cur.execute("DELETE FROM {0}.metadata_tables WHERE table_number IS NULL".format(settings['data_schema']))
 
-    # TODO: get rid of _Person_Persons and replace with _Persons in metadata_stats
+    # get rid of _Persons_Persons and replace with _Persons in metadata_stats
+    pg_cur.execute("UPDATE {0}.metadata_stats "
+                   "SET long_id = replace(long_id, '_Persons_Persons', '_Persons') "
+                   "WHERE long_id LIKE '%_Persons_Persons'".format(settings['data_schema']))
 
     # add primary keys
     pg_cur.execute("ALTER TABLE {0}.metadata_tables ADD CONSTRAINT metadata_tables_pkey PRIMARY KEY (table_number)"
