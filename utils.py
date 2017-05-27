@@ -263,6 +263,13 @@ def get_decimal_places(zoom_level):
     return places
 
 
+# set tolerance for vector simplification
+def get_simplify_vw_tolerance(zoom_level):
+    reverse_zoom_level = 17 - zoom_level
+    tolerance = 70 * math.pow(2, float(reverse_zoom_level))
+    return tolerance
+
+
 # takes a list of sql queries or command lines and runs them using multiprocessing
 def multiprocess_csv_import(work_list, settings, logger):
     pool = multiprocessing.Pool(processes=settings['max_concurrent_processes'])
