@@ -74,20 +74,20 @@ def main():
     # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2011_data
     # --census-bdys-path=/Users/hugh.saalmans/minus34/data/abs_2011
 
-    # # PART 1 - load census data from CSV files
-    # logger.info("")
-    # start_time = datetime.now()
-    # logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
-    # create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
-    # populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
-    #                      settings['table_name_part'], settings['bdy_name_part'], settings)
-    # logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
-    #
-    # # PART 2 - load census boundaries from Shapefiles
+    # PART 1 - load census data from CSV files
+    logger.info("")
+    start_time = datetime.now()
+    logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
+    create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
+    populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
+                         settings['table_name_part'], settings['bdy_name_part'], settings)
+    logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
+
+    # PART 2 - load census boundaries from Shapefiles
     logger.info("")
     start_time = datetime.now()
     logger.info("Part 2 of 3 : Start census boundary load : {0}".format(start_time))
-    # load_boundaries(pg_cur, settings)
+    load_boundaries(pg_cur, settings)
     create_display_boundaries(pg_cur, settings)
     logger.info("Part 2 of 3 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
