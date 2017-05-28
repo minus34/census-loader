@@ -427,7 +427,7 @@ def create_display_boundaries(pg_cur, settings):
 
 
 def create_display_boundaries_2(pg_cur, settings):
-    # Step 2 of 2 : create display optimised version of the main census boundaries (ste > sa4 > sa3 > sa2 > sa1 > mb)
+    # Step 2 of 2 : create display optimised versions of the  census boundaries
     start_time = datetime.now()
 
     # display boundaries schema name
@@ -437,13 +437,6 @@ def create_display_boundaries_2(pg_cur, settings):
     if settings['boundary_schema'] != "public":
         pg_cur.execute("CREATE SCHEMA IF NOT EXISTS {0} AUTHORIZATION {1}".format(pg_schema, settings['pg_user']))
 
-    # # create a list of all stats
-    # stat_list = list()
-    #
-    # pg_cur.execute("SELECT sequential_id AS id, table_number AS table FROM {0}.metadata_stats "
-    #                "ORDER BY table_number, sequential_id".format(settings['data_schema']))
-    # stats = pg_cur.fetchall()
-
     # process boundaries and precisions for all tiled map zoom levels
     create_sql_list = list()
     insert_sql_list = list()
@@ -451,75 +444,76 @@ def create_display_boundaries_2(pg_cur, settings):
 
     for boundary_dict in settings['bdy_table_dicts']:
         boundary_name = boundary_dict["boundary"]
-        id_field = boundary_dict["id_field"]
-        name_field = boundary_dict["name_field"]
-        area_field = boundary_dict["area_field"]
 
-        input_pg_table = "{0}_{1}_aust".format(boundary_name, settings["census_year"])
-        pg_table = "{0}".format(boundary_name)
+        if boundary_name != "mb":
+            id_field = boundary_dict["id_field"]
+            name_field = boundary_dict["name_field"]
+            area_field = boundary_dict["area_field"]
 
-        # thin geometries to a default tolerance based on zoom level 17
-        tolerance = utils.get_simplify_vw_tolerance(17)
+            input_pg_table = "{0}_{1}_aust".format(boundary_name, settings["census_year"])
+            pg_table = "{0}".format(boundary_name)
 
-        # build create table statement
-        create_table_list = list()
-        create_table_list.append("DROP TABLE IF EXISTS {0}.{1} CASCADE;")
-        create_table_list.append("CREATE TABLE {0}.{1} (")
+            # thin geometries to a default tolerance based on zoom level 17
+            tolerance = utils.get_simplify_vw_tolerance(17)
 
-        column_list = list()
-        column_list.append("id text NOT NULL PRIMARY KEY")
-        column_list.append("name text NOT NULL")
-        column_list.append("area double precision NULL")
-        column_list.append("population double precision NOT NULL")
-        column_list.append("geom geometry(MultiPolygon, 4326) NULL")
+            # build create table statement
+            create_table_list = list()
+            create_table_list.append("DROP TABLE IF EXISTS {0}.{1} CASCADE;")
+            create_table_list.append("CREATE TABLE {0}.{1} (")
 
-        # for stat in stats:
-        #     column_list.append("{0} double precision".format(stat[0].lower()))
+            # build column list
+            column_list = list()
+            column_list.append("id text NOT NULL PRIMARY KEY")
+            column_list.append("name text NOT NULL")
+            column_list.append("area double precision NULL")
+            column_list.append("population double precision NOT NULL")
+            column_list.append("geom geometry(MultiPolygon, 4326) NULL")
 
-        create_table_list.append(",".join(column_list))
-        create_table_list.append(") WITH (OIDS=FALSE);")
-        create_table_list.append("ALTER TABLE {0}.{1} OWNER TO {2};")
-        create_table_list.append("CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);")
-        create_table_list.append("ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx")
+            # add columsn to create table statement and finish it
+            create_table_list.append(",".join(column_list))
+            create_table_list.append(") WITH (OIDS=FALSE);")
+            create_table_list.append("ALTER TABLE {0}.{1} OWNER TO {2};")
+            create_table_list.append("CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);")
+            create_table_list.append("ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx")
 
-        sql = "".join(create_table_list).format(pg_schema, pg_table, settings['pg_user'])
-        create_sql_list.append(sql)
+            sql = "".join(create_table_list).format(pg_schema, pg_table, settings['pg_user'])
+            create_sql_list.append(sql)
 
-        # get population field and table
-        if boundary_name[:1] == "i":
-            pop_stat = "i3"
-            pop_table = "i01a"
-        elif settings["census_year"] == "2011":
-            pop_stat = "b3"
-            pop_table = "b01"
-        else:
-            pop_stat = "g3"
-            pop_table = "g01"
+            # get population field and table
+            if boundary_name[:1] == "i":
+                pop_stat = "i3"
+                pop_table = "i01a"
+            elif settings["census_year"] == "2011":
+                pop_stat = "b3"
+                pop_table = "b01"
+            else:
+                pop_stat = "g3"
+                pop_table = "g01"
 
-        insert_into_list = list()
+            # build insert statement
+            insert_into_list = list()
+            insert_into_list.append("INSERT INTO {0}.{1}".format(pg_schema, pg_table))
+            insert_into_list.append("SELECT {0} AS id, {1} AS name, SUM({2}) AS area, {3},"
+                                    .format(id_field, name_field, area_field, pop_stat))
+            insert_into_list.append("ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {0}))), 4326)".format(tolerance,))
+            insert_into_list.append("FROM {0}.{1} AS bdy".format(settings['boundary_schema'], input_pg_table))
+            insert_into_list.append("INNER JOIN {0}.{1}_{2} AS tab".format(settings['data_schema'], boundary_name, pop_table))
+            insert_into_list.append("ON bdy.{0} = tab.{1}".format(id_field, settings["region_id_field"]))
+            insert_into_list.append("GROUP BY {0}, {1}, {2}".format(id_field, name_field, pop_stat))
 
-        insert_into_list.append("INSERT INTO {0}.{1}".format(pg_schema, pg_table))
-        insert_into_list.append("SELECT {0} AS id, {1} AS name, SUM({2}) AS area, {3},"
-                                .format(id_field, name_field, area_field, pop_stat))
-        insert_into_list.append("ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {0}))), 4326)".format(tolerance,))
-        insert_into_list.append("FROM {0}.{1} AS bdy".format(settings['boundary_schema'], input_pg_table))
-        insert_into_list.append("INNER JOIN {0}.{1}_{2} AS tab".format(settings['data_schema'], boundary_name, pop_table))
-        insert_into_list.append("ON bdy.{0} = tab.{1}".format(id_field, settings["region_id_field"]))
-        insert_into_list.append("GROUP BY {0}, {1}, {2}".format(id_field, name_field, pop_stat))
+            # sql = "INSERT INTO {0}.{1} " \
+            #       "SELECT bdy.{5} AS id, bdy.{6} AS name, SUM(bdy.{7}) AS area, tab.b1" \
+            #       "ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(bdy.geom, 3577), {4}))), 4326) " \
+            #       "FROM {2}.{3} " \
+            #       "INNER JOIN " \
+            #       "GROUP BY id, name" \
+            #     .format(pg_schema, pg_table, settings['boundary_schema'], input_pg_table,
+            #             tolerance, id_field, name_field, area_field)
 
-        # sql = "INSERT INTO {0}.{1} " \
-        #       "SELECT bdy.{5} AS id, bdy.{6} AS name, SUM(bdy.{7}) AS area, tab.b1" \
-        #       "ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(bdy.geom, 3577), {4}))), 4326) " \
-        #       "FROM {2}.{3} " \
-        #       "INNER JOIN " \
-        #       "GROUP BY id, name" \
-        #     .format(pg_schema, pg_table, settings['boundary_schema'], input_pg_table,
-        #             tolerance, id_field, name_field, area_field)
+            sql = " ".join(insert_into_list)
+            insert_sql_list.append(sql)
 
-        sql = " ".join(insert_into_list)
-        insert_sql_list.append(sql)
-
-        vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(pg_schema, pg_table))
+            vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(pg_schema, pg_table))
 
     utils.multiprocess_list("sql", create_sql_list, settings, logger)
     utils.multiprocess_list("sql", insert_sql_list, settings, logger)
