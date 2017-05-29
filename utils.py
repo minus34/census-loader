@@ -177,32 +177,6 @@ def get_settings(args):
              {"boundary": "ste", "id_field": "state_code", "name_field": "state_name", "area_field": "area_sqkm"},
              {"boundary": "sua", "id_field": "sua_code", "name_field": "sua_name", "area_field": "area_sqkm"},
              {"boundary": "ucl", "id_field": "ucl_code", "name_field": "ucl_name", "area_field": "area_sqkm"}]
-
-        # # set region names
-        # if boundary_name == "ste":
-        #     stat_name = "state_name"
-        # elif boundary_name == "poa":
-        #     stat_name = "'Postcode ' || poa_name"
-        # elif boundary_name == "sa1":
-        #     stat_name = "'SA1 ' || sa1_7digit"
-        # elif boundary_name == "mb":
-        #     stat_name = "'MB ' || mb_code11"
-        # else:
-        #     stat_name = "{0}_name".format(boundary_name)
-        #
-        # # set area field
-        # if boundary_name == "mb":
-        #     area_field = "albers_sqm / 1000000.0"
-        # else:
-        #     area_field = "area_sqkm"
-
-
-
-
-
-
-
-
     else:
         return None
 
@@ -266,7 +240,7 @@ def get_decimal_places(zoom_level):
 # set tolerance for vector simplification
 def get_simplify_vw_tolerance(zoom_level):
     reverse_zoom_level = 17 - zoom_level
-    tolerance = 70 * math.pow(2, float(reverse_zoom_level))
+    tolerance = 75 * math.pow(2.75, float(reverse_zoom_level))
     return tolerance
 
 

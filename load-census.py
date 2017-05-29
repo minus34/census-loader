@@ -23,9 +23,8 @@
 
 import io
 import logging.config
-import math
 import os
-import pandas  # module needs to be installed (IMPORTANT: need to install 'xlrd' module for Pandas to read XLSX files)
+import pandas  # module needs to be installed (IMPORTANT: need to install 'xlrd' module for Pandas to read .xlsx files)
 import psycopg2  # module needs to be installed
 import utils
 
@@ -88,8 +87,8 @@ def main():
     start_time = datetime.now()
     logger.info("Part 2 of 3 : Start census boundary load : {0}".format(start_time))
     # load_boundaries(pg_cur, settings)
-    # create_display_boundaries(pg_cur, settings)
-    create_display_boundaries_2(pg_cur, settings)
+    create_display_boundaries(pg_cur, settings)
+    # create_display_boundaries_2(pg_cur, settings)
     logger.info("Part 2 of 3 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
     # # PART 3 - create views
@@ -397,9 +396,8 @@ def create_display_boundaries(pg_cur, settings):
             input_pg_table = "{0}_{1}_aust".format(boundary_name, settings["census_year"])
             pg_table = "zoom_{0}_{1}_{2}_aust".format(display_zoom, boundary_name, settings["census_year"])
 
-            # set precision for vector simplification
-            reverse_zoom_level = 17 - zoom_level
-            precision = 70 * math.pow(2, float(reverse_zoom_level))
+            # set tolerance for vector simplification
+            tolerance = utils.get_simplify_vw_tolerance(zoom_level)
 
             sql = "DROP TABLE IF EXISTS {0}.{1} CASCADE;" \
                   "SELECT {5}::text AS id, {6}::text AS name, SUM({7})::double precision AS area, " \
@@ -409,7 +407,7 @@ def create_display_boundaries(pg_cur, settings):
                   "CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);" \
                   "ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx" \
                 .format(pg_schema, pg_table, settings['boundary_schema'], input_pg_table,
-                        precision, id_field, name_field, area_field)
+                        tolerance, id_field, name_field, area_field)
             sql_list.append(sql)
 
             sql_list2.append("VACUUM ANALYZE {0}.{1}".format(pg_schema, pg_table))
@@ -427,7 +425,7 @@ def create_display_boundaries(pg_cur, settings):
 
 
 def create_display_boundaries_2(pg_cur, settings):
-    # Step 2 of 2 : create display optimised versions of the  census boundaries
+    # Step 2 of 2 : create display optimised versions of the census boundaries
     start_time = datetime.now()
 
     # display boundaries schema name
@@ -493,7 +491,7 @@ def create_display_boundaries_2(pg_cur, settings):
             # build insert statement
             insert_into_list = list()
             insert_into_list.append("INSERT INTO {0}.{1}".format(pg_schema, pg_table))
-            insert_into_list.append("SELECT {0} AS id, {1} AS name, SUM({2}) AS area, {3},"
+            insert_into_list.append("SELECT {0} AS id, {1} AS name, SUM({2}) AS area, {3} AS population,"
                                     .format(id_field, name_field, area_field, pop_stat))
             insert_into_list.append("ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {0}))), 4326)".format(tolerance,))
             insert_into_list.append("FROM {0}.{1} AS bdy".format(settings['boundary_schema'], input_pg_table))
