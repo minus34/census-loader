@@ -165,11 +165,11 @@ def get_settings(args):
              {"boundary": "mb", "id_field": "mb_code11", "name_field": "'MB ' || mb_code11", "area_field": "albers_sqm / 1000000.0", "thin_zoom": 16},
              {"boundary": "poa", "id_field": "poa_code", "name_field": "'POA ' || poa_name", "area_field": "area_sqkm", "thin_zoom": 15},
              {"boundary": "ra", "id_field": "ra_code", "name_field": "ra_name", "area_field": "area_sqkm", "thin_zoom": 8},
-             {"boundary": "sa1", "id_field": "sa1_7digit", "name_field": "'SA1 ' || sa1_7digit", "area_field": "area_sqkm", "thin_zoom": 14},
-             {"boundary": "sa2", "id_field": "sa2_main", "name_field": "sa2_name", "area_field": "area_sqkm", "thin_zoom": 12},
-             {"boundary": "sa3", "id_field": "sa3_code", "name_field": "sa3_name", "area_field": "area_sqkm", "thin_zoom": 11},
-             {"boundary": "sa4", "id_field": "sa4_code", "name_field": "sa4_name", "area_field": "area_sqkm", "thin_zoom": 10},
-             {"boundary": "sed", "id_field": "sed_code", "name_field": "sed_name", "area_field": "area_sqkm", "thin_zoom": 11},
+             {"boundary": "sa1", "id_field": "sa1_7digit", "name_field": "'SA1 ' || sa1_7digit", "area_field": "area_sqkm", "thin_zoom": 15},
+             {"boundary": "sa2", "id_field": "sa2_main", "name_field": "sa2_name", "area_field": "area_sqkm", "thin_zoom": 13},
+             {"boundary": "sa3", "id_field": "sa3_code", "name_field": "sa3_name", "area_field": "area_sqkm", "thin_zoom": 12},
+             {"boundary": "sa4", "id_field": "sa4_code", "name_field": "sa4_name", "area_field": "area_sqkm", "thin_zoom": 11},
+             {"boundary": "sed", "id_field": "sed_code", "name_field": "sed_name", "area_field": "area_sqkm", "thin_zoom": 10},
              {"boundary": "sla", "id_field": "sla_main", "name_field": "sla_name", "area_field": "area_sqkm", "thin_zoom": 12},
              {"boundary": "sos", "id_field": "sos_code", "name_field": "sos_name", "area_field": "area_sqkm", "thin_zoom": 8},
              {"boundary": "sosr", "id_field": "sosr_code", "name_field": "sosr_name", "area_field": "area_sqkm", "thin_zoom": 8},
@@ -190,9 +190,9 @@ def get_boundary_name(zoom_level):
         boundary_name = "ste"
     elif zoom_level < 8:
         boundary_name = "sos"
-    elif zoom_level < 11:
+    elif zoom_level < 10:
         boundary_name = "sa4"
-    elif zoom_level < 12:
+    elif zoom_level < 11:
         boundary_name = "sa3"
     elif zoom_level < 14:
         boundary_name = "sa2"
@@ -216,8 +216,8 @@ def get_tolerance(zoom_level):
     # default Google/Bing map tile scales
     metres_per_pixel = 156543.03390625 / math.pow(2.0, float(zoom_level))
 
-    # # the tolerance (metres) for vector simplifcation using the VW algorithm
-    # square_metres_per_pixel = math.pow(metres_per_pixel, 2.0)
+    # the tolerance (metres) for vector simplifcation using the VW algorithm
+    square_metres_per_pixel = math.pow(metres_per_pixel, 2.0)
 
     # the tolerance for thinning data and limiting decimal places in GeoJSON responses
     degrees_per_pixel = metres_per_pixel / metres2degrees
@@ -226,8 +226,8 @@ def get_tolerance(zoom_level):
     square_degrees_per_pixel = math.pow(degrees_per_pixel, 2.0)
 
     # tolerance to use
-    tolerance = square_degrees_per_pixel * tolerance_square_pixels
-    # tolerance = square_metres_per_pixel * tolerance_square_pixels
+    # tolerance = square_degrees_per_pixel * tolerance_square_pixels
+    tolerance = square_metres_per_pixel * tolerance_square_pixels
 
     return tolerance
 

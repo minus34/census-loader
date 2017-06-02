@@ -494,8 +494,8 @@ def create_display_boundaries_2(pg_cur, settings):
             insert_into_list.append("INSERT INTO {0}.{1}".format(pg_schema, pg_table))
             insert_into_list.append("SELECT {0} AS id, {1} AS name, SUM({2}) AS area, {3} AS population,"
                                     .format(id_field, name_field, area_field, pop_stat))
-            # insert_into_list.append("ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {0}))), 4326)".format(tolerance,))
-            insert_into_list.append("ST_Multi(ST_Union(ST_SimplifyVW(geom, {0})))".format(tolerance,))
+            insert_into_list.append("ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {0}))), 4283)".format(tolerance,))
+            # insert_into_list.append("ST_Multi(ST_Union(ST_SimplifyVW(geom, {0})))".format(tolerance,))
             insert_into_list.append("FROM {0}.{1} AS bdy".format(settings['boundary_schema'], input_pg_table))
             insert_into_list.append("INNER JOIN {0}.{1}_{2} AS tab".format(settings['data_schema'], boundary_name, pop_table))
             insert_into_list.append("ON bdy.{0} = tab.{1}".format(id_field, settings["region_id_field"]))
