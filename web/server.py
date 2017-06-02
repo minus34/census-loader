@@ -215,7 +215,8 @@ def get_data():
     # TODO: add support for density stats. eg B1 / areasqkm
 
     # get the boundary table name from zoom level
-    # boundary_name = utils.get_boundary_name(zoom_level)
+    if boundary_name is None:
+        boundary_name = utils.get_boundary_name(zoom_level)
 
     # # get boundary primary key name
     # boundary_primary_key = ""
@@ -223,20 +224,20 @@ def get_data():
     #     if boundary_dict["boundary"] == boundary_name:
     #         boundary_primary_key = boundary_dict["primary_key"]
 
-    display_zoom = str(zoom_level).zfill(2)
+    # display_zoom = str(zoom_level).zfill(2)
 
     stat_table_name = boundary_name + "_" + table_id
 
     # TESTING - switch 1
-    boundary_table_name = "zoom_{0}_{1}_{2}_aust".format(display_zoom, boundary_name, settings["census_year"])
-    # boundary_table_name = "{0}".format(boundary_name)
+    # boundary_table_name = "zoom_{0}_{1}_{2}_aust".format(display_zoom, boundary_name, settings["census_year"])
+    boundary_table_name = "{0}".format(boundary_name)
 
     # TESTING - switch 3
-    boundary_schema = "{0}_display".format(settings['boundary_schema'])
-    # boundary_schema = "{0}_display_2".format(settings['boundary_schema'])
+    # boundary_schema = "{0}_display".format(settings['boundary_schema'])
+    boundary_schema = "{0}_display_2".format(settings['boundary_schema'])
 
-    # thin geometries to a default tolerance based on zoom level 17
-    tolerance = utils.get_simplify_vw_tolerance(17)
+    # # thin geometries to a default tolerance based on zoom level 17
+    # tolerance = utils.get_simplify_vw_tolerance(17)
 
     with get_db_cursor() as pg_cur:
         print("Connected to database in {0}".format(datetime.now() - start_time))
@@ -249,8 +250,8 @@ def get_data():
         # geom_sql = "ST_AsGeoJSON(ST_Transform(ST_SimplifyVW(ST_Transform(bdy.geom, 3577), {0}), 4326), {1})::jsonb".format(tolerance, decimal_places)
 
         # TESTING - switch 4
-        # sql = "SELECT bdy.id, bdy.name, bdy.area, bdy.population AS pop, tab.{0}, " \
-        sql = "SELECT bdy.id, bdy.name, bdy.area, tab.{0}, " \
+        # sql = "SELECT bdy.id, bdy.name, bdy.area, tab.{0}, " \
+        sql = "SELECT bdy.id, bdy.name, bdy.area, bdy.population AS pop, tab.{0}, " \
               "{1} AS geometry FROM {2}.{3} AS bdy " \
               "INNER JOIN {4}.{5} AS tab ON bdy.id = tab.{6} " \
               "WHERE bdy.geom && {7}" \

@@ -87,8 +87,8 @@ def main():
     start_time = datetime.now()
     logger.info("Part 2 of 3 : Start census boundary load : {0}".format(start_time))
     # load_boundaries(pg_cur, settings)
-    create_display_boundaries(pg_cur, settings)
-    # create_display_boundaries_2(pg_cur, settings)
+    # create_display_boundaries(pg_cur, settings)
+    create_display_boundaries_2(pg_cur, settings)
     logger.info("Part 2 of 3 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
     # # PART 3 - create views
@@ -452,7 +452,8 @@ def create_display_boundaries_2(pg_cur, settings):
             pg_table = "{0}".format(boundary_name)
 
             # thin geometries to a default tolerance based on zoom level 17
-            tolerance = utils.get_simplify_vw_tolerance(17)
+            # tolerance = utils.get_simplify_vw_tolerance(17)
+            tolerance = utils.get_tolerance(boundary_dict["thin_zoom"])
 
             # build create table statement
             create_table_list = list()
@@ -465,7 +466,7 @@ def create_display_boundaries_2(pg_cur, settings):
             column_list.append("name text NOT NULL")
             column_list.append("area double precision NULL")
             column_list.append("population double precision NOT NULL")
-            column_list.append("geom geometry(MultiPolygon, 4326) NULL")
+            column_list.append("geom geometry(MultiPolygon, 4283) NULL")
 
             # add columsn to create table statement and finish it
             create_table_list.append(",".join(column_list))
@@ -493,7 +494,8 @@ def create_display_boundaries_2(pg_cur, settings):
             insert_into_list.append("INSERT INTO {0}.{1}".format(pg_schema, pg_table))
             insert_into_list.append("SELECT {0} AS id, {1} AS name, SUM({2}) AS area, {3} AS population,"
                                     .format(id_field, name_field, area_field, pop_stat))
-            insert_into_list.append("ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {0}))), 4326)".format(tolerance,))
+            # insert_into_list.append("ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {0}))), 4326)".format(tolerance,))
+            insert_into_list.append("ST_Multi(ST_Union(ST_SimplifyVW(geom, {0})))".format(tolerance,))
             insert_into_list.append("FROM {0}.{1} AS bdy".format(settings['boundary_schema'], input_pg_table))
             insert_into_list.append("INNER JOIN {0}.{1}_{2} AS tab".format(settings['data_schema'], boundary_name, pop_table))
             insert_into_list.append("ON bdy.{0} = tab.{1}".format(id_field, settings["region_id_field"]))
