@@ -188,7 +188,7 @@ def get_boundary_name(zoom_level):
 
     # if zoom_level < 7:
     #     boundary_name = "ste"
-    if zoom_level < 8:
+    if zoom_level < 7:
         boundary_name = "ste"
     elif zoom_level < 10:
         boundary_name = "sa4"
@@ -214,7 +214,7 @@ def get_tolerance(zoom_level):
     # metres2degrees = (2.0 * math.pi * 6378137.0) / 360.0
 
     # default Google/Bing map tile scales
-    metres_per_pixel = 156543.03390625 / math.pow(2.0, float(zoom_level))
+    metres_per_pixel = 156543.03390625 / math.pow(2.0, float(zoom_level + 1))
 
     # the tolerance (metres) for vector simplification using the VW algorithm
     square_metres_per_pixel = math.pow(metres_per_pixel, 2.0)
@@ -222,7 +222,7 @@ def get_tolerance(zoom_level):
     # # the tolerance for thinning data and limiting decimal places in GeoJSON responses
     # degrees_per_pixel = metres_per_pixel / metres2degrees
 
-    # # the tolerance (degrees) for vector simplifcation using the VW algorithm
+    # # the tolerance (degrees) for vector simplification using the VW algorithm
     # square_degrees_per_pixel = math.pow(degrees_per_pixel, 2.0)
 
     # tolerance to use

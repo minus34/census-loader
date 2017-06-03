@@ -2,7 +2,7 @@
 
 import ast
 import json
-import math
+# import math
 # import os
 import psycopg2
 # import sys
@@ -100,7 +100,7 @@ def get_metadata():
 
     # TODO: add support for numbers in equations - need to strip them from search_stats list
 
-    # TODO: add support for density stats. eg B1 / areasqkm
+    # TODO: add support for normalised and density stats. eg B1 / B3 and B1 / areasqkm
 
     # equation_stats = raw_stats.lower().split(",")
 
