@@ -156,27 +156,27 @@ def get_settings(args):
         settings['region_id_field'] = "region_id"
 
         settings['bdy_table_dicts'] = \
-            [{"boundary": "ced", "id_field": "ced_code", "name_field": "ced_name", "area_field": "area_sqkm", "thin_zoom": 10},
-             {"boundary": "gccsa", "id_field": "gccsa_code", "name_field": "gccsa_name", "area_field": "area_sqkm", "thin_zoom": 10},
-             {"boundary": "iare", "id_field": "iare_code", "name_field": "iare_name", "area_field": "area_sqkm", "thin_zoom": 10},
-             {"boundary": "iloc", "id_field": "iloc_code", "name_field": "iloc_name", "area_field": "area_sqkm", "thin_zoom": 10},
-             {"boundary": "ireg", "id_field": "ireg_code", "name_field": "ireg_name", "area_field": "area_sqkm", "thin_zoom": 10},
-             {"boundary": "lga", "id_field": "lga_code", "name_field": "lga_name", "area_field": "area_sqkm", "thin_zoom": 12},
-             {"boundary": "mb", "id_field": "mb_code11", "name_field": "'MB ' || mb_code11", "area_field": "albers_sqm / 1000000.0", "thin_zoom": 16},
-             {"boundary": "poa", "id_field": "poa_code", "name_field": "'POA ' || poa_name", "area_field": "area_sqkm", "thin_zoom": 15},
-             {"boundary": "ra", "id_field": "ra_code", "name_field": "ra_name", "area_field": "area_sqkm", "thin_zoom": 8},
-             {"boundary": "sa1", "id_field": "sa1_7digit", "name_field": "'SA1 ' || sa1_7digit", "area_field": "area_sqkm", "thin_zoom": 15},
-             {"boundary": "sa2", "id_field": "sa2_main", "name_field": "sa2_name", "area_field": "area_sqkm", "thin_zoom": 13},
-             {"boundary": "sa3", "id_field": "sa3_code", "name_field": "sa3_name", "area_field": "area_sqkm", "thin_zoom": 11},
-             {"boundary": "sa4", "id_field": "sa4_code", "name_field": "sa4_name", "area_field": "area_sqkm", "thin_zoom": 10},
-             {"boundary": "sed", "id_field": "sed_code", "name_field": "sed_name", "area_field": "area_sqkm", "thin_zoom": 10},
-             {"boundary": "sla", "id_field": "sla_main", "name_field": "sla_name", "area_field": "area_sqkm", "thin_zoom": 12},
-             {"boundary": "sos", "id_field": "sos_code", "name_field": "sos_name", "area_field": "area_sqkm", "thin_zoom": 9},
-             {"boundary": "sosr", "id_field": "sosr_code", "name_field": "sosr_name", "area_field": "area_sqkm", "thin_zoom": 8},
-             {"boundary": "ssc", "id_field": "ssc_code", "name_field": "ssc_name", "area_field": "area_sqkm", "thin_zoom": 12},
-             {"boundary": "ste", "id_field": "state_code", "name_field": "state_name", "area_field": "area_sqkm", "thin_zoom": 6},
-             {"boundary": "sua", "id_field": "sua_code", "name_field": "sua_name", "area_field": "area_sqkm", "thin_zoom": 10},
-             {"boundary": "ucl", "id_field": "ucl_code", "name_field": "ucl_name", "area_field": "area_sqkm", "thin_zoom": 13}]
+            [{"boundary": "ced", "id_field": "ced_code", "name_field": "ced_name", "area_field": "area_sqkm"},
+             {"boundary": "gccsa", "id_field": "gccsa_code", "name_field": "gccsa_name", "area_field": "area_sqkm"},
+             {"boundary": "iare", "id_field": "iare_code", "name_field": "iare_name", "area_field": "area_sqkm"},
+             {"boundary": "iloc", "id_field": "iloc_code", "name_field": "iloc_name", "area_field": "area_sqkm"},
+             {"boundary": "ireg", "id_field": "ireg_code", "name_field": "ireg_name", "area_field": "area_sqkm"},
+             {"boundary": "lga", "id_field": "lga_code", "name_field": "lga_name", "area_field": "area_sqkm"},
+             {"boundary": "mb", "id_field": "mb_code11", "name_field": "'MB ' || mb_code11", "area_field": "albers_sqm / 1000000.0"},
+             {"boundary": "poa", "id_field": "poa_code", "name_field": "'POA ' || poa_name", "area_field": "area_sqkm"},
+             {"boundary": "ra", "id_field": "ra_code", "name_field": "ra_name", "area_field": "area_sqkm"},
+             {"boundary": "sa1", "id_field": "sa1_7digit", "name_field": "'SA1 ' || sa1_7digit", "area_field": "area_sqkm"},
+             {"boundary": "sa2", "id_field": "sa2_main", "name_field": "sa2_name", "area_field": "area_sqkm"},
+             {"boundary": "sa3", "id_field": "sa3_code", "name_field": "sa3_name", "area_field": "area_sqkm"},
+             {"boundary": "sa4", "id_field": "sa4_code", "name_field": "sa4_name", "area_field": "area_sqkm"},
+             {"boundary": "sed", "id_field": "sed_code", "name_field": "sed_name", "area_field": "area_sqkm"},
+             {"boundary": "sla", "id_field": "sla_main", "name_field": "sla_name", "area_field": "area_sqkm"},
+             {"boundary": "sos", "id_field": "sos_code", "name_field": "sos_name", "area_field": "area_sqkm"},
+             {"boundary": "sosr", "id_field": "sosr_code", "name_field": "sosr_name", "area_field": "area_sqkm"},
+             {"boundary": "ssc", "id_field": "ssc_code", "name_field": "ssc_name", "area_field": "area_sqkm"},
+             {"boundary": "ste", "id_field": "state_code", "name_field": "state_name", "area_field": "area_sqkm"},
+             {"boundary": "sua", "id_field": "sua_code", "name_field": "sua_name", "area_field": "area_sqkm"},
+             {"boundary": "ucl", "id_field": "ucl_code", "name_field": "ucl_name", "area_field": "area_sqkm"}]
     else:
         return None
 
@@ -210,14 +210,14 @@ def get_tolerance(zoom_level):
     # pixels squared factor
     tolerance_square_pixels = 7
 
-    # # rough metres to degrees conversation, using spherical WGS84 datum radius for simplicity and speed
-    # metres2degrees = (2.0 * math.pi * 6378137.0) / 360.0
-
     # default Google/Bing map tile scales
     metres_per_pixel = 156543.03390625 / math.pow(2.0, float(zoom_level + 1))
 
     # the tolerance (metres) for vector simplification using the VW algorithm
     square_metres_per_pixel = math.pow(metres_per_pixel, 2.0)
+
+    # # rough metres to degrees conversation, using spherical WGS84 datum radius for simplicity and speed
+    # metres2degrees = (2.0 * math.pi * 6378137.0) / 360.0
 
     # # the tolerance for thinning data and limiting decimal places in GeoJSON responses
     # degrees_per_pixel = metres_per_pixel / metres2degrees
@@ -257,13 +257,6 @@ def get_decimal_places(zoom_level):
             trigger = "don't do anything else"  # used to cleanly exit the loop
 
     return places
-
-
-# # set tolerance for vector simplification
-# def get_simplify_vw_tolerance(zoom_level):
-#     reverse_zoom_level = 17 - zoom_level
-#     tolerance = 75 * math.pow(2.75, float(reverse_zoom_level))
-#     return tolerance
 
 
 # takes a list of sql queries or command lines and runs them using multiprocessing

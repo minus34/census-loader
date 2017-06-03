@@ -21,12 +21,15 @@ var statsMetadata;
 var boundaryOverride;
 
 var currentBoundary;
-var currentStatClasses;
+var currentStatValues;
+var currentStatDensities;
+var currentStatNormalised;
 var currentStatId;
 var currentStatTable;
 var currentStatType;
 var currentStatDescription;
 
+var currentStatClasses;
 var colours = ['#fde0c5','#facba6','#f8b58b','#f59e72','#f2855d','#ef6a4c','#eb4a40']
 
 // get querystring values
@@ -140,7 +143,7 @@ function init() {
     chooseMapType.onAdd = function (map) {
         this._div = L.DomUtil.create('div', 'info themer');
         this._div.innerHTML = '<div><b>Map type </b>' +
-                              '<input id="m1" type="radio" name="mapType" value="volume" checked="checked"><label for="r1"><span><span></span></span>volume</label> ' +
+                              '<input id="m1" type="radio" name="mapType" value="values" checked="checked"><label for="r1"><span><span></span></span>values</label> ' +
                               '<input id="m2" type="radio" name="mapType" value="density"><label for="r2"><span><span></span></span>density</label> ' +
                               '<input id="m3" type="radio" name="mapType" value="percent"><label for="r3"><span><span></span></span>percent</label>' +
                               '</div>';
@@ -228,7 +231,9 @@ function init() {
                 currentStatId = currentStats[0].id.toLowerCase();
                 currentStatTable = currentStats[0].table.toLowerCase();
                 currentStatType = currentStats[0].type.toLowerCase();
-                currentStatClasses = currentStats[0].classes;
+                currentStatValues = currentStats[0].values;
+                currentStatDensities = currentStats[0].densities;
+                currentStatNormalised = currentStats[0].normalised;
                 currentStatDescription = currentStats[0].description;
 //                currentStat = currentStats[0]; // pick the first stat in the URL to map first
             }
@@ -274,7 +279,9 @@ function getCurrentStatMetadata() {
                 if (currentStats[j].id.toLowerCase() === currentStatId) {
                     currentStatTable = currentStats[j].table.toLowerCase();
                     currentStatType = currentStats[j].type.toLowerCase();
-                    currentStatClasses = currentStats[j].classes;
+                    currentStatValues = currentStats[0].values;
+                    currentStatDensities = currentStats[0].densities;
+                    currentStatNormalised = currentStats[0].normalised;
                     currentStatDescription = currentStats[j].description;
                 }
             }
