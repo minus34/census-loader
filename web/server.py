@@ -229,7 +229,8 @@ def get_data():
     stat_table_name = boundary_name + "_" + table_id
 
     # TESTING - switch 1
-    boundary_table_name = "zoom_{0}_{1}_{2}_aust".format(display_zoom, boundary_name, settings["census_year"])
+    # boundary_table_name = "zoom_{0}_{1}_{2}_aust".format(display_zoom, boundary_name, settings["census_year"])
+    boundary_table_name = "{0}_zoom_{1}".format(boundary_name, display_zoom)
     # boundary_table_name = "{0}".format(boundary_name)
 
     # TESTING - switch 3

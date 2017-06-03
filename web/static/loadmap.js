@@ -399,14 +399,15 @@ function highlightFeature(e) {
     // console.log(layer);
 
     layer.setStyle({
-        weight : 2,
+        weight : 2.5,
         opacity : 0.9,
+        color : '#ffffff',
         fillOpacity : 0.7
     });
 
-    if (!L.Browser.ie && !L.Browser.opera) {
-        layer.bringToFront();
-    }
+//    if (!L.Browser.ie && !L.Browser.edge && !L.Browser.opera) {
+    layer.bringToFront();
+//    }
 
     info.update(layer.feature.properties);
 }

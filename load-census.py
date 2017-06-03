@@ -88,7 +88,6 @@ def main():
     logger.info("Part 2 of 3 : Start census boundary load : {0}".format(start_time))
     # load_boundaries(pg_cur, settings)
     create_display_boundaries(pg_cur, settings)
-    # create_display_boundaries_2(pg_cur, settings)
     logger.info("Part 2 of 3 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
     # # PART 3 - create views
@@ -454,6 +453,9 @@ def create_display_boundaries(pg_cur, settings):
 
                 # thin geometries to a default tolerance
                 # tolerance = utils.get_tolerance(boundary_dict["thin_zoom"])
+                # if boundary_name == 'ste':
+                #     tolerance = utils.get_tolerance(zoom_level - 1)
+                # else:
                 tolerance = utils.get_tolerance(zoom_level)
 
                 # build create table statement
@@ -505,6 +507,8 @@ def create_display_boundaries(pg_cur, settings):
                 insert_sql_list.append(sql)
 
                 vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(pg_schema, pg_table))
+
+        zoom_level += 1
 
     utils.multiprocess_list("sql", create_sql_list, settings, logger)
     utils.multiprocess_list("sql", insert_sql_list, settings, logger)

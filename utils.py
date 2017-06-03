@@ -186,10 +186,10 @@ def get_settings(args):
 # get the boundary name that suits each (tiled map) zoom level
 def get_boundary_name(zoom_level):
 
-    if zoom_level < 7:
+    # if zoom_level < 7:
+    #     boundary_name = "ste"
+    if zoom_level < 8:
         boundary_name = "ste"
-    elif zoom_level < 9:
-        boundary_name = "sos"
     elif zoom_level < 10:
         boundary_name = "sa4"
     elif zoom_level < 12:
@@ -208,7 +208,7 @@ def get_boundary_name(zoom_level):
 def get_tolerance(zoom_level):
 
     # pixels squared factor
-    tolerance_square_pixels = 10
+    tolerance_square_pixels = 7
 
     # # rough metres to degrees conversation, using spherical WGS84 datum radius for simplicity and speed
     # metres2degrees = (2.0 * math.pi * 6378137.0) / 360.0
