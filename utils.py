@@ -216,14 +216,14 @@ def get_tolerance(zoom_level):
     # default Google/Bing map tile scales
     metres_per_pixel = 156543.03390625 / math.pow(2.0, float(zoom_level))
 
-    # the tolerance (metres) for vector simplifcation using the VW algorithm
+    # the tolerance (metres) for vector simplification using the VW algorithm
     square_metres_per_pixel = math.pow(metres_per_pixel, 2.0)
 
     # the tolerance for thinning data and limiting decimal places in GeoJSON responses
     degrees_per_pixel = metres_per_pixel / metres2degrees
 
-    # the tolerance (degrees) for vector simplifcation using the VW algorithm
-    square_degrees_per_pixel = math.pow(degrees_per_pixel, 2.0)
+    # # the tolerance (degrees) for vector simplifcation using the VW algorithm
+    # square_degrees_per_pixel = math.pow(degrees_per_pixel, 2.0)
 
     # tolerance to use
     # tolerance = square_degrees_per_pixel * tolerance_square_pixels
@@ -259,11 +259,11 @@ def get_decimal_places(zoom_level):
     return places
 
 
-# set tolerance for vector simplification
-def get_simplify_vw_tolerance(zoom_level):
-    reverse_zoom_level = 17 - zoom_level
-    tolerance = 75 * math.pow(2.75, float(reverse_zoom_level))
-    return tolerance
+# # set tolerance for vector simplification
+# def get_simplify_vw_tolerance(zoom_level):
+#     reverse_zoom_level = 17 - zoom_level
+#     tolerance = 75 * math.pow(2.75, float(reverse_zoom_level))
+#     return tolerance
 
 
 # takes a list of sql queries or command lines and runs them using multiprocessing

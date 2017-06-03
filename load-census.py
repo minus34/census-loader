@@ -70,17 +70,17 @@ def main():
     # --census-year=2011
     # --data-schema=census_2011_data
     # --boundary-schema=census_2011_bdys
-    # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2011_data
+    # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2011_data 
     # --census-bdys-path=/Users/hugh.saalmans/minus34/data/abs_2011
 
-    # # PART 1 - load census data from CSV files
-    # logger.info("")
-    # start_time = datetime.now()
-    # logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
-    # create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
-    # populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
-    #                      settings['table_name_part'], settings['bdy_name_part'], settings)
-    # logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
+    # PART 1 - load census data from CSV files
+    logger.info("")
+    start_time = datetime.now()
+    logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
+    create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
+    populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
+                         settings['table_name_part'], settings['bdy_name_part'], settings)
+    logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
 
     # PART 2 - load census boundaries from Shapefiles
     logger.info("")
@@ -211,10 +211,10 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
     # clean up invalid rows
     pg_cur.execute("DELETE FROM {0}.metadata_tables WHERE table_number IS NULL".format(settings['data_schema']))
 
-    # get rid of _Persons_Persons and replace with _Persons in metadata_stats
-    pg_cur.execute("UPDATE {0}.metadata_stats "
-                   "SET long_id = replace(long_id, '_Persons_Persons', '_Persons') "
-                   "WHERE long_id LIKE '%_Persons_Persons'".format(settings['data_schema']))
+    # # get rid of _Persons_Persons and replace with _Persons in metadata_stats - can't do this as it reorders the rows
+    # pg_cur.execute("UPDATE {0}.metadata_stats "
+    #                "SET long_id = replace(long_id, '_Persons_Persons', '_Persons') "
+    #                "WHERE long_id LIKE '%_Persons_Persons'".format(settings['data_schema']))
 
     # add primary keys
     pg_cur.execute("ALTER TABLE {0}.metadata_tables ADD CONSTRAINT metadata_tables_pkey PRIMARY KEY (table_number)"
