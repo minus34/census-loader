@@ -224,17 +224,17 @@ def get_data():
     #     if boundary_dict["boundary"] == boundary_name:
     #         boundary_primary_key = boundary_dict["primary_key"]
 
-    # display_zoom = str(zoom_level).zfill(2)
+    display_zoom = str(zoom_level).zfill(2)
 
     stat_table_name = boundary_name + "_" + table_id
 
     # TESTING - switch 1
-    # boundary_table_name = "zoom_{0}_{1}_{2}_aust".format(display_zoom, boundary_name, settings["census_year"])
-    boundary_table_name = "{0}".format(boundary_name)
+    boundary_table_name = "zoom_{0}_{1}_{2}_aust".format(display_zoom, boundary_name, settings["census_year"])
+    # boundary_table_name = "{0}".format(boundary_name)
 
     # TESTING - switch 3
-    # boundary_schema = "{0}_display".format(settings['boundary_schema'])
-    boundary_schema = "{0}_display_2".format(settings['boundary_schema'])
+    boundary_schema = "{0}_display".format(settings['boundary_schema'])
+    # boundary_schema = "{0}_display_2".format(settings['boundary_schema'])
 
     # # thin geometries to a default tolerance based on zoom level 17
     # tolerance = utils.get_simplify_vw_tolerance(17)

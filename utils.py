@@ -167,11 +167,11 @@ def get_settings(args):
              {"boundary": "ra", "id_field": "ra_code", "name_field": "ra_name", "area_field": "area_sqkm", "thin_zoom": 8},
              {"boundary": "sa1", "id_field": "sa1_7digit", "name_field": "'SA1 ' || sa1_7digit", "area_field": "area_sqkm", "thin_zoom": 15},
              {"boundary": "sa2", "id_field": "sa2_main", "name_field": "sa2_name", "area_field": "area_sqkm", "thin_zoom": 13},
-             {"boundary": "sa3", "id_field": "sa3_code", "name_field": "sa3_name", "area_field": "area_sqkm", "thin_zoom": 12},
-             {"boundary": "sa4", "id_field": "sa4_code", "name_field": "sa4_name", "area_field": "area_sqkm", "thin_zoom": 11},
+             {"boundary": "sa3", "id_field": "sa3_code", "name_field": "sa3_name", "area_field": "area_sqkm", "thin_zoom": 11},
+             {"boundary": "sa4", "id_field": "sa4_code", "name_field": "sa4_name", "area_field": "area_sqkm", "thin_zoom": 10},
              {"boundary": "sed", "id_field": "sed_code", "name_field": "sed_name", "area_field": "area_sqkm", "thin_zoom": 10},
              {"boundary": "sla", "id_field": "sla_main", "name_field": "sla_name", "area_field": "area_sqkm", "thin_zoom": 12},
-             {"boundary": "sos", "id_field": "sos_code", "name_field": "sos_name", "area_field": "area_sqkm", "thin_zoom": 8},
+             {"boundary": "sos", "id_field": "sos_code", "name_field": "sos_name", "area_field": "area_sqkm", "thin_zoom": 9},
              {"boundary": "sosr", "id_field": "sosr_code", "name_field": "sosr_name", "area_field": "area_sqkm", "thin_zoom": 8},
              {"boundary": "ssc", "id_field": "ssc_code", "name_field": "ssc_name", "area_field": "area_sqkm", "thin_zoom": 12},
              {"boundary": "ste", "id_field": "state_code", "name_field": "state_name", "area_field": "area_sqkm", "thin_zoom": 6},
@@ -186,13 +186,13 @@ def get_settings(args):
 # get the boundary name that suits each (tiled map) zoom level
 def get_boundary_name(zoom_level):
 
-    if zoom_level < 6:
+    if zoom_level < 7:
         boundary_name = "ste"
-    elif zoom_level < 8:
+    elif zoom_level < 9:
         boundary_name = "sos"
     elif zoom_level < 10:
         boundary_name = "sa4"
-    elif zoom_level < 11:
+    elif zoom_level < 12:
         boundary_name = "sa3"
     elif zoom_level < 14:
         boundary_name = "sa2"
@@ -204,14 +204,14 @@ def get_boundary_name(zoom_level):
     return boundary_name
 
 
-# calculates the tolerance (in degrees) for vector simplification using the VW algorithm
+# calculates the area tolerance (in m2) for vector simplification using the Visvalingam-Whyatt algorithm
 def get_tolerance(zoom_level):
 
     # pixels squared factor
-    tolerance_square_pixels = 9
+    tolerance_square_pixels = 10
 
-    # rough metres to degrees conversation, using spherical WGS84 datum radius for simplicity and speed
-    metres2degrees = (2.0 * math.pi * 6378137.0) / 360.0
+    # # rough metres to degrees conversation, using spherical WGS84 datum radius for simplicity and speed
+    # metres2degrees = (2.0 * math.pi * 6378137.0) / 360.0
 
     # default Google/Bing map tile scales
     metres_per_pixel = 156543.03390625 / math.pow(2.0, float(zoom_level))
@@ -219,8 +219,8 @@ def get_tolerance(zoom_level):
     # the tolerance (metres) for vector simplification using the VW algorithm
     square_metres_per_pixel = math.pow(metres_per_pixel, 2.0)
 
-    # the tolerance for thinning data and limiting decimal places in GeoJSON responses
-    degrees_per_pixel = metres_per_pixel / metres2degrees
+    # # the tolerance for thinning data and limiting decimal places in GeoJSON responses
+    # degrees_per_pixel = metres_per_pixel / metres2degrees
 
     # # the tolerance (degrees) for vector simplifcation using the VW algorithm
     # square_degrees_per_pixel = math.pow(degrees_per_pixel, 2.0)

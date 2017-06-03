@@ -70,25 +70,25 @@ def main():
     # --census-year=2011
     # --data-schema=census_2011_data
     # --boundary-schema=census_2011_bdys
-    # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2011_data 
+    # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2011_data
     # --census-bdys-path=/Users/hugh.saalmans/minus34/data/abs_2011
 
-    # PART 1 - load census data from CSV files
-    logger.info("")
-    start_time = datetime.now()
-    logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
-    create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
-    populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
-                         settings['table_name_part'], settings['bdy_name_part'], settings)
-    logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
+    # # PART 1 - load census data from CSV files
+    # logger.info("")
+    # start_time = datetime.now()
+    # logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
+    # create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
+    # populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
+    #                      settings['table_name_part'], settings['bdy_name_part'], settings)
+    # logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
 
     # PART 2 - load census boundaries from Shapefiles
     logger.info("")
     start_time = datetime.now()
     logger.info("Part 2 of 3 : Start census boundary load : {0}".format(start_time))
     # load_boundaries(pg_cur, settings)
-    # create_display_boundaries(pg_cur, settings)
-    create_display_boundaries_2(pg_cur, settings)
+    create_display_boundaries(pg_cur, settings)
+    # create_display_boundaries_2(pg_cur, settings)
     logger.info("Part 2 of 3 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
     # # PART 3 - create views
@@ -367,21 +367,74 @@ def load_boundaries(pg_cur, settings):
         logger.info("\t- Step 1 of 2 : census boundaries loaded : {0}".format(datetime.now() - start_time))
 
 
-def create_display_boundaries(pg_cur, settings):
-    # Step 2 of 2 : create display optimised version of the main census boundaries (ste > sa4 > sa3 > sa2 > sa1 > mb)
-    start_time = datetime.now()
+# def create_display_boundaries(pg_cur, settings):
+#     # Step 2 of 2 : create display optimised version of the main census boundaries (ste > sa4 > sa3 > sa2 > sa1 > mb)
+#     start_time = datetime.now()
+#
+#     # display boundaries schema name
+#     pg_schema = "{0}_display".format(settings['boundary_schema'])
+#
+#     # create schema
+#     if settings['boundary_schema'] != "public":
+#         pg_cur.execute("CREATE SCHEMA IF NOT EXISTS {0} AUTHORIZATION {1}"
+#                        .format(pg_schema, settings['pg_user']))
+#
+#     # process boundaries and precisions for all tiled map zoom levels
+#     sql_list = list()
+#     sql_list2 = list()
+#     zoom_level = 4
+#
+#     while zoom_level < 19:
+#         display_zoom = str(zoom_level).zfill(2)
+#
+#         for boundary_dict in settings['bdy_table_dicts']:
+#             boundary_name = boundary_dict["boundary"]
+#             id_field = boundary_dict["id_field"]
+#             name_field = boundary_dict["name_field"]
+#             area_field = boundary_dict["area_field"]
+#
+#             input_pg_table = "{0}_{1}_aust".format(boundary_name, settings["census_year"])
+#             pg_table = "zoom_{0}_{1}_{2}_aust".format(display_zoom, boundary_name, settings["census_year"])
+#
+#             # set tolerance for vector simplification
+#             tolerance = utils.get_tolerance(zoom_level)
+#
+#             sql = "DROP TABLE IF EXISTS {0}.{1} CASCADE;" \
+#                   "SELECT {5}::text AS id, {6}::text AS name, SUM({7})::double precision AS area, " \
+#                   "ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {4}))), 4283)::geometry(MULTIPOLYGON) AS geom " \
+#                   "INTO {0}.{1} FROM {2}.{3} GROUP BY id, name;" \
+#                   "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY (id);" \
+#                   "CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);" \
+#                   "ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx" \
+#                 .format(pg_schema, pg_table, settings['boundary_schema'], input_pg_table,
+#                         tolerance, id_field, name_field, area_field)
+#             sql_list.append(sql)
+#
+#             sql_list2.append("VACUUM ANALYZE {0}.{1}".format(pg_schema, pg_table))
+#
+#         zoom_level += 1
+#
+#     utils.multiprocess_list("sql", sql_list, settings, logger)
+#     utils.multiprocess_list("sql", sql_list2, settings, logger)
+#
+#     logger.info("\t- Step 2 of 2 : display census boundaries created : {0}".format(datetime.now() - start_time))
 
-    # display boundaries schema name
-    pg_schema = "{0}_display".format(settings['boundary_schema'])
+
+def create_display_boundaries(pg_cur, settings):
+    # Step 2 of 2 : create display optimised versions of the census boundaries
+    start_time = datetime.now()
 
     # create schema
     if settings['boundary_schema'] != "public":
-        pg_cur.execute("CREATE SCHEMA IF NOT EXISTS {0} AUTHORIZATION {1}"
-                       .format(pg_schema, settings['pg_user']))
+        pg_schema = "{0}_display".format(settings['boundary_schema'])
+        pg_cur.execute("CREATE SCHEMA IF NOT EXISTS {0} AUTHORIZATION {1}".format(pg_schema, settings['pg_user']))
+    else:
+        pg_schema = "public"
 
-    # process boundaries and precisions for all tiled map zoom levels
-    sql_list = list()
-    sql_list2 = list()
+    # prepare boundaries for all tiled map zoom levels
+    create_sql_list = list()
+    insert_sql_list = list()
+    vacuum_sql_list = list()
     zoom_level = 4
 
     while zoom_level < 19:
@@ -389,131 +442,69 @@ def create_display_boundaries(pg_cur, settings):
 
         for boundary_dict in settings['bdy_table_dicts']:
             boundary_name = boundary_dict["boundary"]
-            id_field = boundary_dict["id_field"]
-            name_field = boundary_dict["name_field"]
-            area_field = boundary_dict["area_field"]
 
-            input_pg_table = "{0}_{1}_aust".format(boundary_name, settings["census_year"])
-            pg_table = "zoom_{0}_{1}_{2}_aust".format(display_zoom, boundary_name, settings["census_year"])
+            if boundary_name != "mb":
+                id_field = boundary_dict["id_field"]
+                name_field = boundary_dict["name_field"]
+                area_field = boundary_dict["area_field"]
 
-            # set tolerance for vector simplification
-            tolerance = utils.get_simplify_vw_tolerance(zoom_level)
+                input_pg_table = "{0}_{1}_aust".format(boundary_name, settings["census_year"])
+                # pg_table = "{0}".format(boundary_name)
+                pg_table = "{0}_zoom_{1}".format(boundary_name, display_zoom)
 
-            sql = "DROP TABLE IF EXISTS {0}.{1} CASCADE;" \
-                  "SELECT {5}::text AS id, {6}::text AS name, SUM({7})::double precision AS area, " \
-                  "ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {4}))), 4326)::geometry(MULTIPOLYGON) AS geom " \
-                  "INTO {0}.{1} FROM {2}.{3} GROUP BY id, name;" \
-                  "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY (id);" \
-                  "CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);" \
-                  "ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx" \
-                .format(pg_schema, pg_table, settings['boundary_schema'], input_pg_table,
-                        tolerance, id_field, name_field, area_field)
-            sql_list.append(sql)
+                # thin geometries to a default tolerance
+                # tolerance = utils.get_tolerance(boundary_dict["thin_zoom"])
+                tolerance = utils.get_tolerance(zoom_level)
 
-            sql_list2.append("VACUUM ANALYZE {0}.{1}".format(pg_schema, pg_table))
+                # build create table statement
+                create_table_list = list()
+                create_table_list.append("DROP TABLE IF EXISTS {0}.{1} CASCADE;")
+                create_table_list.append("CREATE TABLE {0}.{1} (")
 
-        zoom_level += 1
+                # build column list
+                column_list = list()
+                column_list.append("id text NOT NULL PRIMARY KEY")
+                column_list.append("name text NOT NULL")
+                column_list.append("area double precision NULL")
+                column_list.append("population double precision NOT NULL")
+                column_list.append("geom geometry(MultiPolygon, 4283) NULL")
 
-    utils.multiprocess_list("sql", sql_list, settings, logger)
-    utils.multiprocess_list("sql", sql_list2, settings, logger)
+                # add columsn to create table statement and finish it
+                create_table_list.append(",".join(column_list))
+                create_table_list.append(") WITH (OIDS=FALSE);")
+                create_table_list.append("ALTER TABLE {0}.{1} OWNER TO {2};")
+                create_table_list.append("CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);")
+                create_table_list.append("ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx")
 
-    logger.info("\t- Step 2 of 2 : display census boundaries created : {0}".format(datetime.now() - start_time))
+                sql = "".join(create_table_list).format(pg_schema, pg_table, settings['pg_user'])
+                create_sql_list.append(sql)
 
+                # get population field and table
+                if boundary_name[:1] == "i":
+                    pop_stat = "i3"
+                    pop_table = "i01a"
+                elif settings["census_year"] == "2011":
+                    pop_stat = "b3"
+                    pop_table = "b01"
+                else:
+                    pop_stat = "g3"
+                    pop_table = "g01"
 
+                # build insert statement
+                insert_into_list = list()
+                insert_into_list.append("INSERT INTO {0}.{1}".format(pg_schema, pg_table))
+                insert_into_list.append("SELECT {0} AS id, {1} AS name, SUM({2}) AS area, {3} AS population,"
+                                        .format(id_field, name_field, area_field, pop_stat))
+                insert_into_list.append("ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {0}))), 4283)".format(tolerance,))
+                insert_into_list.append("FROM {0}.{1} AS bdy".format(settings['boundary_schema'], input_pg_table))
+                insert_into_list.append("INNER JOIN {0}.{1}_{2} AS tab".format(settings['data_schema'], boundary_name, pop_table))
+                insert_into_list.append("ON bdy.{0} = tab.{1}".format(id_field, settings["region_id_field"]))
+                insert_into_list.append("GROUP BY {0}, {1}, {2}".format(id_field, name_field, pop_stat))
 
+                sql = " ".join(insert_into_list)
+                insert_sql_list.append(sql)
 
-
-
-def create_display_boundaries_2(pg_cur, settings):
-    # Step 2 of 2 : create display optimised versions of the census boundaries
-    start_time = datetime.now()
-
-    # display boundaries schema name
-    pg_schema = "{0}_display_2".format(settings['boundary_schema'])
-
-    # create schema
-    if settings['boundary_schema'] != "public":
-        pg_cur.execute("CREATE SCHEMA IF NOT EXISTS {0} AUTHORIZATION {1}".format(pg_schema, settings['pg_user']))
-
-    # process boundaries and precisions for all tiled map zoom levels
-    create_sql_list = list()
-    insert_sql_list = list()
-    vacuum_sql_list = list()
-
-    for boundary_dict in settings['bdy_table_dicts']:
-        boundary_name = boundary_dict["boundary"]
-
-        if boundary_name != "mb":
-            id_field = boundary_dict["id_field"]
-            name_field = boundary_dict["name_field"]
-            area_field = boundary_dict["area_field"]
-
-            input_pg_table = "{0}_{1}_aust".format(boundary_name, settings["census_year"])
-            pg_table = "{0}".format(boundary_name)
-
-            # thin geometries to a default tolerance based on zoom level 17
-            # tolerance = utils.get_simplify_vw_tolerance(17)
-            tolerance = utils.get_tolerance(boundary_dict["thin_zoom"])
-
-            # build create table statement
-            create_table_list = list()
-            create_table_list.append("DROP TABLE IF EXISTS {0}.{1} CASCADE;")
-            create_table_list.append("CREATE TABLE {0}.{1} (")
-
-            # build column list
-            column_list = list()
-            column_list.append("id text NOT NULL PRIMARY KEY")
-            column_list.append("name text NOT NULL")
-            column_list.append("area double precision NULL")
-            column_list.append("population double precision NOT NULL")
-            column_list.append("geom geometry(MultiPolygon, 4283) NULL")
-
-            # add columsn to create table statement and finish it
-            create_table_list.append(",".join(column_list))
-            create_table_list.append(") WITH (OIDS=FALSE);")
-            create_table_list.append("ALTER TABLE {0}.{1} OWNER TO {2};")
-            create_table_list.append("CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);")
-            create_table_list.append("ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx")
-
-            sql = "".join(create_table_list).format(pg_schema, pg_table, settings['pg_user'])
-            create_sql_list.append(sql)
-
-            # get population field and table
-            if boundary_name[:1] == "i":
-                pop_stat = "i3"
-                pop_table = "i01a"
-            elif settings["census_year"] == "2011":
-                pop_stat = "b3"
-                pop_table = "b01"
-            else:
-                pop_stat = "g3"
-                pop_table = "g01"
-
-            # build insert statement
-            insert_into_list = list()
-            insert_into_list.append("INSERT INTO {0}.{1}".format(pg_schema, pg_table))
-            insert_into_list.append("SELECT {0} AS id, {1} AS name, SUM({2}) AS area, {3} AS population,"
-                                    .format(id_field, name_field, area_field, pop_stat))
-            insert_into_list.append("ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {0}))), 4283)".format(tolerance,))
-            # insert_into_list.append("ST_Multi(ST_Union(ST_SimplifyVW(geom, {0})))".format(tolerance,))
-            insert_into_list.append("FROM {0}.{1} AS bdy".format(settings['boundary_schema'], input_pg_table))
-            insert_into_list.append("INNER JOIN {0}.{1}_{2} AS tab".format(settings['data_schema'], boundary_name, pop_table))
-            insert_into_list.append("ON bdy.{0} = tab.{1}".format(id_field, settings["region_id_field"]))
-            insert_into_list.append("GROUP BY {0}, {1}, {2}".format(id_field, name_field, pop_stat))
-
-            # sql = "INSERT INTO {0}.{1} " \
-            #       "SELECT bdy.{5} AS id, bdy.{6} AS name, SUM(bdy.{7}) AS area, tab.b1" \
-            #       "ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(bdy.geom, 3577), {4}))), 4326) " \
-            #       "FROM {2}.{3} " \
-            #       "INNER JOIN " \
-            #       "GROUP BY id, name" \
-            #     .format(pg_schema, pg_table, settings['boundary_schema'], input_pg_table,
-            #             tolerance, id_field, name_field, area_field)
-
-            sql = " ".join(insert_into_list)
-            insert_sql_list.append(sql)
-
-            vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(pg_schema, pg_table))
+                vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(pg_schema, pg_table))
 
     utils.multiprocess_list("sql", create_sql_list, settings, logger)
     utils.multiprocess_list("sql", insert_sql_list, settings, logger)
