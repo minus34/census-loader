@@ -88,13 +88,174 @@ def get_boundary_name():
     return Response(json.dumps(boundary_zoom_dict), mimetype='application/json')
 
 
+# @app.route("/get-metadata")
+# def get_metadata():
+#     # Get parameters from querystring
+#     num_classes = int(request.args.get('n'))
+#     raw_stats = request.args.get('stats')
+#
+#     # replace all maths operators to get list of all the stats we need
+#     search_stats = raw_stats.upper().replace(" ", "").replace("(", "").replace(")", "")\
+#         .replace("+", ",").replace("-", ",").replace("/", ",").replace("*", ",").split(",")
+#
+#     # TODO: add support for numbers in equations - need to strip them from search_stats list
+#
+#     # equation_stats = raw_stats.lower().split(",")
+#
+#     # print(equation_stats)
+#     # print(search_stats)
+#
+#     # get stats tuple for query input
+#     search_stats_tuple = tuple(search_stats)
+#
+#     # get percentile fraction
+#     percentile_fraction = 1.0 / float(num_classes)
+#
+#     # get all boundary names in all zoom levels
+#     boundary_names = list()
+#
+#     for zoom_level in range(0, 16):
+#         bdy_name = utils.get_boundary_name(zoom_level)
+#
+#         if bdy_name not in boundary_names:
+#             boundary_names.append(bdy_name)
+#
+#     # get stats metadata, including the all important table number
+#     sql = "SELECT sequential_id AS id, lower(table_number) AS table, replace(long_id, '_', ' ') AS description, " \
+#           "column_heading_description AS type " \
+#           "FROM {0}.metadata_stats " \
+#           "WHERE sequential_id IN %s " \
+#           "ORDER BY sequential_id".format(settings["data_schema"],)
+#
+#     with get_db_cursor() as pg_cur:
+#         try:
+#             pg_cur.execute(sql, (search_stats_tuple,))
+#         except psycopg2.Error:
+#             return "I can't SELECT :\n\n" + sql
+#
+#         # Retrieve the results of the query
+#         rows = pg_cur.fetchall()
+#
+#     # output is the main content, row_output is the content from each record returned
+#     response_dict = dict()
+#     response_dict["type"] = "StatsCollection"
+#     response_dict["classes"] = num_classes
+#
+#     output_array = list()
+#
+#     # get metadata for all boundaries (done in one go for frontend performance)
+#     for boundary_name in boundary_names:
+#         output_dict = dict()
+#         output_dict["boundary"] = boundary_name
+#
+#         # # get id and area fields for boundary
+#         # boundary_id_field = ""
+#         # boundary_area_field = ""
+#         #
+#         # for boundary_dict in settings['bdy_table_dicts']:
+#         #     if boundary_dict["boundary"] == boundary_name:
+#         #         boundary_id_field = boundary_dict["id_field"]
+#         #         boundary_area_field = boundary_dict["area_field"]
+#
+#         i = 0
+#         feature_array = list()
+#
+#         # For each row returned assemble a dictionary
+#         for row in rows:
+#             feature_dict = dict(row)
+#
+#             # get the values for the map classes
+#
+#             # 1 of 3 - values
+#             field_array = list()
+#             current_fraction = percentile_fraction
+#
+#             for j in range(0, num_classes):
+#                 field_array.append("percentile_disc({0}) within group (order by {1}) as \"{2}\""
+#                                    .format(current_fraction, feature_dict["id"], j + 1))
+#
+#                 current_fraction += percentile_fraction
+#
+#             sql = "SELECT {3} FROM {0}.{1}_{2}"\
+#                 .format(settings["data_schema"], boundary_name, feature_dict["table"], ",".join(field_array))
+#
+#             with get_db_cursor() as pg_cur:
+#                 pg_cur.execute(sql)
+#                 values = pg_cur.fetchone()
+#
+#                 feature_dict["values"] = dict(values)
+#
+#             # 2 of 3 - densities
+#             field_array = list()
+#             current_fraction = percentile_fraction
+#
+#             for j in range(0, num_classes):
+#                 the_field = "tab." + feature_dict["id"] + " / bdy.area"
+#
+#                 field_array.append("percentile_disc({0}) within group (order by {1}) as \"{2}\""
+#                                    .format(current_fraction, the_field, j + 1))
+#
+#                 current_fraction += percentile_fraction
+#
+#             sql = "SELECT {0} FROM {1}.{2}_{3} AS tab " \
+#                   "INNER JOIN {4}.{2}_zoom_10 AS bdy ON tab.{5} = bdy.id " \
+#                   "WHERE geom IS NOT NULL" \
+#                 .format(",".join(field_array), settings["data_schema"], boundary_name, feature_dict["table"],
+#                         settings["boundary_schema"] + "_display", settings['region_id_field'])
+#
+#             with get_db_cursor() as pg_cur:
+#                 pg_cur.execute(sql)
+#                 values = pg_cur.fetchone()
+#
+#                 feature_dict["densities"] = dict(values)
+#
+#             # 3 of 3 - normalised
+#             field_array = list()
+#             current_fraction = percentile_fraction
+#
+#             for j in range(0, num_classes):
+#                 the_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END"\
+#                     .format(feature_dict["id"],)
+#
+#                 field_array.append("percentile_disc({0}) within group (order by {1}) as \"{2}\""
+#                                    .format(current_fraction, the_field, j + 1))
+#
+#                 current_fraction += percentile_fraction
+#
+#             sql = "SELECT {0} FROM {1}.{2}_{3} AS tab " \
+#                   "INNER JOIN {4}.{2}_zoom_10 AS bdy ON tab.{5} = bdy.id " \
+#                   "WHERE bdy.geom IS NOT NULL " \
+#                   "AND bdy.population > 0" \
+#                 .format(",".join(field_array), settings["data_schema"], boundary_name, feature_dict["table"],
+#                         settings["boundary_schema"] + "_display", settings['region_id_field'])
+#
+#             with get_db_cursor() as pg_cur:
+#                 pg_cur.execute(sql)
+#                 values = pg_cur.fetchone()
+#
+#                 feature_dict["normalised"] = dict(values)
+#
+#             # add dict to output array oif metadata
+#             feature_array.append(feature_dict)
+#
+#             i += 1
+#
+#         output_dict["stats"] = feature_array
+#         output_array.append(output_dict)
+#
+#     # Assemble the JSON
+#     response_dict["boundaries"] = output_array
+#
+#     return Response(json.dumps(response_dict), mimetype='application/json')
+
+
 @app.route("/get-metadata")
 def get_metadata():
     # Get parameters from querystring
     num_classes = int(request.args.get('n'))
     raw_stats = request.args.get('stats')
 
-    # strip maths operators to get list of stats we need
+    # replace all maths operators to get list of all the stats we need
     search_stats = raw_stats.upper().replace(" ", "").replace("(", "").replace(")", "")\
         .replace("+", ",").replace("-", ",").replace("/", ",").replace("*", ",").split(",")
 
@@ -107,9 +268,6 @@ def get_metadata():
 
     # get stats tuple for query input
     search_stats_tuple = tuple(search_stats)
-
-    # get percentile fraction
-    percentile_fraction = 1.0 / float(num_classes)
 
     # get all boundary names in all zoom levels
     boundary_names = list()
@@ -148,15 +306,6 @@ def get_metadata():
         output_dict = dict()
         output_dict["boundary"] = boundary_name
 
-        # # get id and area fields for boundary
-        # boundary_id_field = ""
-        # boundary_area_field = ""
-        #
-        # for boundary_dict in settings['bdy_table_dicts']:
-        #     if boundary_dict["boundary"] == boundary_name:
-        #         boundary_id_field = boundary_dict["id_field"]
-        #         boundary_area_field = boundary_dict["area_field"]
-
         i = 0
         feature_array = list()
 
@@ -167,73 +316,17 @@ def get_metadata():
             # get the values for the map classes
 
             # 1 of 3 - values
-            field_array = list()
-            current_fraction = percentile_fraction
-
-            for j in range(0, num_classes):
-                field_array.append("percentile_disc({0}) within group (order by {1}) as \"{2}\""
-                                   .format(current_fraction, feature_dict["id"], j + 1))
-
-                current_fraction += percentile_fraction
-
-            sql = "SELECT {3} FROM {0}.{1}_{2}"\
-                .format(settings["data_schema"], boundary_name, feature_dict["table"], ",".join(field_array))
-
-            with get_db_cursor() as pg_cur:
-                pg_cur.execute(sql)
-                values = pg_cur.fetchone()
-
-                feature_dict["values"] = dict(values)
+            stat_field = feature_dict["id"]
+            feature_dict["values"] = get_bins(boundary_name, feature_dict, num_classes, stat_field)
 
             # 2 of 3 - densities
-            field_array = list()
-            current_fraction = percentile_fraction
-
-            for j in range(0, num_classes):
-                the_field = "tab." + feature_dict["id"] + " / bdy.area"
-
-                field_array.append("percentile_disc({0}) within group (order by {1}) as \"{2}\""
-                                   .format(current_fraction, the_field, j + 1))
-
-                current_fraction += percentile_fraction
-
-            sql = "SELECT {0} FROM {1}.{2}_{3} AS tab " \
-                  "INNER JOIN {4}.{2}_zoom_10 AS bdy ON tab.{5} = bdy.id " \
-                  "WHERE geom IS NOT NULL" \
-                .format(",".join(field_array), settings["data_schema"], boundary_name, feature_dict["table"],
-                        settings["boundary_schema"] + "_display", settings['region_id_field'])
-
-            with get_db_cursor() as pg_cur:
-                pg_cur.execute(sql)
-                values = pg_cur.fetchone()
-
-                feature_dict["densities"] = dict(values)
+            stat_field = "tab." + feature_dict["id"] + " / bdy.area"
+            feature_dict["densities"] = get_bins(boundary_name, feature_dict, num_classes, stat_field)
 
             # 3 of 3 - normalised
-            field_array = list()
-            current_fraction = percentile_fraction
-
-            for j in range(0, num_classes):
-                the_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END"\
-                    .format(feature_dict["id"],)
-
-                field_array.append("percentile_disc({0}) within group (order by {1}) as \"{2}\""
-                                   .format(current_fraction, the_field, j + 1))
-
-                current_fraction += percentile_fraction
-
-            sql = "SELECT {0} FROM {1}.{2}_{3} AS tab " \
-                  "INNER JOIN {4}.{2}_zoom_10 AS bdy ON tab.{5} = bdy.id " \
-                  "WHERE bdy.geom IS NOT NULL " \
-                  "AND bdy.population > 0" \
-                .format(",".join(field_array), settings["data_schema"], boundary_name, feature_dict["table"],
-                        settings["boundary_schema"] + "_display", settings['region_id_field'])
-
-            with get_db_cursor() as pg_cur:
-                pg_cur.execute(sql)
-                values = pg_cur.fetchone()
-
-                feature_dict["normalised"] = dict(values)
+            stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END" \
+                .format(feature_dict["id"], )
+            feature_dict["normalised"] = get_bins(boundary_name, feature_dict, num_classes, stat_field)
 
             # add dict to output array oif metadata
             feature_array.append(feature_dict)
@@ -247,6 +340,30 @@ def get_metadata():
     response_dict["boundaries"] = output_array
 
     return Response(json.dumps(response_dict), mimetype='application/json')
+
+
+def get_bins(boundary_name, feature_dict, num_classes, stat_field):
+    value_dict = dict()
+
+    sql = "SELECT MAX({0}) AS val FROM {1}.{2}_{3} AS tab " \
+          "INNER JOIN {4}.{2}_zoom_10 AS bdy ON tab.{5} = bdy.id " \
+          "WHERE geom IS NOT NULL" \
+        .format(stat_field, settings["data_schema"], boundary_name, feature_dict["table"],
+                settings["boundary_schema"] + "_display", settings['region_id_field'])
+
+    print(sql)
+
+    with get_db_cursor() as pg_cur:
+        pg_cur.execute(sql)
+        row = pg_cur.fetchone()
+        max_value = row["val"]
+
+    increment = max_value / float(num_classes)
+
+    for j in range(0, num_classes):
+        value_dict["{0}".format(j)] = increment * float(j + 1)
+
+    return value_dict
 
 
 @app.route("/get-data")
