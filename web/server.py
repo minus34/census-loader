@@ -100,8 +100,6 @@ def get_metadata():
 
     # TODO: add support for numbers in equations - need to strip them from search_stats list
 
-    # TODO: add support for normalised and density stats. eg B1 / B3 and B1 / areasqkm
-
     # equation_stats = raw_stats.lower().split(",")
 
     # print(equation_stats)
@@ -229,8 +227,6 @@ def get_metadata():
                   "AND bdy.population > 0" \
                 .format(",".join(field_array), settings["data_schema"], boundary_name, feature_dict["table"],
                         settings["boundary_schema"] + "_display", settings['region_id_field'])
-
-            print(sql)
 
             with get_db_cursor() as pg_cur:
                 pg_cur.execute(sql)

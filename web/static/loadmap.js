@@ -29,6 +29,7 @@ var currentStatTable;
 var currentStatType;
 var currentStatDescription;
 
+var currentMapType = "density"; // initial map type options: values, density, percent
 var currentStatClasses;
 var colours = ['#fde0c5','#facba6','#f8b58b','#f59e72','#f2855d','#ef6a4c','#eb4a40']
 
@@ -136,15 +137,15 @@ function init() {
     };
     info.addTo(map);
 
-    // add radio buttons to choose mpa type: valume of stats, density (stat/area) or percent (normalised against B3 - total persons)
+    // add radio buttons to choose mpa type: volume of stats, density (stat/area) or percent (normalised against B3 - total persons)
     var chooseMapType = L.control({
         position : 'bottomright'
     });
     chooseMapType.onAdd = function (map) {
         this._div = L.DomUtil.create('div', 'info themer');
         this._div.innerHTML = '<div><b>Map type </b>' +
-                              '<input id="m1" type="radio" name="mapType" value="values" checked="checked"><label for="r1"><span><span></span></span>values</label> ' +
-                              '<input id="m2" type="radio" name="mapType" value="density"><label for="r2"><span><span></span></span>density</label> ' +
+                              '<input id="m1" type="radio" name="mapType" value="values"><label for="r1"><span><span></span></span>values</label> ' +
+                              '<input id="m2" type="radio" name="mapType" value="density" checked="checked"><label for="r2"><span><span></span></span>density</label> ' +
                               '<input id="m3" type="radio" name="mapType" value="percent"><label for="r3"><span><span></span></span>percent</label>' +
                               '</div>';
         return this._div;
@@ -152,7 +153,7 @@ function init() {
 
     // event to trigger the map theme change
     $("input:radio[name=mapType]").click(function () {
-        currentStatId = $(this).val();
+        currentMapType = $(this).val();
         // update all stat metadata
         getCurrentStatMetadata();
 
@@ -167,6 +168,7 @@ function init() {
         getData();
     });
     chooseMapType.addTo(map);
+
     // add radio buttons to choose stat to theme the map
     themer = L.control({
         position : 'bottomright'
@@ -235,6 +237,21 @@ function init() {
                 currentStatDensities = currentStats[0].densities;
                 currentStatNormalised = currentStats[0].normalised;
                 currentStatDescription = currentStats[0].description;
+
+                // set initial map type classes
+                switch(currentMapType) {
+                    case "values":
+                        currentStatClasses = currentStatValues
+                        break;
+                    case "density":
+                        currentStatClasses = currentStatDensities
+                        break;
+                    case "percent":
+                        currentStatClasses = currentStatNormalised
+                        break;
+                    default:
+                        currentStatClasses = currentStatDensities
+                }
 //                currentStat = currentStats[0]; // pick the first stat in the URL to map first
             }
         }
@@ -283,6 +300,21 @@ function getCurrentStatMetadata() {
                     currentStatDensities = currentStats[0].densities;
                     currentStatNormalised = currentStats[0].normalised;
                     currentStatDescription = currentStats[j].description;
+
+                    // set the current map classes
+                    switch(currentMapType) {
+                        case "values":
+                            currentStatClasses = currentStatValues
+                            break;
+                        case "density":
+                            currentStatClasses = currentStatDensities
+                            break;
+                        case "percent":
+                            currentStatClasses = currentStatNormalised
+                            break;
+                        default:
+                            currentStatClasses = currentStatDensities
+                    }
                 }
             }
         }
