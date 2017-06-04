@@ -151,33 +151,42 @@ function init() {
         return this._div;
     };
 
-    // event to trigger the map theme change
-    $("input:radio[name=mapType]").click(function () {
-        currentMapType = $(this).val();
-        // update all stat metadata
-        getCurrentStatMetadata();
+    chooseMapType.update = function (radioButtons) {
+        this._div.innerHTML = radioButtons;
 
-//            // change styles for new stat - incompatible with current backend
-//            geojsonLayer.eachLayer(function (layer) {
-//                console.log(layer.feature);
-//
-//                layer.setStyle(style(layer.feature));
-//            });
+        // event to trigger the map theme change
+        $("input:radio[name=mapType]").click(function () {
+            currentMapType = $(this).val();
 
-        // reload the data - NEEDS TO BE REPLACED WITH A MORE EFFICIENT WAY
-        getData();
-    });
+            console.log(currentMapType);
+
+            // update all stat metadata
+            getCurrentStatMetadata();
+
+    //            // change styles for new stat - incompatible with current backend
+    //            geojsonLayer.eachLayer(function (layer) {
+    //                console.log(layer.feature);
+    //
+    //                layer.setStyle(style(layer.feature));
+    //            });
+
+            // reload the data - NEEDS TO BE REPLACED WITH A MORE EFFICIENT WAY
+            getData();
+        });
+    };
     chooseMapType.addTo(map);
 
     // add radio buttons to choose stat to theme the map
     themer = L.control({
         position : 'bottomright'
     });
+
     themer.onAdd = function (map) {
         this._div = L.DomUtil.create('div', 'info themer');
         this.update();
         return this._div;
     };
+
     themer.update = function (radioButtons) {
         this._div.innerHTML = radioButtons;
 
@@ -389,7 +398,22 @@ function gotData(json) {
 }
 
 function style(feature) {
-    var renderVal = parseInt(feature.properties[currentStatId]);
+    var renderVal;
+
+    // render value to use depends on map type
+    switch(currentMapType) {
+        case "values":
+            renderVal = parseInt(feature.properties[currentStatId]);
+            break;
+        case "density":
+            renderVal = parseInt(feature.properties.density);
+            break;
+        case "percent":
+            renderVal = parseInt(feature.properties.percent);
+            break;
+        default:
+            renderVal = parseInt(feature.properties.density);
+      }
 
 //    console.log(currentStatId);
 //    console.log(renderVal);

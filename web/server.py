@@ -302,7 +302,7 @@ def get_data():
         print("Connected to database in {0}".format(datetime.now() - start_time))
         start_time = datetime.now()
 
-        envelope_sql = "ST_MakeEnvelope({0}, {1}, {2}, {3}, 4326)".format(map_left, map_bottom, map_right, map_top)
+        envelope_sql = "ST_MakeEnvelope({0}, {1}, {2}, {3}, 4283)".format(map_left, map_bottom, map_right, map_top)
 
         # TESTING - switch 3
         geom_sql = "ST_AsGeoJSON(bdy.geom, {0})::jsonb".format(decimal_places)
@@ -310,10 +310,11 @@ def get_data():
 
         # TESTING - switch 4
         # sql = "SELECT bdy.id, bdy.name, bdy.area, tab.{0}, " \
-        sql = "SELECT bdy.id, bdy.name, bdy.area, bdy.population AS pop, tab.{0}, " \
+        sql = "SELECT bdy.id, bdy.name, tab.{0}/bdy.area AS density, tab.{0}/bdy.population AS percent, tab.{0}, " \
               "{1} AS geometry FROM {2}.{3} AS bdy " \
               "INNER JOIN {4}.{5} AS tab ON bdy.id = tab.{6} " \
-              "WHERE bdy.geom && {7}" \
+              "WHERE bdy.geom && {7} " \
+              "AND bdy.population > 0" \
             .format(stat_id, geom_sql, boundary_schema, boundary_table_name, settings['data_schema'],
                     stat_table_name, settings['region_id_field'], envelope_sql)
 
