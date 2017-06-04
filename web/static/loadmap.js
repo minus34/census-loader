@@ -133,7 +133,20 @@ function init() {
 //        var typePrefix;
 //        var typeSuffix;
 //        this._div.innerHTML = (props ? '<b>' + typePrefix + props[currentStatId].toLocaleString(['en-AU']) + typeSuffix + '</b> ' + currentStatType : 'pick a boundary');
-        this._div.innerHTML = (props ? props.name + '<br/><b>' + props[currentStatId].toLocaleString(['en-AU']) + '</b> ' + currentStatType : 'pick a boundary');
+
+        switch(currentMapType) {
+            case "values":
+                this._div.innerHTML = (props ? props.name + '<br/><b>' + props[currentStatId].toLocaleString(['en-AU']) + '</b> ' + currentStatType : 'pick a boundary');
+                break;
+            case "density":
+                this._div.innerHTML = (props ? props.name + '<br/><b>' + props.density.toFixed(4).toLocaleString(['en-AU']) + '</b> ' + currentStatType + '/km<sup>2</sup>' : 'pick a boundary');
+                break;
+            case "percent":
+                this._div.innerHTML = (props ? props.name + '<br/><b>' + props.percent.toFixed(1).toLocaleString(['en-AU']) + '</b> %' : 'pick a boundary');
+                break;
+            default:
+                this._div.innerHTML = (props ? props.name + '<br/><b>' + props.density.toFixed(4).toLocaleString(['en-AU']) + '</b> ' + currentStatType + '/km<sup>2</sup>' : 'pick a boundary');
+        }
     };
     info.addTo(map);
 
@@ -150,31 +163,20 @@ function init() {
                               '</div>';
         return this._div;
     };
-
-    chooseMapType.update = function (radioButtons) {
-        this._div.innerHTML = radioButtons;
-
-        // event to trigger the map theme change
-        $("input:radio[name=mapType]").click(function () {
-            currentMapType = $(this).val();
-
-            console.log(currentMapType);
-
-            // update all stat metadata
-            getCurrentStatMetadata();
-
-    //            // change styles for new stat - incompatible with current backend
-    //            geojsonLayer.eachLayer(function (layer) {
-    //                console.log(layer.feature);
-    //
-    //                layer.setStyle(style(layer.feature));
-    //            });
-
-            // reload the data - NEEDS TO BE REPLACED WITH A MORE EFFICIENT WAY
-            getData();
-        });
-    };
     chooseMapType.addTo(map);
+
+    // event to trigger the map theme change
+    $("input:radio[name=mapType]").click(function () {
+        currentMapType = $(this).val();
+
+        console.log(currentMapType);
+
+        // update all stat metadata
+        getCurrentStatMetadata();
+
+        // reload the data - NEEDS TO BE REPLACED WITH A MORE EFFICIENT WAY
+        getData();
+    });
 
     // add radio buttons to choose stat to theme the map
     themer = L.control({
