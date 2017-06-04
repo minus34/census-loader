@@ -190,7 +190,7 @@ def get_metadata():
             current_fraction = percentile_fraction
 
             for j in range(0, num_classes):
-                the_field = "tab." + feature_dict["id"] + "/bdy.area"
+                the_field = "tab." + feature_dict["id"] + " / bdy.area"
 
                 field_array.append("percentile_disc({0}) within group (order by {1}) as \"{2}\""
                                    .format(current_fraction, the_field, j + 1))
@@ -214,7 +214,7 @@ def get_metadata():
             current_fraction = percentile_fraction
 
             for j in range(0, num_classes):
-                the_field = "tab." + feature_dict["id"] + "/bdy.population"
+                the_field = "tab." + feature_dict["id"] + " / bdy.population * 100.0"
 
                 field_array.append("percentile_disc({0}) within group (order by {1}) as \"{2}\""
                                    .format(current_fraction, the_field, j + 1))
@@ -310,8 +310,9 @@ def get_data():
 
         # TESTING - switch 4
         # sql = "SELECT bdy.id, bdy.name, bdy.area, tab.{0}, " \
-        sql = "SELECT bdy.id, bdy.name, tab.{0}/bdy.area AS density, tab.{0}/bdy.population AS percent, tab.{0}, " \
-              "{1} AS geometry FROM {2}.{3} AS bdy " \
+        sql = "SELECT bdy.id, bdy.name, tab.{0} / bdy.area AS density, tab.{0} / bdy.population * 100.0 AS percent, " \
+              "tab.{0}, {1} AS geometry " \
+              "FROM {2}.{3} AS bdy " \
               "INNER JOIN {4}.{5} AS tab ON bdy.id = tab.{6} " \
               "WHERE bdy.geom && {7} " \
               "AND bdy.population > 0" \

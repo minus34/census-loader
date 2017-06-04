@@ -423,7 +423,7 @@ function style(feature) {
     return {
         weight : 1.5,
         opacity : 0.2,
-        color : '#fff',
+        color : '#aaa',
         fillOpacity : 0.5,
         fillColor : getColor(renderVal)
     };
