@@ -214,7 +214,8 @@ def get_metadata():
             current_fraction = percentile_fraction
 
             for j in range(0, num_classes):
-                the_field = "tab." + feature_dict["id"] + " / bdy.population * 100.0"
+                the_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END"\
+                    .format(feature_dict["id"],)
 
                 field_array.append("percentile_disc({0}) within group (order by {1}) as \"{2}\""
                                    .format(current_fraction, the_field, j + 1))
@@ -310,12 +311,12 @@ def get_data():
 
         # TESTING - switch 4
         # sql = "SELECT bdy.id, bdy.name, bdy.area, tab.{0}, " \
-        sql = "SELECT bdy.id, bdy.name, tab.{0} / bdy.area AS density, tab.{0} / bdy.population * 100.0 AS percent, " \
+        sql = "SELECT bdy.id, bdy.name, tab.{0} / bdy.area AS density, " \
+              "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END AS percent, " \
               "tab.{0}, {1} AS geometry " \
               "FROM {2}.{3} AS bdy " \
               "INNER JOIN {4}.{5} AS tab ON bdy.id = tab.{6} " \
-              "WHERE bdy.geom && {7} " \
-              "AND bdy.population > 0" \
+              "WHERE bdy.geom && {7}" \
             .format(stat_id, geom_sql, boundary_schema, boundary_table_name, settings['data_schema'],
                     stat_table_name, settings['region_id_field'], envelope_sql)
 

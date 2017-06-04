@@ -330,9 +330,22 @@ function getCurrentStatMetadata() {
             }
         }
     }
-
-//    console.log(currentStatClasses);
 }
+
+// format a number for display based on the number of digits or decimal places
+//function formatNumber(number) {
+//    var s = number.toString();
+//
+//    var output;
+//
+//    if (s.indexOf('.') > 3) output = parseInt(s.split("."));
+//    if (s.indexOf('.') > 1) output = parseInt(s.split("."));
+//
+//
+//    while (s.length < s.indexOf('.') + 4) s += '0';
+//
+//    return output;
+//}
 
 function getData() {
 
