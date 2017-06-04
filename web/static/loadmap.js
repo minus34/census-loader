@@ -31,7 +31,10 @@ var currentStatDescription;
 
 var currentMapType = "density"; // initial map type options: values, density, percent
 var currentStatClasses;
-var colours = ['#fde0c5','#facba6','#f8b58b','#f59e72','#f2855d','#ef6a4c','#eb4a40']
+
+var valueColours = ['#fde0c5','#facba6','#f8b58b','#f59e72','#f2855d','#ef6a4c','#eb4a40'];
+var densityColours = ['#d1eeea','#a8dbd9','#85c4c9','#68abb8','#4f90a6','#3b738f','#2a5674'];
+var percentColours = ['#f9ddda','#f2b9c4','#e597b9','#ce78b3','#ad5fad','#834ba0','#573b88'];
 
 // get querystring values
 // code from http://forum.jquery.com/topic/getting-value-from-a-querystring
@@ -414,20 +417,25 @@ function gotData(json) {
 
 function style(feature) {
     var renderVal;
+    var colours;
 
     // render value to use depends on map type
     switch(currentMapType) {
         case "values":
             renderVal = parseInt(feature.properties[currentStatId]);
+            colours = valueColours;
             break;
         case "density":
             renderVal = parseInt(feature.properties.density);
+            colours = densityColours;
             break;
         case "percent":
             renderVal = parseInt(feature.properties.percent);
+            colours = percentColours;
             break;
         default:
             renderVal = parseInt(feature.properties.density);
+            colours = densityColours;
       }
 
 //    console.log(currentStatId);
@@ -436,14 +444,14 @@ function style(feature) {
     return {
         weight : 1.5,
         opacity : 0.2,
-        color : '#aaa',
+        color : '#ccc',
         fillOpacity : 0.5,
-        fillColor : getColor(renderVal)
+        fillColor : getColor(colours, renderVal)
     };
 }
 
 // get color depending on ratio of count versus max value
-function getColor(d) {
+function getColor(colours, d) {
     return  d > currentStatClasses[6] ? colours[6] :
             d > currentStatClasses[5] ? colours[5] :
             d > currentStatClasses[4] ? colours[4] :
