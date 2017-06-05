@@ -1,0 +1,29 @@
+--create table test_b2778 as
+WITH sub AS (
+	WITH points AS (
+		SELECT tab.b2778, ST_MakePoint(tab.b2778, 0) AS pnt
+			FROM census_2011_data.sa1_b14 AS tab
+			INNER JOIN census_2011_bdys.sa1_2011_aust AS bdy
+			ON tab.region_id = bdy.sa1_7digit
+			ORDER BY tab.B2778
+	)
+	SELECT b2778, ST_ClusterKMeans(pnt, 7) OVER () AS class_id FROM points 
+),
+rolling AS (   
+	SELECT b2778, class_id, CASE WHEN (lag(class_id) OVER ()) IS NULL THEN 1 WHEN class_id = lag(class_id) OVER () THEN 0 ELSE 1 END AS incr FROM sub
+)
+select b2778, SUM(incr) OVER (ROWS UNBOUNDED PRECEDING) AS rank FROM rolling;
+
+
+
+
+WITH sub AS (
+WITH points AS (
+		SELECT tab.b2778, ST_MakePoint(tab.b2778, 0) AS pnt
+			FROM census_2011_data.sa1_b14 AS tab
+			INNER JOIN census_2011_bdys_display.sa1_zoom_10 AS bdy
+			ON tab.region_id = bdy.id
+	)
+	SELECT b2778, ST_ClusterKMeans(pnt, 7) OVER () AS class_id FROM points
+)
+SELECT MAX(b2778) AS b2778, class_id FROM sub GROUP BY class_id ORDER BY b2778;

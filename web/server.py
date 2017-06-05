@@ -345,23 +345,45 @@ def get_metadata():
 def get_bins(boundary_name, feature_dict, num_classes, stat_field):
     value_dict = dict()
 
-    sql = "SELECT MAX({0}) AS val FROM {1}.{2}_{3} AS tab " \
-          "INNER JOIN {4}.{2}_zoom_10 AS bdy ON tab.{5} = bdy.id " \
-          "WHERE geom IS NOT NULL" \
+    # kmeans cluster data to get the best set of classes
+    # (uses a nice idea from Alex Ignatov to use a value as a coordinate in teh PostGIS ST_ClusterKMeans function!)
+    sql = "WITH sub AS (" \
+          "WITH points AS (" \
+          "SELECT {0} as val, ST_MakePoint({0}, 0) AS pnt FROM {1}.{2}_{3} AS tab " \
+          "INNER JOIN {4}.{2}_zoom_10 AS bdy ON tab.{5} = bdy.id) " \
+          "SELECT val, ST_ClusterKMeans(pnt, {6}) OVER () AS cluster_id FROM points) " \
+          "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val"\
         .format(stat_field, settings["data_schema"], boundary_name, feature_dict["table"],
-                settings["boundary_schema"] + "_display", settings['region_id_field'])
+                settings["boundary_schema"] + "_display", settings['region_id_field'], num_classes)
 
     print(sql)
 
     with get_db_cursor() as pg_cur:
         pg_cur.execute(sql)
-        row = pg_cur.fetchone()
-        max_value = row["val"]
+        rows = pg_cur.fetchall()
 
-    increment = max_value / float(num_classes)
+        j = 0
 
-    for j in range(0, num_classes):
-        value_dict["{0}".format(j)] = increment * float(j + 1)
+        for row in rows:
+            value_dict["{0}".format(j)] = row["val"]
+            j += 1
+
+    # # get max values
+    # sql = "SELECT MAX({0}) AS val FROM {1}.{2}_{3} AS tab " \
+    #       "INNER JOIN {4}.{2}_zoom_10 AS bdy ON tab.{5} = bdy.id " \
+    #       "WHERE geom IS NOT NULL" \
+    #     .format(stat_field, settings["data_schema"], boundary_name, feature_dict["table"],
+    #             settings["boundary_schema"] + "_display", settings['region_id_field'])
+    #
+    # with get_db_cursor() as pg_cur:
+    #     pg_cur.execute(sql)
+    #     row = pg_cur.fetchone()
+    #     max_value = row["val"]
+    #
+    # increment = max_value / float(num_classes)
+    #
+    # for j in range(0, num_classes):
+    #     value_dict["{0}".format(j)] = increment * float(j + 1)
 
     return value_dict
 
