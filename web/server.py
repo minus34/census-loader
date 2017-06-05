@@ -306,6 +306,15 @@ def get_metadata():
         output_dict = dict()
         output_dict["boundary"] = boundary_name
 
+        # get id and area fields for boundary
+        bdy_id_field = ""
+        bdy_area_field = ""
+
+        for boundary_dict in settings['bdy_table_dicts']:
+            if boundary_dict["boundary"] == boundary_name:
+                bdy_id_field = boundary_dict["id_field"]
+                bdy_area_field = boundary_dict["area_field"]
+
         i = 0
         feature_array = list()
 
@@ -317,16 +326,17 @@ def get_metadata():
 
             # 1 of 3 - values
             stat_field = feature_dict["id"]
-            feature_dict["values"] = get_bins(boundary_name, feature_dict, num_classes, stat_field)
+            feature_dict["values"] = get_bins(boundary_name, feature_dict, num_classes, stat_field, bdy_id_field)
 
             # 2 of 3 - densities
-            stat_field = "tab." + feature_dict["id"] + " / bdy.area"
-            feature_dict["densities"] = get_bins(boundary_name, feature_dict, num_classes, stat_field)
+            stat_field = "CASE WHEN bdy.{1} > 0.0 THEN tab.{0} / bdy.{1} ELSE 0 END"\
+                .format(feature_dict["id"], bdy_area_field)
+            feature_dict["densities"] = get_bins(boundary_name, feature_dict, num_classes, stat_field, bdy_id_field)
 
             # 3 of 3 - normalised
             stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END" \
                 .format(feature_dict["id"], )
-            feature_dict["normalised"] = get_bins(boundary_name, feature_dict, num_classes, stat_field)
+            feature_dict["normalised"] = get_bins(boundary_name, feature_dict, num_classes, stat_field, bdy_id_field)
 
             # add dict to output array oif metadata
             feature_array.append(feature_dict)
@@ -342,19 +352,21 @@ def get_metadata():
     return Response(json.dumps(response_dict), mimetype='application/json')
 
 
-def get_bins(boundary_name, feature_dict, num_classes, stat_field):
+def get_bins(boundary_name, feature_dict, num_classes, stat_field, bdy_id_field):
     value_dict = dict()
 
     # kmeans cluster data to get the best set of classes
-    # (uses a nice idea from Alex Ignatov to use a value as a coordinate in teh PostGIS ST_ClusterKMeans function!)
+    # (uses a nice idea from Alex Ignatov to use a value as a coordinate in the PostGIS ST_ClusterKMeans function!)
+    data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary_name, feature_dict["table"])
+    bdy_table = "{0}.{1}_{2}_aust".format(settings["boundary_schema"], boundary_name, settings["census_year"])
+
     sql = "WITH sub AS (" \
           "WITH points AS (" \
-          "SELECT {0} as val, ST_MakePoint({0}, 0) AS pnt FROM {1}.{2}_{3} AS tab " \
-          "INNER JOIN {4}.{2}_zoom_10 AS bdy ON tab.{5} = bdy.id) " \
-          "SELECT val, ST_ClusterKMeans(pnt, {6}) OVER () AS cluster_id FROM points) " \
+          "SELECT {0} as val, ST_MakePoint({0}, 0) AS pnt FROM {1} AS tab " \
+          "INNER JOIN {2} AS bdy ON tab.{3} = bdy.{4}) " \
+          "SELECT val, ST_ClusterKMeans(pnt, {5}) OVER () AS cluster_id FROM points) " \
           "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val"\
-        .format(stat_field, settings["data_schema"], boundary_name, feature_dict["table"],
-                settings["boundary_schema"] + "_display", settings['region_id_field'], num_classes)
+        .format(stat_field, data_table, bdy_table, settings['region_id_field'], bdy_id_field, num_classes)
 
     print(sql)
 
