@@ -137,6 +137,8 @@ function init() {
 //        var typeSuffix;
 //        this._div.innerHTML = (props ? '<b>' + typePrefix + props[currentStatId].toLocaleString(['en-AU']) + typeSuffix + '</b> ' + currentStatType : 'pick a boundary');
 
+//        var density = (props ?
+
         this._div.innerHTML = (props ? '<h3>' + props.name + '</h3>' +
                                        '<b>' + props[currentStatId].toLocaleString(['en-AU']) + '</b> ' + currentStatType + '<br/>' +
                                        '<b>' + props.percent.toFixed(1).toLocaleString(['en-AU']) + '%</b> of population<br/>' +
@@ -152,8 +154,8 @@ function init() {
         this._div = L.DomUtil.create('div', 'info themer');
         this._div.innerHTML = '<div><b>Map type </b>' +
                               '<input id="m1" type="radio" name="mapType" value="values"><label for="r1"><span><span></span></span>values</label> ' +
-                              '<input id="m2" type="radio" name="mapType" value="density"><label for="r2"><span><span></span></span>density</label> ' +
-                              '<input id="m3" type="radio" name="mapType" value="percent" checked="checked"><label for="r3"><span><span></span></span>percent</label>' +
+                              '<input id="m2" type="radio" name="mapType" value="percent" checked="checked"><label for="r3"><span><span></span></span>percent</label>' +
+                              '<input id="m3" type="radio" name="mapType" value="density"><label for="r2"><span><span></span></span>density</label> ' +
                               '</div>';
         return this._div;
     };
@@ -327,7 +329,7 @@ function getCurrentStatMetadata() {
     }
 }
 
-// format a number for display based on the number of digits or decimal places
+//// format a number for display based on the number of digits or decimal places
 //function formatNumber(number) {
 //    var s = number.toString();
 //
@@ -335,7 +337,6 @@ function getCurrentStatMetadata() {
 //
 //    if (s.indexOf('.') > 3) output = parseInt(s.split("."));
 //    if (s.indexOf('.') > 1) output = parseInt(s.split("."));
-//
 //
 //    while (s.length < s.indexOf('.') + 4) s += '0';
 //
