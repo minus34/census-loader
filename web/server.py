@@ -365,7 +365,7 @@ def get_bins(boundary_name, feature_dict, num_classes, stat_field, bdy_id_field)
     # (uses a nice idea from Alex Ignatov to use a value as a coordinate in the PostGIS ST_ClusterKMeans function!)
     data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary_name, feature_dict["table"])
     # bdy_table = "{0}.{1}_{2}_aust".format(settings["boundary_schema"], boundary_name, settings["census_year"])
-    bdy_table = "{0}.{1}_zoom_10".format(settings["web_schema"], boundary_name)
+    bdy_table = "{0}.{1}".format(settings["web_schema"], boundary_name)
 
     sql = "WITH sub AS (" \
           "WITH points AS (" \
@@ -437,16 +437,14 @@ def get_data():
 
     stat_table_name = boundary_name + "_" + table_id
 
-    boundary_table_name = "{0}_zoom_{1}".format(boundary_name, display_zoom)
+    boundary_table_name = "{0}".format(boundary_name)
 
     with get_db_cursor() as pg_cur:
         print("Connected to database in {0}".format(datetime.now() - start_time))
         start_time = datetime.now()
 
         envelope_sql = "ST_MakeEnvelope({0}, {1}, {2}, {3}, 4283)".format(map_left, map_bottom, map_right, map_top)
-
-        # TESTING - switch 3
-        geom_sql = "ST_AsGeoJSON(bdy.geom, {0})::jsonb".format(decimal_places)
+        geom_sql = "geojson_{0}".format(display_zoom)
 
         sql = "SELECT bdy.id, bdy.name, tab.{0} / bdy.area AS density, " \
               "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END AS percent, " \
@@ -523,5 +521,5 @@ if __name__ == '__main__':
     # url = "http://127.0.0.1:8081/?stats=B2793&z=12"
     # threading.Timer(5, lambda: webbrowser.open(url)).start()
 
-    app.run(host='0.0.0.0', port=8081, debug=False)
+    app.run(host='0.0.0.0', port=8081, debug=True)
 
