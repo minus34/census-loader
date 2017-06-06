@@ -538,5 +538,10 @@ def get_data():
 
 
 if __name__ == '__main__':
+    import webbrowser
+    # webbrowser.open_new("http://127.0.0.1:8081?stats=B2712,B2772,B2775,B2778,B2781,B2793")  # religions
+    webbrowser.open_new("http://127.0.0.1:8081/?stats=B2793&z=12")  # no religion
+
     app.debug = True
     app.run(host='0.0.0.0', port=8081)
+

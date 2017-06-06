@@ -29,7 +29,7 @@ var currentStatTable;
 var currentStatType;
 var currentStatDescription;
 
-var currentMapType = "density"; // initial map type options: values, density, percent
+var currentMapType = "percent"; // initial map type options: values, density, percent
 var currentStatClasses;
 
 var valueColours = ['#fde0c5','#facba6','#f8b58b','#f59e72','#f2855d','#ef6a4c','#eb4a40'];
@@ -92,7 +92,7 @@ if (queryObj["stats"] === undefined) {
 
 function init() {
     //Initialize the map on the "map" div
-    map = new L.Map('map', { preferCanvas: true });
+    map = new L.Map('map', { preferCanvas: false }); // canvas slows Safari down versus Chrome (IE & edge are untested)
 
     // acknowledge the data provider
     map.attributionControl.addAttribution('Census data &copy; <a href="http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material">ABS</a>');
@@ -137,19 +137,10 @@ function init() {
 //        var typeSuffix;
 //        this._div.innerHTML = (props ? '<b>' + typePrefix + props[currentStatId].toLocaleString(['en-AU']) + typeSuffix + '</b> ' + currentStatType : 'pick a boundary');
 
-        switch(currentMapType) {
-            case "values":
-                this._div.innerHTML = (props ? props.name + '<br/><b>' + props[currentStatId].toLocaleString(['en-AU']) + '</b> ' + currentStatType : 'pick a boundary');
-                break;
-            case "density":
-                this._div.innerHTML = (props ? props.name + '<br/><b>' + props.density.toFixed(4).toLocaleString(['en-AU']) + '</b> ' + currentStatType + '/km<sup>2</sup>' : 'pick a boundary');
-                break;
-            case "percent":
-                this._div.innerHTML = (props ? props.name + '<br/><b>' + props.percent.toFixed(1).toLocaleString(['en-AU']) + '</b> %' : 'pick a boundary');
-                break;
-            default:
-                this._div.innerHTML = (props ? props.name + '<br/><b>' + props.density.toFixed(4).toLocaleString(['en-AU']) + '</b> ' + currentStatType + '/km<sup>2</sup>' : 'pick a boundary');
-        }
+        this._div.innerHTML = (props ? '<h3>' + props.name + '</h3>' +
+                                       '<b>' + props[currentStatId].toLocaleString(['en-AU']) + '</b> ' + currentStatType + '<br/>' +
+                                       '<b>' + props.percent.toFixed(1).toLocaleString(['en-AU']) + '%</b> of population<br/>' +
+                                       '<b>' + props.density.toFixed(4).toLocaleString(['en-AU']) + '</b> ' + currentStatType + '/km<sup>2</sup><br/>' : 'pick a boundary');
     };
     info.addTo(map);
 
@@ -161,8 +152,8 @@ function init() {
         this._div = L.DomUtil.create('div', 'info themer');
         this._div.innerHTML = '<div><b>Map type </b>' +
                               '<input id="m1" type="radio" name="mapType" value="values"><label for="r1"><span><span></span></span>values</label> ' +
-                              '<input id="m2" type="radio" name="mapType" value="density" checked="checked"><label for="r2"><span><span></span></span>density</label> ' +
-                              '<input id="m3" type="radio" name="mapType" value="percent"><label for="r3"><span><span></span></span>percent</label>' +
+                              '<input id="m2" type="radio" name="mapType" value="density"><label for="r2"><span><span></span></span>density</label> ' +
+                              '<input id="m3" type="radio" name="mapType" value="percent" checked="checked"><label for="r3"><span><span></span></span>percent</label>' +
                               '</div>';
         return this._div;
     };
@@ -213,6 +204,7 @@ function init() {
         });
     };
     themer.addTo(map);
+    themer.update("<b>L O A D I N G . . .</b>");
 
     // get a new set of data when map panned or zoomed
     // TODO: Handle map movement due to popup
@@ -442,10 +434,10 @@ function style(feature) {
 //    console.log(renderVal);
 
     return {
-        weight : 0,
-//        opacity : 0.0,
-        color : getColor(colours, renderVal),
-        fillOpacity : getOpacity(renderVal),
+        weight : 1.5,
+        opacity : 0.3,
+        color : "#ccc",
+        fillOpacity : 0.5,
         fillColor : getColor(colours, renderVal)
     };
 }
@@ -464,12 +456,12 @@ function getColor(colours, d) {
 // get opacity based on value
 function getOpacity(d) {
     return  d > currentStatClasses[6] ? 0.8 :
-            d > currentStatClasses[5] ? 0.7 :
-            d > currentStatClasses[4] ? 0.6 :
-            d > currentStatClasses[3] ? 0.5 :
-            d > currentStatClasses[2] ? 0.4 :
-            d > currentStatClasses[1] ? 0.3 :
-                                        0.2;
+            d > currentStatClasses[5] ? 0.75 :
+            d > currentStatClasses[4] ? 0.7 :
+            d > currentStatClasses[3] ? 0.6 :
+            d > currentStatClasses[2] ? 0.55 :
+            d > currentStatClasses[1] ? 0.5 :
+                                        0.45;
 }
 
 function onEachFeature(feature, layer) {
@@ -508,35 +500,34 @@ function resetHighlight(e) {
 //    map.fitBounds(e.target.getBounds());
 //}
 
-// fix for Apple Magic Mouse jumpiness
-var lastScroll = new Date().getTime();
-
-L.Map.ScrollWheelZoom.prototype._onWheelScroll = function (e) {
-  if (new Date().getTime() - lastScroll < 600) {
-    e.preventDefault();
-    return;
-  }
-  var delta = L.DomEvent.getWheelDelta(e);
-  var debounce = this._map.options.wheelDebounceTime;
-
-  if (delta >= -0.15 && delta <= 0.15) {
-    e.preventDefault();
-    return;
-  }
-  if (delta <= -0.25) delta = -0.25;
-  if (delta >= 0.25) delta = 0.25;
-  this._delta += delta;
-  this._lastMousePos = this._map.mouseEventToContainerPoint(e);
-
-  if (!this._startTime) {
-      this._startTime = +new Date();
-  }
-
-  var left = Math.max(debounce - (+new Date() - this._startTime), 0);
-
-  clearTimeout(this._timer);
-  lastScroll = new Date().getTime();
-  this._timer = setTimeout(L.bind(this._performZoom, this), left);
-
-  L.DomEvent.stop(e);
-}
+//// fix for Apple Magic Mouse jumpiness
+//var lastScroll = new Date().getTime();
+//L.Map.ScrollWheelZoom.prototype._onWheelScroll = function (e) {
+//  if (new Date().getTime() - lastScroll < 600) {
+//    e.preventDefault();
+//    return;
+//  }
+//  var delta = L.DomEvent.getWheelDelta(e);
+//  var debounce = this._map.options.wheelDebounceTime;
+//
+//  if (delta >= -0.15 && delta <= 0.15) {
+//    e.preventDefault();
+//    return;
+//  }
+//  if (delta <= -0.25) delta = -0.25;
+//  if (delta >= 0.25) delta = 0.25;
+//  this._delta += delta;
+//  this._lastMousePos = this._map.mouseEventToContainerPoint(e);
+//
+//  if (!this._startTime) {
+//      this._startTime = +new Date();
+//  }
+//
+//  var left = Math.max(debounce - (+new Date() - this._startTime), 0);
+//
+//  clearTimeout(this._timer);
+//  lastScroll = new Date().getTime();
+//  this._timer = setTimeout(L.bind(this._performZoom, this), left);
+//
+//  L.DomEvent.stop(e);
+//}
