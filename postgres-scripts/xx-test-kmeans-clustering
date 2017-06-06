@@ -1,0 +1,48 @@
+--create table test_b2778 as
+WITH sub AS (
+	WITH points AS (
+		SELECT tab.b2778, ST_MakePoint(tab.b2778, 0) AS pnt
+			FROM census_2011_data.sa1_b14 AS tab
+			INNER JOIN census_2011_bdys.sa1_2011_aust AS bdy
+			ON tab.region_id = bdy.sa1_7digit
+			ORDER BY tab.B2778
+	)
+	SELECT b2778, ST_ClusterKMeans(pnt, 7) OVER () AS class_id FROM points 
+),
+rolling AS (   
+	SELECT b2778, class_id, CASE WHEN (lag(class_id) OVER ()) IS NULL THEN 1 WHEN class_id = lag(class_id) OVER () THEN 0 ELSE 1 END AS incr FROM sub
+)
+select b2778, SUM(incr) OVER (ROWS UNBOUNDED PRECEDING) AS rank FROM rolling;
+
+
+
+
+WITH sub AS (
+WITH points AS (
+SELECT tab.b2778, ST_MakePoint(tab.b2778, 0) AS pnt FROM census_2011_data.sa1_b14 AS tab
+INNER JOIN census_2011_bdys_display.sa1_zoom_10 AS bdy ON tab.region_id = bdy.id)
+SELECT b2778, ST_ClusterKMeans(pnt, 7) OVER () AS class_id FROM points)
+SELECT MAX(b2778) AS b2778, class_id FROM sub GROUP BY class_id ORDER BY b2778;
+
+
+WITH sub AS (
+WITH points AS (
+SELECT tab.B2778 / bdy.area_sqkm as val, ST_MakePoint(tab.B2778 / bdy.area_sqkm, 0) AS pnt 
+FROM census_2011_data.sa3_b14 AS tab 
+INNER JOIN census_2011_bdys.sa3_2011_aust AS bdy 
+ON tab.region_id = bdy.sa3_code) 
+SELECT val, ST_ClusterKMeans(pnt, 6) OVER () AS cluster_id FROM points) 
+SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val;
+
+
+select area from census_2011_bdys_display.sa1_zoom_10 order by area;
+
+
+	WITH sub AS (WITH points AS (SELECT tab.B2778 / bdy.area as val, ST_MakePoint(tab.B2778 / bdy.area, tab.B2778 / bdy.area) AS pnt FROM census_2011_data.sa2_b14 AS tab 
+	INNER JOIN census_2011_bdys_display.sa2_zoom_16 AS bdy ON tab.region_id = bdy.id) SELECT val, ST_ClusterKMeans(pnt, 7) OVER () AS cluster_id FROM points) SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val
+
+WITH sub AS (WITH points AS (SELECT tab.B2778 / bdy.area as val, ST_MakePoint(tab.B2778 / bdy.area, 0) AS pnt FROM census_2011_data.sa3_b14 AS tab INNER JOIN census_2011_bdys_display.sa3_zoom_10 AS bdy ON tab.region_id = bdy.id) SELECT val, ST_ClusterKMeans(pnt, 7) OVER () AS cluster_id FROM points) SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val
+
+
+
+
