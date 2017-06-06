@@ -365,7 +365,7 @@ def get_bins(boundary_name, feature_dict, num_classes, stat_field, bdy_id_field)
     # (uses a nice idea from Alex Ignatov to use a value as a coordinate in the PostGIS ST_ClusterKMeans function!)
     data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary_name, feature_dict["table"])
     # bdy_table = "{0}.{1}_{2}_aust".format(settings["boundary_schema"], boundary_name, settings["census_year"])
-    bdy_table = "{0}_display.{1}_zoom_10".format(settings["boundary_schema"], boundary_name)
+    bdy_table = "{0}.{1}_zoom_10".format(settings["web_schema"], boundary_name)
 
     sql = "WITH sub AS (" \
           "WITH points AS (" \
@@ -518,10 +518,10 @@ def get_data():
 
 
 if __name__ == '__main__':
-    import threading, webbrowser
-    # url = "http://127.0.0.1:8081?stats=B2712,B2772,B2775,B2778,B2781,B2793"
-    url = "http://127.0.0.1:8081/?stats=B2793&z=12"
-    threading.Timer(5, lambda: webbrowser.open(url)).start()
+    # import threading, webbrowser
+    # # url = "http://127.0.0.1:8081?stats=B2712,B2772,B2775,B2778,B2781,B2793"
+    # url = "http://127.0.0.1:8081/?stats=B2793&z=12"
+    # threading.Timer(5, lambda: webbrowser.open(url)).start()
 
     app.run(host='0.0.0.0', port=8081, debug=False)
 
