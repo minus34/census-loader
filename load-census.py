@@ -73,36 +73,22 @@ def main():
     # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2011_data
     # --census-bdys-path=/Users/hugh.saalmans/minus34/data/abs_2011
 
-    # # PART 1 - load census data from CSV files
-    # logger.info("")
-    # start_time = datetime.now()
-    # logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
-    # create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
-    # populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
-    #                      settings['table_name_part'], settings['bdy_name_part'], settings)
-    # logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
+    # PART 1 - load census data from CSV files
+    logger.info("")
+    start_time = datetime.now()
+    logger.info("Part 1 of 2 : Start census data load : {0}".format(start_time))
+    create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
+    populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
+                         settings['table_name_part'], settings['bdy_name_part'], settings)
+    logger.info("Part 1 of 2 : Census data loaded! : {0}".format(datetime.now() - start_time))
 
     # PART 2 - load census boundaries from Shapefiles
     logger.info("")
     start_time = datetime.now()
-    logger.info("Part 2 of 3 : Start census boundary load : {0}".format(start_time))
-    # load_boundaries(pg_cur, settings)
+    logger.info("Part 2 of 2 : Start census boundary load : {0}".format(start_time))
+    load_boundaries(pg_cur, settings)
     create_display_boundaries(pg_cur, settings)
-    logger.info("Part 2 of 3 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
-
-    # # PART 3 - create views
-    # logger.info("")
-    # start_time = datetime.now()
-    # logger.info("Part 3 of 4 : Start create reference tables : {0}".format(start_time))
-    # create_reference_tables(pg_cur, settings)
-    # logger.info("Part 3 of 4 : Reference tables created! : {0}".format(datetime.now() - start_time))
-    #
-    # # # PART 5 - get record counts for QA
-    # logger.info("")
-    # start_time = datetime.now()
-    # logger.info("Part 5 of 5 : Start row counts : {0}".format(start_time))
-    # create_qa_tables(pg_cur, settings)
-    # logger.info("Part 5 of 5 : Got row counts : {0}".format(datetime.now() - start_time))
+    logger.info("Part 2 of 2 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
     # close Postgres connection
     pg_cur.close()
