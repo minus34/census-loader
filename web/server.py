@@ -86,6 +86,7 @@ def get_boundary_name():
     return Response(json.dumps(boundary_zoom_dict), mimetype='application/json')
 
 
+# # this unused code uses the quantile method of creating map classes
 # @app.route("/get-metadata")
 # def get_metadata():
 #     # Get parameters from querystring
@@ -428,33 +429,15 @@ def get_data():
 
     # TODO: add support for equations
 
-    # TODO: add support for density stats. eg B1 / areasqkm
-
     # get the boundary table name from zoom level
     if boundary_name is None:
         boundary_name = utils.get_boundary_name(zoom_level)
-
-    # # get boundary primary key name
-    # boundary_primary_key = ""
-    # for boundary_dict in settings['bdy_table_dicts']:
-    #     if boundary_dict["boundary"] == boundary_name:
-    #         boundary_primary_key = boundary_dict["primary_key"]
 
     display_zoom = str(zoom_level).zfill(2)
 
     stat_table_name = boundary_name + "_" + table_id
 
-    # TESTING - switch 1
-    # boundary_table_name = "zoom_{0}_{1}_{2}_aust".format(display_zoom, boundary_name, settings["census_year"])
     boundary_table_name = "{0}_zoom_{1}".format(boundary_name, display_zoom)
-    # boundary_table_name = "{0}".format(boundary_name)
-
-    # TESTING - switch 3
-    boundary_schema = "{0}_display".format(settings['boundary_schema'])
-    # boundary_schema = "{0}_display_2".format(settings['boundary_schema'])
-
-    # # thin geometries to a default tolerance based on zoom level 17
-    # tolerance = utils.get_simplify_vw_tolerance(17)
 
     with get_db_cursor() as pg_cur:
         print("Connected to database in {0}".format(datetime.now() - start_time))
@@ -464,17 +447,14 @@ def get_data():
 
         # TESTING - switch 3
         geom_sql = "ST_AsGeoJSON(bdy.geom, {0})::jsonb".format(decimal_places)
-        # geom_sql = "ST_AsGeoJSON(ST_Transform(ST_SimplifyVW(ST_Transform(bdy.geom, 3577), {0}), 4326), {1})::jsonb".format(tolerance, decimal_places)
 
-        # TESTING - switch 4
-        # sql = "SELECT bdy.id, bdy.name, bdy.area, tab.{0}, " \
         sql = "SELECT bdy.id, bdy.name, tab.{0} / bdy.area AS density, " \
               "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END AS percent, " \
               "tab.{0}, {1} AS geometry " \
               "FROM {2}.{3} AS bdy " \
               "INNER JOIN {4}.{5} AS tab ON bdy.id = tab.{6} " \
               "WHERE bdy.geom && {7}" \
-            .format(stat_id, geom_sql, boundary_schema, boundary_table_name, settings['data_schema'],
+            .format(stat_id, geom_sql, settings['web_schema'], boundary_table_name, settings['data_schema'],
                     stat_table_name, settings['region_id_field'], envelope_sql)
 
         try:

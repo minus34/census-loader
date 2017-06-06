@@ -49,10 +49,13 @@ def set_arguments():
 
     parser.add_argument(
         '--data-schema', default='census_' + census_year + '_data',
-        help='Schema name to store raw GNAF tables in. Defaults to \'census_' + census_year + '_data\'.')
+        help='Schema name to store data tables in. Defaults to \'census_' + census_year + '_data\'.')
     parser.add_argument(
         '--boundary-schema', default='census_' + census_year + '_bdys',
-        help='Schema name to store raw admin boundary tables in. Defaults to \'census_' + census_year + '_bdys\'.')
+        help='Schema name to store raw boundary tables in. Defaults to \'census_' + census_year + '_bdys\'.')
+    parser.add_argument(
+        '--web-schema', default='census_' + census_year + '_web',
+        help='Schema name to store web optimised boundary tables in. Defaults to \'census_' + census_year + '_web\'.')
 
     # directories
     parser.add_argument(
@@ -84,6 +87,7 @@ def get_settings(args):
     settings['states'] = ["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"]
     settings['data_schema'] = args.data_schema
     settings['boundary_schema'] = args.boundary_schema
+    settings['web_schema'] = args.web_schema
     settings['data_directory'] = args.census_data_path.replace("\\", "/")
     # if args.local_server_dir:
     #     settings['data_pg_server_local_directory'] = args.local_server_dir.replace("\\", "/")
