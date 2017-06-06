@@ -104,11 +104,10 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
     # Step 1 of 2 : create metadata tables from Census Excel spreadsheets
     start_time = datetime.now()
 
-    # create schema and set as search path
+    # create schema
     if settings['data_schema'] != "public":
         pg_cur.execute("CREATE SCHEMA IF NOT EXISTS {0} AUTHORIZATION {1}"
                        .format(settings['data_schema'], settings['pg_user']))
-        pg_cur.execute("SET search_path = {0}".format(settings['data_schema'],))
 
     # create metadata tables
     sql = "DROP TABLE IF EXISTS {0}.metadata_tables CASCADE;" \
@@ -355,6 +354,11 @@ def load_boundaries(pg_cur, settings):
 def create_display_boundaries(pg_cur, settings):
     # Step 2 of 2 : create web optimised versions of the census boundaries
     start_time = datetime.now()
+
+    # create schema
+    if settings['web_schema'] != "public":
+        pg_cur.execute("CREATE SCHEMA IF NOT EXISTS {0} AUTHORIZATION {1}"
+                       .format(settings['web_schema'], settings['pg_user']))
 
     # prepare boundaries for all tiled map zoom levels
     create_sql_list = list()
