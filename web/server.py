@@ -1,5 +1,4 @@
 
-
 import ast
 import json
 # import math
@@ -75,7 +74,6 @@ def homepage():
 
 @app.route("/get-bdy-names")
 def get_boundary_name():
-
     # Get parameters from querystring
     min = int(request.args.get('min'))
     max = int(request.args.get('max'))
@@ -251,12 +249,15 @@ def get_boundary_name():
 
 @app.route("/get-metadata")
 def get_metadata():
+    full_start_time = datetime.now()
+    start_time = datetime.now()
+
     # Get parameters from querystring
     num_classes = int(request.args.get('n'))
     raw_stats = request.args.get('stats')
 
     # replace all maths operators to get list of all the stats we need
-    search_stats = raw_stats.upper().replace(" ", "").replace("(", "").replace(")", "")\
+    search_stats = raw_stats.upper().replace(" ", "").replace("(", "").replace(")", "") \
         .replace("+", ",").replace("-", ",").replace("/", ",").replace("*", ",").split(",")
 
     # TODO: add support for numbers in equations - need to strip them from search_stats list
@@ -283,7 +284,7 @@ def get_metadata():
           "column_heading_description AS type " \
           "FROM {0}.metadata_stats " \
           "WHERE sequential_id IN %s " \
-          "ORDER BY sequential_id".format(settings["data_schema"],)
+          "ORDER BY sequential_id".format(settings["data_schema"], )
 
     with get_db_cursor() as pg_cur:
         try:
@@ -329,7 +330,7 @@ def get_metadata():
             feature_dict["values"] = get_bins(boundary_name, feature_dict, num_classes, stat_field, bdy_id_field)
 
             # 2 of 3 - densities
-            stat_field = "CASE WHEN bdy.{1} > 0.0 THEN tab.{0} / bdy.{1} ELSE 0 END"\
+            stat_field = "CASE WHEN bdy.area > 0.0 THEN tab.{0} / bdy.area ELSE 0 END" \
                 .format(feature_dict["id"], bdy_area_field)
             feature_dict["densities"] = get_bins(boundary_name, feature_dict, num_classes, stat_field, bdy_id_field)
 
@@ -338,7 +339,7 @@ def get_metadata():
                 .format(feature_dict["id"], )
             feature_dict["normalised"] = get_bins(boundary_name, feature_dict, num_classes, stat_field, bdy_id_field)
 
-            # add dict to output array oif metadata
+            # add dict to output array of metadata
             feature_array.append(feature_dict)
 
             i += 1
@@ -346,8 +347,12 @@ def get_metadata():
         output_dict["stats"] = feature_array
         output_array.append(output_dict)
 
+        print("Got metadata for {0} in {1}".format(boundary_name, datetime.now() - start_time))
+
     # Assemble the JSON
     response_dict["boundaries"] = output_array
+
+    print("Returned metadata in {1}".format(i, datetime.now() - full_start_time))
 
     return Response(json.dumps(response_dict), mimetype='application/json')
 
@@ -358,17 +363,18 @@ def get_bins(boundary_name, feature_dict, num_classes, stat_field, bdy_id_field)
     # kmeans cluster data to get the best set of classes
     # (uses a nice idea from Alex Ignatov to use a value as a coordinate in the PostGIS ST_ClusterKMeans function!)
     data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary_name, feature_dict["table"])
-    bdy_table = "{0}.{1}_{2}_aust".format(settings["boundary_schema"], boundary_name, settings["census_year"])
+    # bdy_table = "{0}.{1}_{2}_aust".format(settings["boundary_schema"], boundary_name, settings["census_year"])
+    bdy_table = "{0}_display.{1}_zoom_10".format(settings["boundary_schema"], boundary_name)
 
     sql = "WITH sub AS (" \
           "WITH points AS (" \
           "SELECT {0} as val, ST_MakePoint({0}, 0) AS pnt FROM {1} AS tab " \
-          "INNER JOIN {2} AS bdy ON tab.{3} = bdy.{4}) " \
+          "INNER JOIN {2} AS bdy ON tab.{3} = bdy.id) " \
           "SELECT val, ST_ClusterKMeans(pnt, {5}) OVER () AS cluster_id FROM points) " \
-          "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val"\
+          "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val" \
         .format(stat_field, data_table, bdy_table, settings['region_id_field'], bdy_id_field, num_classes)
 
-    print(sql)
+    # print(sql)
 
     with get_db_cursor() as pg_cur:
         pg_cur.execute(sql)

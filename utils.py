@@ -208,7 +208,7 @@ def get_boundary_name(zoom_level):
 def get_tolerance(zoom_level):
 
     # pixels squared factor
-    tolerance_square_pixels = 7
+    tolerance_square_pixels = 5
 
     # default Google/Bing map tile scales
     metres_per_pixel = 156543.03390625 / math.pow(2.0, float(zoom_level + 1))

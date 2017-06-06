@@ -442,10 +442,10 @@ function style(feature) {
 //    console.log(renderVal);
 
     return {
-        weight : 1.5,
-        opacity : 0.2,
-        color : '#ccc',
-        fillOpacity : 0.5,
+        weight : 0,
+//        opacity : 0.0,
+        color : getColor(colours, renderVal),
+        fillOpacity : getOpacity(renderVal),
         fillColor : getColor(colours, renderVal)
     };
 }
@@ -461,15 +461,16 @@ function getColor(colours, d) {
                                         colours[0];
 }
 
-//// get color depending on ratio of count versus max value
-//function getOpacity(d) {
-//    return d > 500 ? 0.7 :
-//        d > 250 ? 0.6 :
-//        d > 100 ? 0.5 :
-//        d > 50 ? 0.4 :
-//        d > 25 ? 0.3 :
-//        d > 0 ? 0.2 :
-//                0.1;
+// get opacity based on value
+function getOpacity(d) {
+    return  d > currentStatClasses[6] ? 0.8 :
+            d > currentStatClasses[5] ? 0.7 :
+            d > currentStatClasses[4] ? 0.6 :
+            d > currentStatClasses[3] ? 0.5 :
+            d > currentStatClasses[2] ? 0.4 :
+            d > currentStatClasses[1] ? 0.3 :
+                                        0.2;
+}
 
 function onEachFeature(feature, layer) {
     layer.on({

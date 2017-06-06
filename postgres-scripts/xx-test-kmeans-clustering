@@ -38,8 +38,10 @@ SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val;
 select area from census_2011_bdys_display.sa1_zoom_10 order by area;
 
 
-WITH sub AS (WITH points AS (SELECT tab.B2778 / bdy.area as val, ST_MakePoint(tab.B2778 / bdy.area, 0) AS pnt FROM census_2011_data.sa2_b14 AS tab 
-INNER JOIN census_2011_bdys_display.sa2_zoom_16 AS bdy ON tab.region_id = bdy.id) SELECT val, ST_ClusterKMeans(pnt, 7) OVER () AS cluster_id FROM points) SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val
+	WITH sub AS (WITH points AS (SELECT tab.B2778 / bdy.area as val, ST_MakePoint(tab.B2778 / bdy.area, tab.B2778 / bdy.area) AS pnt FROM census_2011_data.sa2_b14 AS tab 
+	INNER JOIN census_2011_bdys_display.sa2_zoom_16 AS bdy ON tab.region_id = bdy.id) SELECT val, ST_ClusterKMeans(pnt, 7) OVER () AS cluster_id FROM points) SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val
+
+WITH sub AS (WITH points AS (SELECT tab.B2778 / bdy.area as val, ST_MakePoint(tab.B2778 / bdy.area, 0) AS pnt FROM census_2011_data.sa3_b14 AS tab INNER JOIN census_2011_bdys_display.sa3_zoom_10 AS bdy ON tab.region_id = bdy.id) SELECT val, ST_ClusterKMeans(pnt, 7) OVER () AS cluster_id FROM points) SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val
 
 
 
