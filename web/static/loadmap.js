@@ -48,9 +48,8 @@ var queryObj = {};
 for (var i = 0; i < querystring.length; i++) {
     // get name and value
     var name = querystring[i].split('=')[0];
-    var value = querystring[i].split('=')[1];
     // populate object
-    queryObj[name] = value;
+    queryObj[name] = querystring[i].split('=')[1];
 }
 
 //// get/set values from querystring
@@ -91,14 +90,22 @@ if (queryObj["stats"] === undefined) {
 }
 
 function init() {
-    //Initialize the map on the "map" div
-    map = new L.Map('map', { preferCanvas: false }); // canvas slows Safari down versus Chrome (IE & edge are untested)
+    //Initialize the map on the "map" div - only use canvas if supported
+    var elem = document.createElement( "canvas" );
+
+    if ( elem.getContext && elem.getContext( "2d" ) ) {
+        map = new L.Map('map', { preferCanvas: true });
+    } else {
+       map = new L.Map('map', { preferCanvas: false });
+    }
+
+    // map = new L.Map('map', { preferCanvas: false }); // canvas slows Safari down versus Chrome (IE & edge are untested)
 
     // acknowledge the data provider
     map.attributionControl.addAttribution('Census data &copy; <a href="http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material">ABS</a>');
 
     // load CARTO basemap tiles
-    var tiles = L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+    L.tileLayer('http:////cartodb-basemaps-{s}.global.ssl.fastly.net/dark_only_labels/{z}/{x}/{y}.png', {
         attribution : '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
         subdomains : 'abcd',
         minZoom : minZoom,
@@ -117,9 +124,9 @@ function init() {
             });
         }
     };
-    
+
     // add bookmark control to map
-    var bmControl = new L.Control.Bookmarks({
+    var bm = new L.Control.Bookmarks({
         position : 'topleft',
         localStorage : false,
         storage : bmStorage
@@ -127,7 +134,7 @@ function init() {
 
     // add control that shows info on mouseover
     info = L.control();
-    info.onAdd = function (map) {
+    info.onAdd = function () {
         this._div = L.DomUtil.create('div', 'info');
         this.update();
         return this._div;
@@ -150,7 +157,7 @@ function init() {
     var chooseMapType = L.control({
         position : 'bottomright'
     });
-    chooseMapType.onAdd = function (map) {
+    chooseMapType.onAdd = function () {
         this._div = L.DomUtil.create('div', 'info themer');
         this._div.innerHTML = '<div><b>Map type </b>' +
                               '<input id="m1" type="radio" name="mapType" value="values"><label for="r1"><span><span></span></span>values</label> ' +
@@ -179,7 +186,7 @@ function init() {
         position : 'bottomright'
     });
 
-    themer.onAdd = function (map) {
+    themer.onAdd = function () {
         this._div = L.DomUtil.create('div', 'info themer');
         this.update();
         return this._div;
@@ -204,14 +211,13 @@ function init() {
             // reload the data - NEEDS TO BE REPLACED WITH A MORE EFFICIENT WAY
             getData();
         });
-    };
+   };
     themer.addTo(map);
-    themer.update("<b>L O A D I N G . . .</b>");
+    themer.update('<b>L O A D I N G . . .</b>');
 
     // get a new set of data when map panned or zoomed
-    // TODO: Handle map movement due to popup
-    map.on('moveend', function (e) {
-        getCurrentStatMetadata()
+    map.on('moveend', function () {
+        getCurrentStatMetadata();
         getData();
     });
 
@@ -225,7 +231,7 @@ function init() {
             boundaryZooms = bdysResponse[0];
         } else {
             // create array of zoom levels with the override boundary id
-            boundaryZooms = {}
+            boundaryZooms = {};
             for (var j = minZoom; j <= maxZoom; j++) {
                 boundaryZooms[j.toString()] = boundaryOverride;
             }
@@ -249,16 +255,16 @@ function init() {
                 // set initial map type classes
                 switch(currentMapType) {
                     case "values":
-                        currentStatClasses = currentStatValues
+                        currentStatClasses = currentStatValues;
                         break;
                     case "density":
-                        currentStatClasses = currentStatDensities
+                        currentStatClasses = currentStatDensities;
                         break;
                     case "percent":
-                        currentStatClasses = currentStatNormalised
+                        currentStatClasses = currentStatNormalised;
                         break;
                     default:
-                        currentStatClasses = currentStatDensities
+                        currentStatClasses = currentStatDensities;
                 }
 //                currentStat = currentStats[0]; // pick the first stat in the URL to map first
             }
@@ -279,7 +285,7 @@ function setRadioButtons() {
         var value = currentStats[i].id.toLowerCase();
         var description = currentStats[i].description;
 
-        if (value == currentStatId) {
+        if (value === currentStatId) {
             radioButtons += '<div><input id="r' + i.toString() + '" type="radio" name="stat" value="' + value + '" checked="checked"><label for="r' + i.toString() + '"><span><span></span></span>' + description + '</label></div>';
         } else {
             radioButtons += '<div><input id="r' + i.toString() + '" type="radio" name="stat" value="' + value + '"><label for="r' + i.toString() + '"><span><span></span></span>' + description + '</label></div>';
@@ -312,16 +318,16 @@ function getCurrentStatMetadata() {
                     // set the current map classes
                     switch(currentMapType) {
                         case "values":
-                            currentStatClasses = currentStatValues
+                            currentStatClasses = currentStatValues;
                             break;
                         case "density":
-                            currentStatClasses = currentStatDensities
+                            currentStatClasses = currentStatDensities;
                             break;
                         case "percent":
-                            currentStatClasses = currentStatNormalised
+                            currentStatClasses = currentStatNormalised;
                             break;
                         default:
-                            currentStatClasses = currentStatDensities
+                            currentStatClasses = currentStatDensities;
                     }
                 }
             }
@@ -431,13 +437,10 @@ function style(feature) {
             colours = densityColours;
       }
 
-//    console.log(currentStatId);
-//    console.log(renderVal);
-
     return {
         weight : 1.5,
-        opacity : 0.3,
-        color : "#ccc",
+        opacity : 0.2,
+        color : getColor(colours, renderVal),
         fillOpacity : 0.5,
         fillColor : getColor(colours, renderVal)
     };
@@ -454,16 +457,16 @@ function getColor(colours, d) {
                                         colours[0];
 }
 
-// get opacity based on value
-function getOpacity(d) {
-    return  d > currentStatClasses[6] ? 0.8 :
-            d > currentStatClasses[5] ? 0.75 :
-            d > currentStatClasses[4] ? 0.7 :
-            d > currentStatClasses[3] ? 0.6 :
-            d > currentStatClasses[2] ? 0.55 :
-            d > currentStatClasses[1] ? 0.5 :
-                                        0.45;
-}
+// // get opacity based on value
+// function getOpacity(d) {
+//     return  d > currentStatClasses[6] ? 0.7 :
+//             d > currentStatClasses[5] ? 0.6 :
+//             d > currentStatClasses[4] ? 0.5 :
+//             d > currentStatClasses[3] ? 0.4 :
+//             d > currentStatClasses[2] ? 0.3 :
+//             d > currentStatClasses[1] ? 0.2 :
+//                                         0.0;
+// }
 
 function onEachFeature(feature, layer) {
     layer.on({

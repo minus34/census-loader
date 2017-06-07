@@ -131,7 +131,7 @@ def get_settings(args):
              {"boundary": "lga", "id_field": "lga_code16", "name_field": "lga_name16", "area_field": "areasqkm16"},
              {"boundary": "mb", "id_field": "mb_code16", "name_field": "'MB ' || mb_code16", "area_field": "areasqkm16"},
              {"boundary": "nrmr", "id_field": "nrm_code16", "name_field": "nrm_name16", "area_field": "areasqkm16"},
-             {"boundary": "poa", "id_field": "poa_code16", "name_field": "'POA ' || poa_name16", "area_field": "areasqkm16"},
+             {"boundary": "poa", "id_field": "poa_code16", "name_field": "'Postcode ' || poa_name16", "area_field": "areasqkm16"},
              # {"boundary": "ra", "id_field": "ra_code16", "name_field": "ra_name16", "area_field": "areasqkm16"},
              {"boundary": "sa1", "id_field": "sa1_main16", "name_field": "'SA1 ' || sa1_main16", "area_field": "areasqkm16"},
              {"boundary": "sa2", "id_field": "sa2_main16", "name_field": "sa2_name16", "area_field": "areasqkm16"},
@@ -194,11 +194,11 @@ def get_boundary_name(zoom_level):
     #     boundary_name = "ste"
     if zoom_level < 7:
         boundary_name = "ste"
-    elif zoom_level < 10:
+    elif zoom_level < 9:
         boundary_name = "sa4"
-    elif zoom_level < 12:
+    elif zoom_level < 11:
         boundary_name = "sa3"
-    elif zoom_level < 14:
+    elif zoom_level < 13:
         boundary_name = "sa2"
     elif zoom_level < 17:
         boundary_name = "sa1"
@@ -212,7 +212,7 @@ def get_boundary_name(zoom_level):
 def get_tolerance(zoom_level):
 
     # pixels squared factor
-    tolerance_square_pixels = 6
+    tolerance_square_pixels = 7
 
     # default Google/Bing map tile scales
     metres_per_pixel = 156543.03390625 / math.pow(2.0, float(zoom_level + 1))
