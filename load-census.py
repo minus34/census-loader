@@ -472,14 +472,13 @@ def create_data_statistics(pg_cur, settings):
     # get dictionary of all census stats
     # get stats metadata, including the all important table number
     sql = "SELECT lower(sequential_id) AS id, lower(table_number) AS table " \
-          "FROM {0}.metadata_stats".format(settings["data_schema"], )
+          "FROM {0}.metadata_stats LIMIT 10".format(settings["data_schema"], )
     pg_cur.execute(sql)
 
     # Retrieve the results of the query into a dictionary
-    stats = list(pg_cur.fetchall())
+    data_list = list(pg_cur.fetchall())
 
-    # prepare boundaries for all tiled map zoom levels
-    create_sql_list = list()
+    # prepare statistics for all census data fields
     insert_sql_list = list()
     vacuum_sql_list = list()
 
@@ -491,8 +490,8 @@ def create_data_statistics(pg_cur, settings):
             name_field = boundary_dict["name_field"]
             area_field = boundary_dict["area_field"]
 
-            input_pg_table = "{0}_{1}_aust".format(boundary_name, settings["census_year"])
-            pg_table = "{0}".format(boundary_name)
+            boundary_table = "{0}.{1}".format(settings["web_schema"], boundary_name)
+            output_table = "{0}_stats".format(boundary_name,)
 
             # build create table statement
             create_table_list = list()
@@ -502,74 +501,92 @@ def create_data_statistics(pg_cur, settings):
             # build column list
             column_list = list()
             column_list.append("id text NOT NULL PRIMARY KEY")
-            column_list.append("name text NOT NULL")
-            column_list.append("area double precision NOT NULL")
-            column_list.append("population double precision NOT NULL")
-            column_list.append("geom geometry(MultiPolygon, 4283) NULL")
-
-            for zoom_level in range(4, 18):
-                display_zoom = str(zoom_level).zfill(2)
-                column_list.append("geojson_{0} jsonb NOT NULL".format(display_zoom))
+            column_list.append("table text NOT NULL")
+            column_list.append("mean double precision NOT NULL")
+            column_list.append("values double precision[] NOT NULL")
+            column_list.append("density double precision[] NOT NULL")
+            column_list.append("percent double precision[] NOT NULL")
 
             # add columns to create table statement and finish it
             create_table_list.append(",".join(column_list))
             create_table_list.append(") WITH (OIDS=FALSE);")
             create_table_list.append("ALTER TABLE {0}.{1} OWNER TO {2};")
-            create_table_list.append("CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);")
-            create_table_list.append("ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx")
+            # create_table_list.append("ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx")
 
-            sql = "".join(create_table_list).format(settings['web_schema'], pg_table, settings['pg_user'])
-            create_sql_list.append(sql)
+            sql = "".join(create_table_list).format(settings['web_schema'], output_table, settings['pg_user'])
+            pg_cur.execute(sql)
 
-            # get population field and table
-            if boundary_name[:1] == "i":
-                pop_stat = "i3"
-                pop_table = "i01a"
-            elif settings["census_year"] == "2011":
-                pop_stat = "b3"
-                pop_table = "b01"
-            else:
-                pop_stat = "g3"
-                pop_table = "g01"
+            # insert a row for each stat
+            for data in data_list:
+                stat = data[0]
+                table = data[1]
 
-            # build insert statement
-            insert_into_list = list()
-            insert_into_list.append("INSERT INTO {0}.{1}".format(settings['web_schema'], pg_table))
-            insert_into_list.append("SELECT bdy.{0} AS id, {1} AS name, SUM(bdy.{2}) AS area, tab.{3} AS population,"
-                                    .format(id_field, name_field, area_field, pop_stat))
+                data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary_name, table)
 
-            # thin geometry to make querying faster
-            tolerance = utils.get_tolerance(10)
-            insert_into_list.append(
-                "ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {0}))), 4283),"
-                    .format(tolerance, ))
+                row = dict()
+                row["id"] = stat
+                row["table"] = table
 
-            # create statements for geojson optimised for each zoom level
-            geojson_list = list()
+                # 1 of 3 kmeans classes - values
+                row["values"] = utils.get_bins(data_table, boundary_table, stat, pg_cur, settings)
 
-            for zoom_level in range(4, 18):
-                # thin geometries to a default tolerance per zoom level
-                tolerance = utils.get_tolerance(zoom_level)
-                # trim coords to only the significant ones
-                decimal_places = utils.get_decimal_places(zoom_level)
+                # 2 of 3 kmeans classes  - densities per sq km
+                stat_field = "CASE WHEN bdy.area > 0.0 THEN tab.{0} / bdy.area ELSE 0 END".format(stat)
+                row["densities"] = utils.get_bins(data_table, boundary_table, stat_field, pg_cur, settings)
 
-                geojson_list.append("ST_AsGeoJSON(ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform("
-                                    "bdy.geom, 3577), {0}))), 4283), {1})::jsonb".format(tolerance, decimal_places))
+                # 3 of 3 kmeans classes  - normalised against population
+                stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END"\
+                    .format(stat,)
+                row["normalised"] = utils.get_bins(data_table, boundary_table, stat_field, pg_cur, settings)
 
-            insert_into_list.append(",".join(geojson_list))
-            insert_into_list.append("FROM {0}.{1} AS bdy".format(settings['boundary_schema'], input_pg_table))
-            insert_into_list.append(
-                "INNER JOIN {0}.{1}_{2} AS tab".format(settings['data_schema'], boundary_name, pop_table))
-            insert_into_list.append("ON bdy.{0} = tab.{1}".format(id_field, settings["region_id_field"]))
-            insert_into_list.append("WHERE bdy.geom IS NOT NULL")
-            insert_into_list.append("GROUP BY {0}, {1}, {2}".format(id_field, name_field, pop_stat))
 
-            sql = " ".join(insert_into_list)
-            insert_sql_list.append(sql)
 
-            vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(settings['web_schema'], pg_table))
 
-    utils.multiprocess_list("sql", create_sql_list, settings, logger)
+
+
+
+
+
+
+
+
+                # build insert statement
+                insert_into_list = list()
+                insert_into_list.append("INSERT INTO {0}.{1}".format(settings['web_schema'], pg_table))
+                insert_into_list.append("SELECT bdy.{0} AS id, {1} AS name, SUM(bdy.{2}) AS area, tab.{3} AS population,"
+                                        .format(id_field, name_field, area_field, pop_stat))
+
+                # thin geometry to make querying faster
+                tolerance = utils.get_tolerance(10)
+                insert_into_list.append(
+                    "ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {0}))), 4283),"
+                        .format(tolerance, ))
+
+                # create statements for geojson optimised for each zoom level
+                geojson_list = list()
+
+                for zoom_level in range(4, 18):
+                    # thin geometries to a default tolerance per zoom level
+                    tolerance = utils.get_tolerance(zoom_level)
+                    # trim coords to only the significant ones
+                    decimal_places = utils.get_decimal_places(zoom_level)
+
+                    geojson_list.append("ST_AsGeoJSON(ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform("
+                                        "bdy.geom, 3577), {0}))), 4283), {1})::jsonb".format(tolerance, decimal_places))
+
+                insert_into_list.append(",".join(geojson_list))
+                insert_into_list.append("FROM {0}.{1} AS bdy".format(settings['boundary_schema'], input_pg_table))
+                insert_into_list.append(
+                    "INNER JOIN {0}.{1}_{2} AS tab".format(settings['data_schema'], boundary_name, pop_table))
+                insert_into_list.append("ON bdy.{0} = tab.{1}".format(id_field, settings["region_id_field"]))
+                insert_into_list.append("WHERE bdy.geom IS NOT NULL")
+                insert_into_list.append("GROUP BY {0}, {1}, {2}".format(id_field, name_field, pop_stat))
+
+                sql = " ".join(insert_into_list)
+                insert_sql_list.append(sql)
+
+                vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(settings['web_schema'], pg_table))
+
     utils.multiprocess_list("sql", insert_sql_list, settings, logger)
     utils.multiprocess_list("sql", vacuum_sql_list, settings, logger)
 

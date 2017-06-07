@@ -57,6 +57,11 @@ def set_arguments():
         '--web-schema', default='census_' + census_year + '_web',
         help='Schema name to store web optimised boundary tables in. Defaults to \'census_' + census_year + '_web\'.')
 
+    # number of classes of data to map
+    parser.add_argument(
+        '--num-classes', type=int, default=7,
+        help='Number of classes (i.e breaks) shown in each map. Defaults to 7.')
+
     # directories
     parser.add_argument(
         '--census-data-path', required=True,
@@ -94,6 +99,8 @@ def get_settings(args):
     # else:
     #     settings['data_pg_server_local_directory'] = settings['data_directory']
     settings['boundaries_local_directory'] = args.census_bdys_path.replace("\\", "/")
+
+    settings['num_classes'] = args.num_classes
 
     # create postgres connect string
     settings['pg_host'] = args.pghost or os.getenv("PGHOST", "localhost")
@@ -261,6 +268,29 @@ def get_decimal_places(zoom_level):
             trigger = "don't do anything else"  # used to cleanly exit the loop
 
     return places
+
+
+def get_bins(data_table, bdy_table, stat_field, pg_cur, settings):
+
+    sql = "WITH sub AS (" \
+          "WITH points AS (" \
+          "SELECT {0} as val, ST_MakePoint({0}, 0) AS pnt FROM {1} AS tab " \
+          "INNER JOIN {2} AS bdy ON tab.{3} = bdy.id) " \
+          "SELECT val, ST_ClusterKMeans(pnt, {4}) OVER () AS cluster_id FROM points) " \
+          "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val" \
+        .format(stat_field, data_table, bdy_table, settings['region_id_field'], settings['num_classes'])
+
+    print(sql)
+
+    pg_cur.execute(sql)
+    rows = pg_cur.fetchall()
+
+    output_list = list()
+
+    for row in rows:
+        output_list.append(row[0])
+
+    return output_list
 
 
 # takes a list of sql queries or command lines and runs them using multiprocessing
