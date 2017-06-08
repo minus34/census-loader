@@ -281,14 +281,19 @@ def get_bins(data_table, bdy_table, stat_field, pg_cur, settings):
         .format(stat_field, data_table, bdy_table, settings['region_id_field'], settings['num_classes'])
 
     # print(sql)
+    try:
+        pg_cur.execute(sql)
+        rows = pg_cur.fetchall()
 
-    pg_cur.execute(sql)
-    rows = pg_cur.fetchall()
+        output_list = list()
 
-    output_list = list()
+        for row in rows:
+            output_list.append(row[0])
+    except Exception as ex:
+        # print("{0} - {1} Failed: {2}".format(data_table, stat_field, ex))
+        return list()
 
-    for row in rows:
-        output_list.append(row[0])
+    # census_2011_data.ced_b23a - b4318
 
     return output_list
 
