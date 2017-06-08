@@ -57,6 +57,11 @@ def set_arguments():
         '--web-schema', default='census_' + census_year + '_web',
         help='Schema name to store web optimised boundary tables in. Defaults to \'census_' + census_year + '_web\'.')
 
+    # number of classes of data to map
+    parser.add_argument(
+        '--num-classes', type=int, default=7,
+        help='Number of classes (i.e breaks) shown in each map. Defaults to 7.')
+
     # directories
     parser.add_argument(
         '--census-data-path', required=True,
@@ -95,6 +100,8 @@ def get_settings(args):
     #     settings['data_pg_server_local_directory'] = settings['data_directory']
     settings['boundaries_local_directory'] = args.census_bdys_path.replace("\\", "/")
 
+    settings['num_classes'] = args.num_classes
+
     # create postgres connect string
     settings['pg_host'] = args.pghost or os.getenv("PGHOST", "localhost")
     settings['pg_port'] = args.pgport or os.getenv("PGPORT", 5432)
@@ -131,7 +138,7 @@ def get_settings(args):
              {"boundary": "lga", "id_field": "lga_code16", "name_field": "lga_name16", "area_field": "areasqkm16"},
              {"boundary": "mb", "id_field": "mb_code16", "name_field": "'MB ' || mb_code16", "area_field": "areasqkm16"},
              {"boundary": "nrmr", "id_field": "nrm_code16", "name_field": "nrm_name16", "area_field": "areasqkm16"},
-             {"boundary": "poa", "id_field": "poa_code16", "name_field": "'POA ' || poa_name16", "area_field": "areasqkm16"},
+             {"boundary": "poa", "id_field": "poa_code16", "name_field": "'Postcode ' || poa_name16", "area_field": "areasqkm16"},
              # {"boundary": "ra", "id_field": "ra_code16", "name_field": "ra_name16", "area_field": "areasqkm16"},
              {"boundary": "sa1", "id_field": "sa1_main16", "name_field": "'SA1 ' || sa1_main16", "area_field": "areasqkm16"},
              {"boundary": "sa2", "id_field": "sa2_main16", "name_field": "sa2_name16", "area_field": "areasqkm16"},
@@ -194,9 +201,9 @@ def get_boundary_name(zoom_level):
     #     boundary_name = "ste"
     if zoom_level < 7:
         boundary_name = "ste"
-    elif zoom_level < 10:
+    elif zoom_level < 9:
         boundary_name = "sa4"
-    elif zoom_level < 12:
+    elif zoom_level < 11:
         boundary_name = "sa3"
     elif zoom_level < 14:
         boundary_name = "sa2"
@@ -212,7 +219,7 @@ def get_boundary_name(zoom_level):
 def get_tolerance(zoom_level):
 
     # pixels squared factor
-    tolerance_square_pixels = 6
+    tolerance_square_pixels = 7
 
     # default Google/Bing map tile scales
     metres_per_pixel = 156543.03390625 / math.pow(2.0, float(zoom_level + 1))
@@ -261,6 +268,29 @@ def get_decimal_places(zoom_level):
             trigger = "don't do anything else"  # used to cleanly exit the loop
 
     return places
+
+
+def get_bins(data_table, bdy_table, stat_field, pg_cur, settings):
+
+    sql = "WITH sub AS (" \
+          "WITH points AS (" \
+          "SELECT {0} as val, ST_MakePoint({0}, 0) AS pnt FROM {1} AS tab " \
+          "INNER JOIN {2} AS bdy ON tab.{3} = bdy.id) " \
+          "SELECT val, ST_ClusterKMeans(pnt, {4}) OVER () AS cluster_id FROM points) " \
+          "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val" \
+        .format(stat_field, data_table, bdy_table, settings['region_id_field'], settings['num_classes'])
+
+    print(sql)
+
+    pg_cur.execute(sql)
+    rows = pg_cur.fetchall()
+
+    output_list = list()
+
+    for row in rows:
+        output_list.append(row[0])
+
+    return output_list
 
 
 # takes a list of sql queries or command lines and runs them using multiprocessing
