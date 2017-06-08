@@ -205,7 +205,7 @@ def get_boundary_name(zoom_level):
         boundary_name = "sa4"
     elif zoom_level < 11:
         boundary_name = "sa3"
-    elif zoom_level < 13:
+    elif zoom_level < 14:
         boundary_name = "sa2"
     elif zoom_level < 17:
         boundary_name = "sa1"
@@ -280,7 +280,7 @@ def get_bins(data_table, bdy_table, stat_field, pg_cur, settings):
           "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val" \
         .format(stat_field, data_table, bdy_table, settings['region_id_field'], settings['num_classes'])
 
-    print(sql)
+    # print(sql)
 
     pg_cur.execute(sql)
     rows = pg_cur.fetchall()

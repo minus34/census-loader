@@ -4,6 +4,7 @@ var bdyNamesUrl = "../get-bdy-names";
 var metadataUrl = "../get-metadata";
 var dataUrl = "../get-data";
 
+var colours;
 var map;
 var info;
 var themer;
@@ -32,9 +33,13 @@ var currentStatDescription;
 var currentMapType = "percent"; // initial map type options: values, density, percent
 var currentStatClasses;
 
-var valueColours = ['#fde0c5','#facba6','#f8b58b','#f59e72','#f2855d','#ef6a4c','#eb4a40'];
-var densityColours = ['#d1eeea','#a8dbd9','#85c4c9','#68abb8','#4f90a6','#3b738f','#2a5674'];
-var percentColours = ['#f9ddda','#f2b9c4','#e597b9','#ce78b3','#ad5fad','#834ba0','#573b88'];
+// var valueColours = ['#fde0c5','#facba6','#f8b58b','#f59e72','#f2855d','#ef6a4c','#eb4a40'];
+// var densityColours = ['#d1eeea','#a8dbd9','#85c4c9','#68abb8','#4f90a6','#3b738f','#2a5674'];
+// var percentColours = ['#f9ddda','#f2b9c4','#e597b9','#ce78b3','#ad5fad','#834ba0','#573b88'];
+
+var valueColours = ["#1a1a1a", "#79C753"];
+var percentColours = ["#1a1a1a", "#DD4132"];
+var densityColours = ["#1a1a1a", "#FAE03C"];
 
 // get querystring values
 // code from http://forum.jquery.com/topic/getting-value-from-a-querystring
@@ -69,7 +74,7 @@ if (queryObj["b"] !== undefined) {
 
 // start zoom level
 if (queryObj["z"] === undefined) {
-    currentZoomLevel = 10;
+    currentZoomLevel = 11;
 } else {
     currentZoomLevel = queryObj["z"];
 }
@@ -84,12 +89,18 @@ if (queryObj["z"] === undefined) {
 // get the stat(s) - can include basic equations using + - * / and ()  e.g. B23 * (B45 + B678)
 if (queryObj["stats"] === undefined) {
     statsArray = ["b3"]; // total_persons
+
 } else {
     statsArray = encodeURIComponent(queryObj["stats"].toLowerCase()).split("%2C"); // handle maths operators as well as plain stats
 //    console.log(statsArray);
 }
 
 function init() {
+
+    // initialise colour ramp
+    colours = new Rainbow();
+    colours.setNumberRange(1, numClasses);
+
     //Initialize the map on the "map" div - only use canvas if supported
     var elem = document.createElement( "canvas" );
 
@@ -104,13 +115,37 @@ function init() {
     // acknowledge the data provider
     map.attributionControl.addAttribution('Census data &copy; <a href="http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material">ABS</a>');
 
-    // load CARTO basemap tiles
-    L.tileLayer('http:////cartodb-basemaps-{s}.global.ssl.fastly.net/dark_only_labels/{z}/{x}/{y}.png', {
+    // create pane for map labels - a non-interactive pane (i.e. no mouse events)
+    map.createPane('labels');
+
+    // This pane is above markers but below popups
+    map.getPane('labels').style.zIndex = 650;
+
+    // Layers in this pane are non-interactive and do not obscure mouse/touch events
+    map.getPane('labels').style.pointerEvents = 'none';
+
+    // var tiles = L.tileLayer('https://ws.spookfish.com/api/WMTS/tile/1.0.0/MostRecent/GeneratedDefaultStyle/GoogleMapsCompatible/{z}/{x}/{y}.jpeg', {
+    //     attribution : '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+    //     subdomains : 'abcd',
+    //     minZoom : minZoom,
+    //     maxZoom : maxZoom
+    // }).addTo(map);
+
+    // load CartoDB basemap tiles
+    L.tileLayer('http://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_only_labels/{z}/{x}/{y}.png', {
         attribution : '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
         subdomains : 'abcd',
         minZoom : minZoom,
-        maxZoom : maxZoom
+        maxZoom : maxZoom,
+        pane: 'labels'
     }).addTo(map);
+
+    // L.tileLayer('http://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_nolabels/{z}/{x}/{y}.png', {
+    //     attribution : '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+    //     subdomains : 'abcd',
+    //     minZoom : minZoom,
+    //     maxZoom : maxZoom,
+    // }).addTo(map);
 
     // set the view to a given center and zoom
     map.setView(new L.LatLng(-33.85, 151.15), currentZoomLevel);
@@ -252,19 +287,26 @@ function init() {
                 currentStatNormalised = currentStats[0].normalised;
                 currentStatDescription = currentStats[0].description;
 
+                // // don't show percent as default for total pop (it's a grey map)
+                // if (statsArray === ["b3"]) currentMapType = "density";
+
                 // set initial map type classes
                 switch(currentMapType) {
                     case "values":
                         currentStatClasses = currentStatValues;
+                        colours.setSpectrum(valueColours[0], valueColours[1]);
                         break;
                     case "density":
                         currentStatClasses = currentStatDensities;
+                        colours.setSpectrum(densityColours[0], densityColours[1]);
                         break;
                     case "percent":
                         currentStatClasses = currentStatNormalised;
+                        colours.setSpectrum(percentColours[0], percentColours[1]);
                         break;
                     default:
                         currentStatClasses = currentStatDensities;
+                        colours.setSpectrum(densityColours[0], densityColours[1]);
                 }
 //                currentStat = currentStats[0]; // pick the first stat in the URL to map first
             }
@@ -319,15 +361,19 @@ function getCurrentStatMetadata() {
                     switch(currentMapType) {
                         case "values":
                             currentStatClasses = currentStatValues;
+                            colours.setSpectrum(valueColours[0], valueColours[1]);
                             break;
                         case "density":
                             currentStatClasses = currentStatDensities;
+                            colours.setSpectrum(densityColours[0], densityColours[1]);
                             break;
                         case "percent":
                             currentStatClasses = currentStatNormalised;
+                            colours.setSpectrum(percentColours[0], percentColours[1]);
                             break;
                         default:
                             currentStatClasses = currentStatDensities;
+                            colours.setSpectrum(densityColours[0], densityColours[1]);
                     }
                 }
             }
@@ -416,45 +462,45 @@ function gotData(json) {
 
 function style(feature) {
     var renderVal;
-    var colours;
+    // var colours;
 
     // render value to use depends on map type
     switch(currentMapType) {
         case "values":
             renderVal = parseInt(feature.properties[currentStatId]);
-            colours = valueColours;
             break;
         case "density":
             renderVal = parseInt(feature.properties.density);
-            colours = densityColours;
             break;
         case "percent":
             renderVal = parseInt(feature.properties.percent);
-            colours = percentColours;
             break;
         default:
             renderVal = parseInt(feature.properties.density);
-            colours = densityColours;
       }
 
+      console.log(colours.colourAt(7));
+
     return {
-        weight : 1.5,
-        opacity : 0.2,
-        color : getColor(colours, renderVal),
-        fillOpacity : 0.5,
-        fillColor : getColor(colours, renderVal)
+        weight : 2,
+        opacity : 1.0,
+        color : getColor(renderVal),
+        fillOpacity : 1.0,
+        fillColor : getColor(renderVal)
     };
 }
 
 // get color depending on ratio of count versus max value
-function getColor(colours, d) {
-    return  d > currentStatClasses[6] ? colours[6] :
-            d > currentStatClasses[5] ? colours[5] :
-            d > currentStatClasses[4] ? colours[4] :
-            d > currentStatClasses[3] ? colours[3] :
-            d > currentStatClasses[2] ? colours[2] :
-            d > currentStatClasses[1] ? colours[1] :
-                                        colours[0];
+function getColor(d) {
+    var colour = d > currentStatClasses[6] ? colours.colourAt(7) :
+                 d > currentStatClasses[5] ? colours.colourAt(6) :
+                 d > currentStatClasses[4] ? colours.colourAt(5) :
+                 d > currentStatClasses[3] ? colours.colourAt(4) :
+                 d > currentStatClasses[2] ? colours.colourAt(3) :
+                 d > currentStatClasses[1] ? colours.colourAt(2) :
+                                             colours.colourAt(1);
+
+    return "#" + colour;
 }
 
 // // get opacity based on value
@@ -484,8 +530,7 @@ function highlightFeature(e) {
     layer.setStyle({
         weight : 2.5,
         opacity : 0.9,
-        color : '#ffffff',
-        fillOpacity : 0.7
+        color : '#dddddd'
     });
 
 //    if (!L.Browser.ie && !L.Browser.edge && !L.Browser.opera) {
