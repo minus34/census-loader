@@ -62,8 +62,12 @@ def main():
         logger.fatal("Unable to add PostGIS extension\nACTION: Check your Postgres user privileges or PostGIS install")
         return False
 
-    # test if ST_SubDivide exists (only in PostGIS 2.2+). It's used to split boundaries for faster processing
+    # test if ST_ClusterKMeans exists (only in PostGIS 2.3+). It's used to create classes to display the data in the map
     utils.check_postgis_version(pg_cur, settings, logger)
+
+    if not settings['st_clusterkmeans_supported']:
+        logger.warning("YOU NEED TO INSTALL POSTGIS 2.3 OR HIGHER FOR THE MAP SERVER TO WORK\n"
+                       "t utilises the ST_ClusterKMeans() function in v2.3+")
 
     # START LOADING DATA
 
@@ -89,15 +93,15 @@ def main():
     # start_time = datetime.now()
     # logger.info("Part 2 of 3 : Start census boundary load : {0}".format(start_time))
     # load_boundaries(pg_cur, settings)
-    # create_display_boundaries(pg_cur, settings)
+    create_display_boundaries(pg_cur, settings)
     # logger.info("Part 2 of 3 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
-    # PART 3 - create tables of stats for all census data, for the visualisation
-    logger.info("")
-    start_time = datetime.now()
-    logger.info("Part 3 of 3 : Start calculating statistics : {0}".format(start_time))
-    create_data_statistics(pg_cur, settings)
-    logger.info("Part 3 of 3 : Census data Statistics calculated! : {0}".format(datetime.now() - start_time))
+    # # PART 3 - create tables of stats for all census data, for the visualisation
+    # logger.info("")
+    # start_time = datetime.now()
+    # logger.info("Part 3 of 3 : Start calculating statistics : {0}".format(start_time))
+    # create_data_statistics(pg_cur, settings)
+    # logger.info("Part 3 of 3 : Census data Statistics calculated! : {0}".format(datetime.now() - start_time))
 
     # close Postgres connection
     pg_cur.close()

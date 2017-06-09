@@ -270,7 +270,7 @@ def get_decimal_places(zoom_level):
     return places
 
 
-def get_bins(data_table, bdy_table, stat_field, pg_cur, settings):
+def get_bins(data_table, boundary_table, stat_field, pg_cur, settings):
 
     sql = "WITH sub AS (" \
           "WITH points AS (" \
@@ -278,22 +278,24 @@ def get_bins(data_table, bdy_table, stat_field, pg_cur, settings):
           "INNER JOIN {2} AS bdy ON tab.{3} = bdy.id) " \
           "SELECT val, ST_ClusterKMeans(pnt, {4}) OVER () AS cluster_id FROM points) " \
           "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val" \
-        .format(stat_field, data_table, bdy_table, settings['region_id_field'], settings['num_classes'])
+        .format(stat_field, data_table, boundary_table, settings['region_id_field'], settings['num_classes'])
 
-    # print(sql)
+    print(sql)
+
     try:
         pg_cur.execute(sql)
         rows = pg_cur.fetchall()
 
-        output_list = list()
-
-        for row in rows:
-            output_list.append(row[0])
     except Exception as ex:
-        # print("{0} - {1} Failed: {2}".format(data_table, stat_field, ex))
+        print("{0} - {1} Failed: {2}".format(data_table, stat_field, ex))
         return list()
 
     # census_2011_data.ced_b23a - b4318
+
+    output_list = list()
+
+    for row in rows:
+        output_list.append(row["val"])
 
     return output_list
 
@@ -572,7 +574,7 @@ def check_postgis_version(pg_cur, settings, logger):
     postgis_version_num = 0.0
     geos_version = "UNKNOWN"
     geos_version_num = 0.0
-    settings['st_subdivide_supported'] = False
+    settings['st_clusterkmeans_supported'] = False
     for lib_string in lib_strings:
         if lib_string[:8] == "POSTGIS=":
             postgis_version = lib_string.replace("POSTGIS=", "")
@@ -581,7 +583,7 @@ def check_postgis_version(pg_cur, settings, logger):
             geos_version = lib_string.replace("GEOS=", "")
             geos_version_num = float(geos_version[:3])
     if postgis_version_num >= 2.2 and geos_version_num >= 3.5:
-        settings['st_subdivide_supported'] = True
+        settings['st_clusterkmeans_supported'] = True
     logger.info("\t- using Postgres {0} and PostGIS {1} (with GEOS {2})"
                 .format(pg_version, postgis_version, geos_version))
 
