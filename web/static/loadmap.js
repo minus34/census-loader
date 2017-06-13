@@ -37,6 +37,8 @@ var currentStatClasses;
 // var densityColours = ['#d1eeea','#a8dbd9','#85c4c9','#68abb8','#4f90a6','#3b738f','#2a5674'];
 // var percentColours = ['#f9ddda','#f2b9c4','#e597b9','#ce78b3','#ad5fad','#834ba0','#573b88'];
 
+var highlightColour = "#ffff00"
+
 var valueColours = ["#1a1a1a", "#79C753"];
 var percentColours = ["#1a1a1a", "#DD4132"];
 var densityColours = ["#1a1a1a", "#FAE03C"];
@@ -530,7 +532,7 @@ function highlightFeature(e) {
     layer.setStyle({
         weight : 2.5,
         opacity : 0.9,
-        color : '#dddddd'
+        color : highlightColour
     });
 
 //    if (!L.Browser.ie && !L.Browser.edge && !L.Browser.opera) {

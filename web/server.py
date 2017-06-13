@@ -170,16 +170,6 @@ def get_metadata():
 
             # get the values for the map classes
             with get_db_cursor() as pg_cur:
-                # 1 of 3 - values
-                stat_field = feature_dict["id"]
-                feature_dict["values"] = utils.get_bins(data_table, boundary_table, stat_field, pg_cur, settings)
-
-                # 2 of 3 - densities
-                stat_field = "CASE WHEN bdy.area > 0.0 THEN tab.{0} / bdy.area ELSE 0 END" \
-                    .format(feature_dict["id"],)
-                feature_dict["densities"] = utils.get_bins(data_table, boundary_table, stat_field, pg_cur, settings)
-
-                # 3 of 3 - normalised
                 stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END" \
                     .format(feature_dict["id"], )
                 feature_dict["normalised"] = utils.get_bins(data_table, boundary_table, stat_field, pg_cur, settings)
