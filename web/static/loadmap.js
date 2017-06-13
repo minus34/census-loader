@@ -39,9 +39,9 @@ var currentStatClasses;
 
 var highlightColour = "#ffff00"
 
-var valueColours = ["#1a1a1a", "#79C753"];
+//var percentColours = ["#1a1a1a", "#79C753"];
 var percentColours = ["#1a1a1a", "#DD4132"];
-var densityColours = ["#1a1a1a", "#FAE03C"];
+//var percentColours = ["#1a1a1a", "#FAE03C"];
 
 // get querystring values
 // code from http://forum.jquery.com/topic/getting-value-from-a-querystring
@@ -481,7 +481,7 @@ function style(feature) {
             renderVal = parseInt(feature.properties.density);
       }
 
-      console.log(colours.colourAt(7));
+//      console.log(colours.colourAt(7));
 
     return {
         weight : 2,

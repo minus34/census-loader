@@ -270,7 +270,7 @@ def get_decimal_places(zoom_level):
     return places
 
 
-def get_bins(data_table, boundary_table, stat_field, pg_cur, settings):
+def get_kmeans_bins(data_table, boundary_table, stat_field, pg_cur, settings):
 
     sql = "WITH sub AS (" \
           "WITH points AS (" \
@@ -296,6 +296,36 @@ def get_bins(data_table, boundary_table, stat_field, pg_cur, settings):
 
     for row in rows:
         output_list.append(row["val"])
+
+    return output_list
+
+
+def get_equal_interval_bins(data_table, boundary_table, stat_field, pg_cur, settings):
+
+    sql = "SELECT MIN({0}) AS min, MAX({0}) AS max FROM {1}  AS tab " \
+          "INNER JOIN {2} AS bdy ON tab.{3} = bdy.id"\
+        .format(stat_field, data_table, boundary_table, settings['region_id_field'])
+
+    try:
+        pg_cur.execute(sql)
+        row = pg_cur.fetchone()
+
+    except Exception as ex:
+        print("{0} - {1} Failed: {2}".format(data_table, stat_field, ex))
+        return list()
+
+    output_list = list()
+
+    min = row["min"]
+    max = row["max"]
+    delta = (max - min) / float(settings["num_classes"])
+    currVal = min
+
+    # print("{0} : from {1} to {2}".format(boundary_table, min, max))
+
+    for i in range(0, settings["num_classes"]):
+        output_list.append(currVal)
+        currVal += delta
 
     return output_list
 
