@@ -4,7 +4,6 @@ var bdyNamesUrl = "../get-bdy-names";
 var metadataUrl = "../get-metadata";
 var dataUrl = "../get-data";
 
-var colours;
 var map;
 var info;
 var themer;
@@ -29,19 +28,11 @@ var currentStatId;
 var currentStatTable;
 var currentStatType;
 var currentStatDescription;
-
-var currentMapType = "percent"; // initial map type options: values, density, percent
 var currentStatClasses;
 
-// var valueColours = ['#fde0c5','#facba6','#f8b58b','#f59e72','#f2855d','#ef6a4c','#eb4a40'];
-// var densityColours = ['#d1eeea','#a8dbd9','#85c4c9','#68abb8','#4f90a6','#3b738f','#2a5674'];
-// var percentColours = ['#f9ddda','#f2b9c4','#e597b9','#ce78b3','#ad5fad','#834ba0','#573b88'];
-
 var highlightColour = "#ffff00"
-
-//var percentColours = ["#1a1a1a", "#79C753"];
+var colours;
 var percentColours = ["#1a1a1a", "#DD4132"];
-//var percentColours = ["#1a1a1a", "#FAE03C"];
 
 // get querystring values
 // code from http://forum.jquery.com/topic/getting-value-from-a-querystring
@@ -99,9 +90,10 @@ if (queryObj["stats"] === undefined) {
 
 function init() {
 
-    // initialise colour ramp
+    // create colour ramp
     colours = new Rainbow();
     colours.setNumberRange(1, numClasses);
+    colours.setSpectrum(percentColours[0], percentColours[1]);
 
     //Initialize the map on the "map" div - only use canvas if supported
     var elem = document.createElement( "canvas" );
@@ -126,14 +118,7 @@ function init() {
     // Layers in this pane are non-interactive and do not obscure mouse/touch events
     map.getPane('labels').style.pointerEvents = 'none';
 
-    // var tiles = L.tileLayer('https://ws.spookfish.com/api/WMTS/tile/1.0.0/MostRecent/GeneratedDefaultStyle/GoogleMapsCompatible/{z}/{x}/{y}.jpeg', {
-    //     attribution : '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
-    //     subdomains : 'abcd',
-    //     minZoom : minZoom,
-    //     maxZoom : maxZoom
-    // }).addTo(map);
-
-    // load CartoDB basemap tiles
+    // load CartoDB labels
     L.tileLayer('http://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_only_labels/{z}/{x}/{y}.png', {
         attribution : '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
         subdomains : 'abcd',
@@ -141,13 +126,6 @@ function init() {
         maxZoom : maxZoom,
         pane: 'labels'
     }).addTo(map);
-
-    // L.tileLayer('http://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_nolabels/{z}/{x}/{y}.png', {
-    //     attribution : '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
-    //     subdomains : 'abcd',
-    //     minZoom : minZoom,
-    //     maxZoom : maxZoom,
-    // }).addTo(map);
 
     // set the view to a given center and zoom
     map.setView(new L.LatLng(-33.85, 151.15), currentZoomLevel);
@@ -182,34 +160,6 @@ function init() {
                                        '<h2>' + props.percent.toFixed(1).toLocaleString(['en-AU']) + '%</h2>' : 'pick a boundary');
     };
     info.addTo(map);
-
-    // add radio buttons to choose map type: volume of stats, density (stat/area) or percent (normalised against B3 - total persons)
-    var chooseMapType = L.control({
-        position : 'bottomright'
-    });
-    chooseMapType.onAdd = function () {
-        this._div = L.DomUtil.create('div', 'info themer');
-        this._div.innerHTML = '<div><b>Map type </b>' +
-                              '<input id="m1" type="radio" name="mapType" value="values"><label for="r1"><span><span></span></span>values</label> ' +
-                              '<input id="m2" type="radio" name="mapType" value="percent" checked="checked"><label for="r3"><span><span></span></span>percent</label>' +
-                              '<input id="m3" type="radio" name="mapType" value="density"><label for="r2"><span><span></span></span>density</label> ' +
-                              '</div>';
-        return this._div;
-    };
-    chooseMapType.addTo(map);
-
-    // event to trigger the map theme change
-    $("input:radio[name=mapType]").click(function () {
-        currentMapType = $(this).val();
-
-        console.log(currentMapType);
-
-        // update all stat metadata
-        getCurrentStatMetadata();
-
-        // reload the data - NEEDS TO BE REPLACED WITH A MORE EFFICIENT WAY
-        getData();
-    });
 
     // add radio buttons to choose stat to theme the map
     themer = L.control({
@@ -278,32 +228,8 @@ function init() {
                 currentStatTable = currentStats[0].table.toLowerCase();
                 currentStatType = currentStats[0].type.toLowerCase();
                 currentStatValues = currentStats[0].values;
-                currentStatDensities = currentStats[0].densities;
-                currentStatNormalised = currentStats[0].normalised;
+                currentStatClasses = currentStats[0].normalised;
                 currentStatDescription = currentStats[0].description;
-
-                // // don't show percent as default for total pop (it's a grey map)
-                // if (statsArray === ["b3"]) currentMapType = "density";
-
-                // set initial map type classes
-                switch(currentMapType) {
-                    case "values":
-                        currentStatClasses = currentStatValues;
-                        colours.setSpectrum(valueColours[0], valueColours[1]);
-                        break;
-                    case "density":
-                        currentStatClasses = currentStatDensities;
-                        colours.setSpectrum(densityColours[0], densityColours[1]);
-                        break;
-                    case "percent":
-                        currentStatClasses = currentStatNormalised;
-                        colours.setSpectrum(percentColours[0], percentColours[1]);
-                        break;
-                    default:
-                        currentStatClasses = currentStatDensities;
-                        colours.setSpectrum(densityColours[0], densityColours[1]);
-                }
-//                currentStat = currentStats[0]; // pick the first stat in the URL to map first
             }
         }
 
@@ -349,27 +275,8 @@ function getCurrentStatMetadata() {
                     currentStatType = currentStats[j].type.toLowerCase();
                     currentStatValues = currentStats[0].values;
                     currentStatDensities = currentStats[0].densities;
-                    currentStatNormalised = currentStats[0].normalised;
+                    currentStatClasses = currentStats[0].normalised;
                     currentStatDescription = currentStats[j].description;
-
-                    // set the current map classes
-                    switch(currentMapType) {
-                        case "values":
-                            currentStatClasses = currentStatValues;
-                            colours.setSpectrum(valueColours[0], valueColours[1]);
-                            break;
-                        case "density":
-                            currentStatClasses = currentStatDensities;
-                            colours.setSpectrum(densityColours[0], densityColours[1]);
-                            break;
-                        case "percent":
-                            currentStatClasses = currentStatNormalised;
-                            colours.setSpectrum(percentColours[0], percentColours[1]);
-                            break;
-                        default:
-                            currentStatClasses = currentStatDensities;
-                            colours.setSpectrum(densityColours[0], densityColours[1]);
-                    }
                 }
             }
         }
@@ -456,25 +363,7 @@ function gotData(json) {
 }
 
 function style(feature) {
-    var renderVal;
-    // var colours;
-
-    // render value to use depends on map type
-    switch(currentMapType) {
-        case "values":
-            renderVal = parseInt(feature.properties[currentStatId]);
-            break;
-        case "density":
-            renderVal = parseInt(feature.properties.density);
-            break;
-        case "percent":
-            renderVal = parseInt(feature.properties.percent);
-            break;
-        default:
-            renderVal = parseInt(feature.properties.density);
-      }
-
-//      console.log(colours.colourAt(7));
+    var renderVal = parseInt(feature.properties.percent);
 
     return {
         weight : 2,
