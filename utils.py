@@ -303,7 +303,8 @@ def get_kmeans_bins(data_table, boundary_table, stat_field, pg_cur, settings):
 def get_equal_interval_bins(data_table, boundary_table, stat_field, pg_cur, settings):
 
     sql = "SELECT MIN({0}) AS min, MAX({0}) AS max FROM {1}  AS tab " \
-          "INNER JOIN {2} AS bdy ON tab.{3} = bdy.id"\
+          "INNER JOIN {2} AS bdy ON tab.{3} = bdy.id " \
+          "WHERE {0} > 0 AND {0} < 100.0"\
         .format(stat_field, data_table, boundary_table, settings['region_id_field'])
 
     try:

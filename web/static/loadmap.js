@@ -90,7 +90,7 @@ if (queryObj["z"] === undefined) {
 
 // get the stat(s) - can include basic equations using + - * / and ()  e.g. B23 * (B45 + B678)
 if (queryObj["stats"] === undefined) {
-    statsArray = ["b3"]; // total_persons
+    statsArray = ["b1", "b2"]; // total_persons
 
 } else {
     statsArray = encodeURIComponent(queryObj["stats"].toLowerCase()).split("%2C"); // handle maths operators as well as plain stats
@@ -177,20 +177,13 @@ function init() {
         return this._div;
     };
     info.update = function (props) {
-//        var typePrefix;
-//        var typeSuffix;
-//        this._div.innerHTML = (props ? '<b>' + typePrefix + props[currentStatId].toLocaleString(['en-AU']) + typeSuffix + '</b> ' + currentStatType : 'pick a boundary');
-
-//        var density = (props ?
-
         this._div.innerHTML = (props ? '<h3>' + props.name + '</h3>' +
-                                       '<b>' + props[currentStatId].toLocaleString(['en-AU']) + '</b> ' + currentStatType + '<br/>' +
-                                       '<b>' + props.percent.toFixed(1).toLocaleString(['en-AU']) + '%</b> of population<br/>' +
-                                       '<b>' + props.density.toFixed(4).toLocaleString(['en-AU']) + '</b> ' + currentStatType + '/km<sup>2</sup><br/>' : 'pick a boundary');
+                                       props[currentStatId].toLocaleString(['en-AU']) + ' of ' + props.population.toLocaleString(['en-AU']) + ' ' + currentStatType +
+                                       '<h2>' + props.percent.toFixed(1).toLocaleString(['en-AU']) + '%</h2>' : 'pick a boundary');
     };
     info.addTo(map);
 
-    // add radio buttons to choose mpa type: volume of stats, density (stat/area) or percent (normalised against B3 - total persons)
+    // add radio buttons to choose map type: volume of stats, density (stat/area) or percent (normalised against B3 - total persons)
     var chooseMapType = L.control({
         position : 'bottomright'
     });

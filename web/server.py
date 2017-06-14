@@ -280,7 +280,7 @@ def get_data():
         envelope_sql = "ST_MakeEnvelope({0}, {1}, {2}, {3}, 4283)".format(map_left, map_bottom, map_right, map_top)
         geom_sql = "geojson_{0}".format(display_zoom)
 
-        sql = "SELECT bdy.id, bdy.name, tab.{0} / bdy.area AS density, " \
+        sql = "SELECT bdy.id, bdy.name, bdy.population, tab.{0} / bdy.area AS density, " \
               "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END AS percent, " \
               "tab.{0}, {1} AS geometry " \
               "FROM {2}.{3} AS bdy " \
