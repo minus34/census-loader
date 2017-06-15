@@ -143,32 +143,25 @@ def get_metadata():
     response_dict["type"] = "StatsCollection"
     response_dict["classes"] = num_classes
 
-    output_array = list()
+    # output_array = list()
 
-    # get metadata for all boundaries (done in one go for frontend performance)
-    for boundary_name in boundary_names:
-        output_dict = dict()
-        output_dict["boundary"] = boundary_name
+    # # get metadata for all boundaries (done in one go for frontend performance)
+    # for boundary_name in boundary_names:
+    #     output_dict = dict()
+    #     output_dict["boundary"] = boundary_name
+    #
+    #     boundary_table = "{0}.{1}".format(settings["web_schema"], boundary_name)
 
-        boundary_table = "{0}.{1}".format(settings["web_schema"], boundary_name)
+    feature_array = list()
 
-        # # get id and area fields for boundary
-        # bdy_id_field = ""
-        # bdy_area_field = ""
+    # For each row returned assemble a dictionary
+    for row in rows:
+        feature_dict = dict(row)
+        feature_dict["id"] = feature_dict["id"].lower()
+        feature_dict["table"] = feature_dict["table"].lower()
 
-        # for boundary_dict in settings['bdy_table_dicts']:
-            # if boundary_dict["boundary"] == boundary_name:
-                # bdy_id_field = boundary_dict["id_field"]
-                # bdy_area_field = boundary_dict["area_field"]
-
-        i = 0
-        feature_array = list()
-
-        # For each row returned assemble a dictionary
-        for row in rows:
-            feature_dict = dict(row)
-            feature_dict["id"] = feature_dict["id"].lower()
-            feature_dict["table"] = feature_dict["table"].lower()
+        for boundary_name in boundary_names:
+            boundary_table = "{0}.{1}".format(settings["web_schema"], boundary_name)
 
             data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary_name, feature_dict["table"])
 
@@ -176,73 +169,23 @@ def get_metadata():
             with get_db_cursor() as pg_cur:
                 stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END" \
                     .format(feature_dict["id"], )
-                feature_dict["classes"] = utils.get_equal_interval_bins(data_table, boundary_table, stat_field, pg_cur, settings)
+                feature_dict[boundary_name] = utils.get_equal_interval_bins(
+                    data_table, boundary_table, stat_field, pg_cur, settings)
 
-                # add dict to output array of metadata
-                feature_array.append(feature_dict)
+        # add dict to output array of metadata
+        feature_array.append(feature_dict)
 
-            i += 1
+    response_dict["stat"] = feature_array
+    # output_array.append(output_dict)
 
-        output_dict["stats"] = feature_array
-        output_array.append(output_dict)
+    # print("Got metadata for {0} in {1}".format(boundary_name, datetime.now() - start_time))
 
-        print("Got metadata for {0} in {1}".format(boundary_name, datetime.now() - start_time))
-
-    # Assemble the JSON
-    response_dict["boundaries"] = output_array
+    # # Assemble the JSON
+    # response_dict["boundaries"] = output_array
 
     print("Returned metadata in {0}".format(datetime.now() - full_start_time))
 
     return Response(json.dumps(response_dict), mimetype='application/json')
-
-
-# def get_bins(boundary_name, feature_dict, num_classes, stat_field, bdy_id_field):
-#     value_dict = dict()
-#
-#     # kmeans cluster data to get the best set of classes
-#     # (uses a nice idea from Alex Ignatov to use a value as a coordinate in the PostGIS ST_ClusterKMeans function!)
-#     data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary_name, feature_dict["table"])
-#     # bdy_table = "{0}.{1}_{2}_aust".format(settings["boundary_schema"], boundary_name, settings["census_year"])
-#     bdy_table = "{0}.{1}".format(settings["web_schema"], boundary_name)
-#
-#     sql = "WITH sub AS (" \
-#           "WITH points AS (" \
-#           "SELECT {0} as val, ST_MakePoint({0}, 0) AS pnt FROM {1} AS tab " \
-#           "INNER JOIN {2} AS bdy ON tab.{3} = bdy.id) " \
-#           "SELECT val, ST_ClusterKMeans(pnt, {5}) OVER () AS cluster_id FROM points) " \
-#           "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val" \
-#         .format(stat_field, data_table, bdy_table, settings['region_id_field'], bdy_id_field, num_classes)
-#
-#     # print(sql)
-#
-#     with get_db_cursor() as pg_cur:
-#         pg_cur.execute(sql)
-#         rows = pg_cur.fetchall()
-#
-#         j = 0
-#
-#         for row in rows:
-#             value_dict["{0}".format(j)] = row["val"]
-#             j += 1
-#
-#     # # get max values
-#     # sql = "SELECT MAX({0}) AS val FROM {1}.{2}_{3} AS tab " \
-#     #       "INNER JOIN {4}.{2}_zoom_10 AS bdy ON tab.{5} = bdy.id " \
-#     #       "WHERE geom IS NOT NULL" \
-#     #     .format(stat_field, settings["data_schema"], boundary_name, feature_dict["table"],
-#     #             settings["boundary_schema"] + "_display", settings['region_id_field'])
-#     #
-#     # with get_db_cursor() as pg_cur:
-#     #     pg_cur.execute(sql)
-#     #     row = pg_cur.fetchone()
-#     #     max_value = row["val"]
-#     #
-#     # increment = max_value / float(num_classes)
-#     #
-#     # for j in range(0, num_classes):
-#     #     value_dict["{0}".format(j)] = increment * float(j + 1)
-#
-#     return value_dict
 
 
 @app.route("/get-data")
@@ -262,8 +205,8 @@ def get_data():
     boundary_name = request.args.get('b')
     zoom_level = int(request.args.get('z'))
 
-    # get the number of decimal places for the output GeoJSON to reduce response size & speed up rendering
-    decimal_places = utils.get_decimal_places(zoom_level)
+    # # get the number of decimal places for the output GeoJSON to reduce response size & speed up rendering
+    # decimal_places = utils.get_decimal_places(zoom_level)
 
     # TODO: add support for equations
 
@@ -273,28 +216,28 @@ def get_data():
 
     display_zoom = str(zoom_level).zfill(2)
 
-    stat_table_name = boundary_name + "_" + table_id
-
-    boundary_table_name = "{0}".format(boundary_name)
+    # stat_table_name = boundary_name + "_" + table_id
+    #
+    # boundary_table_name = "{0}".format(boundary_name)
 
     with get_db_cursor() as pg_cur:
         print("Connected to database in {0}".format(datetime.now() - start_time))
         start_time = datetime.now()
 
-        envelope_sql = "ST_MakeEnvelope({0}, {1}, {2}, {3}, 4283)".format(map_left, map_bottom, map_right, map_top)
-        geom_sql = "geojson_{0}".format(display_zoom)
+        # envelope_sql = "ST_MakeEnvelope({0}, {1}, {2}, {3}, 4283)".format(map_left, map_bottom, map_right, map_top)
+        # geom_sql = "geojson_{0}".format(display_zoom)
 
-        sql = "SELECT bdy.id, bdy.name, bdy.population, tab.{0} / bdy.area AS density, " \
-              "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END AS percent, " \
-              "tab.{0}, {1} AS geometry " \
-              "FROM {2}.{3} AS bdy " \
-              "INNER JOIN {4}.{5} AS tab ON bdy.id = tab.{6} " \
-              "WHERE bdy.geom && {7}" \
-            .format(stat_id, geom_sql, settings['web_schema'], boundary_table_name, settings['data_schema'],
-                    stat_table_name, settings['region_id_field'], envelope_sql)
+        # build SQL with SQL injection protection
+        sql = "SELECT bdy.id, bdy.name, bdy.population, tab.%s / bdy.area AS density, " \
+              "CASE WHEN bdy.population > 0 THEN tab.%s / bdy.population * 100.0 ELSE 0 END AS percent, " \
+              "tab.%s, geojson_%s AS geometry " \
+              "FROM {0}.%s AS bdy " \
+              "INNER JOIN {1}.%s_%s AS tab ON bdy.id = tab.{2} " \
+              "WHERE bdy.geom && ST_MakeEnvelope(%s, %s, %s, %s, 4283)" \
+            .format(settings['web_schema'], settings['data_schema'], settings['region_id_field'])
 
         try:
-            pg_cur.execute(sql)
+            pg_cur.execute(sql, (stat_id, stat_id, stat_id, display_zoom, boundary_name, boundary_name, table_id, map_left, map_bottom, map_right, map_top))
         except psycopg2.Error:
             return "I can't SELECT : " + sql
 
