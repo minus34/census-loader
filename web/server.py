@@ -106,8 +106,8 @@ def get_metadata():
     # print(equation_stats)
     # print(search_stats)
 
-    # get stats tuple for query input
-    search_stats_tuple = tuple(search_stats)
+    # get stats tuple for query input (convert to lower case)
+    search_stats_tuple = tuple([stat.lower() for stat in search_stats])
 
     # get all boundary names in all zoom levels
     boundary_names = list()
@@ -118,11 +118,15 @@ def get_metadata():
         if bdy_name not in boundary_names:
             boundary_names.append(bdy_name)
 
-    # get stats metadata, including the all important table number
-    sql = "SELECT sequential_id AS id, lower(table_number) AS \"table\", replace(long_id, '_', ' ') AS description, " \
-          "column_heading_description AS type " \
+    # get stats metadata, including the all important table number and map type (raw values based or normalised by pop)
+    sql = "SELECT lower(sequential_id) AS id, " \
+          "lower(table_number) AS \"table\", " \
+          "replace(long_id, '_', ' ') AS description, " \
+          "column_heading_description AS type, " \
+          "CASE WHEN lower(long_id) LIKE '%%median%%' OR lower(long_id) LIKE '%%average%%' THEN 'values' " \
+          "ELSE 'normalised' END AS maptype " \
           "FROM {0}.metadata_stats " \
-          "WHERE sequential_id IN %s " \
+          "WHERE lower(sequential_id) IN %s " \
           "ORDER BY sequential_id".format(settings["data_schema"], )
 
     with get_db_cursor() as pg_cur:
@@ -172,7 +176,7 @@ def get_metadata():
             with get_db_cursor() as pg_cur:
                 stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END" \
                     .format(feature_dict["id"], )
-                feature_dict["normalised"] = utils.get_equal_interval_bins(data_table, boundary_table, stat_field, pg_cur, settings)
+                feature_dict["classes"] = utils.get_equal_interval_bins(data_table, boundary_table, stat_field, pg_cur, settings)
 
                 # add dict to output array of metadata
                 feature_array.append(feature_dict)
