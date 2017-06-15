@@ -175,7 +175,7 @@ def get_metadata():
         # add dict to output array of metadata
         feature_array.append(feature_dict)
 
-    response_dict["stat"] = feature_array
+    response_dict["stats"] = feature_array
     # output_array.append(output_dict)
 
     # print("Got metadata for {0} in {1}".format(boundary_name, datetime.now() - start_time))

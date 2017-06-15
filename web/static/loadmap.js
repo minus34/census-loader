@@ -15,20 +15,13 @@ var maxZoom = 16;
 var currentZoomLevel;
 
 var statsArray;
-var currentStats;
+var currentStat;
 var boundaryZooms;
-var statsMetadata;
+var currentStats;
 var boundaryOverride;
 
 var currentBoundary;
-var currentStatValues;
-var currentStatDensities;
-var currentStatNormalised;
 var currentStatId;
-var currentStatTable;
-var currentStatType;
-var currentStatDescription;
-var currentStatClasses;
 
 var highlightColour = "#ffff00"
 var colours;
@@ -84,11 +77,14 @@ if (queryObj["stats"] === undefined) {
     statsArray = ["b1", "b2"]; // total_persons
 
 } else {
-    statsArray = encodeURIComponent(queryObj["stats"].toLowerCase()).split("%2C"); // handle maths operators as well as plain stats
-//    console.log(statsArray);
+    statsArray = encodeURIComponent(queryObj["stats"].toLowerCase()).split("%2C");
+    // TODO: handle maths operators as well as plain stats
 }
 
 function init() {
+
+    // initial stat is the first one in the querystring
+    currentStatId = statsArray[0]
 
     // create colour ramp
     colours = new Rainbow();
@@ -156,7 +152,7 @@ function init() {
     };
     info.update = function (props) {
         this._div.innerHTML = (props ? '<h3>' + props.name + '</h3>' +
-                                       props[currentStatId].toLocaleString(['en-AU']) + ' of ' + props.population.toLocaleString(['en-AU']) + ' ' + currentStatType +
+                                       props[currentStatId].toLocaleString(['en-AU']) + ' of ' + props.population.toLocaleString(['en-AU']) + ' ' + currentStat.type +
                                        '<h2>' + props.percent.toFixed(1).toLocaleString(['en-AU']) + '%</h2>' : 'pick a boundary');
     };
     info.addTo(map);
@@ -217,21 +213,9 @@ function init() {
             }
         }
 
-        currentBoundary = boundaryZooms[currentZoomLevel.toString()];
-        statsMetadata = metadataResponse[0].boundaries;
-
-        // loop through each boundary to get the current one
-        for (var i = 0; i < statsMetadata.length; i++) {
-            if (statsMetadata[i].boundary === currentBoundary) {
-                currentStats = statsMetadata[i].stats;
-                currentStatId = currentStats[0].id.toLowerCase();
-                currentStatTable = currentStats[0].table.toLowerCase();
-                currentStatType = currentStats[0].type.toLowerCase();
-                currentStatValues = currentStats[0].values;
-                currentStatClasses = currentStats[0].normalised;
-                currentStatDescription = currentStats[0].description;
-            }
-        }
+        // get the initial stat's metadata
+        currentStats = metadataResponse[0].stats;
+        getCurrentStatMetadata();
 
         // create the radio buttons
         setRadioButtons();
@@ -245,7 +229,7 @@ function setRadioButtons() {
     var radioButtons = '<h4>Active stat</h4>';
 
     for (var i = 0; i < currentStats.length; i++){
-        var value = currentStats[i].id.toLowerCase();
+        var value = currentStats[i].id;
         var description = currentStats[i].description;
 
         if (value === currentStatId) {
@@ -263,22 +247,10 @@ function getCurrentStatMetadata() {
     currentZoomLevel = map.getZoom();
     currentBoundary = boundaryZooms[currentZoomLevel.toString()];
 
-    // loop through each boundary to get the new sets of stats metadata
-    for (var i = 0; i < statsMetadata.length; i++) {
-        if (statsMetadata[i].boundary === currentBoundary) {
-            currentStats = statsMetadata[i].stats;
-
-            // loop through each stat to get the new classes
-            for (var j = 0; j < currentStats.length; j++) {
-                if (currentStats[j].id.toLowerCase() === currentStatId) {
-                    currentStatTable = currentStats[j].table.toLowerCase();
-                    currentStatType = currentStats[j].type.toLowerCase();
-                    currentStatValues = currentStats[0].values;
-                    currentStatDensities = currentStats[0].densities;
-                    currentStatClasses = currentStats[0].normalised;
-                    currentStatDescription = currentStats[j].description;
-                }
-            }
+    // loop through the stats to get the current one
+    for (var i = 0; i < currentStats.length; i++) {
+        if (currentStats[i].id === currentStatId) {
+            currentStat = currentStats[i];
         }
     }
 }
@@ -326,9 +298,9 @@ function getData() {
     ua.push("&mt=");
     ua.push(ne.lat.toString());
     ua.push("&s=");
-    ua.push(currentStatId);
+    ua.push(currentStat.id);
     ua.push("&t=");
-    ua.push(currentStatTable);
+    ua.push(currentStat.table);
     ua.push("&b=");
     ua.push(currentBoundary);
     ua.push("&z=");
@@ -376,27 +348,18 @@ function style(feature) {
 
 // get color depending on ratio of count versus max value
 function getColor(d) {
-    var colour = d > currentStatClasses[6] ? colours.colourAt(7) :
-                 d > currentStatClasses[5] ? colours.colourAt(6) :
-                 d > currentStatClasses[4] ? colours.colourAt(5) :
-                 d > currentStatClasses[3] ? colours.colourAt(4) :
-                 d > currentStatClasses[2] ? colours.colourAt(3) :
-                 d > currentStatClasses[1] ? colours.colourAt(2) :
+    var classes = currentStat[currentBoundary];
+
+    var colour = d > classes[6] ? colours.colourAt(7) :
+                 d > classes[5] ? colours.colourAt(6) :
+                 d > classes[4] ? colours.colourAt(5) :
+                 d > classes[3] ? colours.colourAt(4) :
+                 d > classes[2] ? colours.colourAt(3) :
+                 d > classes[1] ? colours.colourAt(2) :
                                              colours.colourAt(1);
 
     return "#" + colour;
 }
-
-// // get opacity based on value
-// function getOpacity(d) {
-//     return  d > currentStatClasses[6] ? 0.7 :
-//             d > currentStatClasses[5] ? 0.6 :
-//             d > currentStatClasses[4] ? 0.5 :
-//             d > currentStatClasses[3] ? 0.4 :
-//             d > currentStatClasses[2] ? 0.3 :
-//             d > currentStatClasses[1] ? 0.2 :
-//                                         0.0;
-// }
 
 function onEachFeature(feature, layer) {
     layer.on({
