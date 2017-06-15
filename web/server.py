@@ -237,6 +237,8 @@ def get_data():
             .format(settings['web_schema'], settings['data_schema'], settings['region_id_field'])
 
         try:
+            print(pg_cur.mogrify(sql, (stat_id, stat_id, stat_id, display_zoom, boundary_name, boundary_name, table_id, map_left, map_bottom, map_right, map_top)))
+
             pg_cur.execute(sql, (stat_id, stat_id, stat_id, display_zoom, boundary_name, boundary_name, table_id, map_left, map_bottom, map_right, map_top))
         except psycopg2.Error:
             return "I can't SELECT : " + sql
