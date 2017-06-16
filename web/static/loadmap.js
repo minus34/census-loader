@@ -26,6 +26,7 @@ var currentStatId;
 var highlightColour = "#ffff00"
 var colours;
 var percentColours = ["#1a1a1a", "#DD4132"];
+//var percentColours = ["#1a1a1a", "#92B558"];
 
 // get querystring values
 // code from http://forum.jquery.com/topic/getting-value-from-a-querystring

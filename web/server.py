@@ -4,6 +4,7 @@ import json
 # import math
 # import os
 import psycopg2
+
 # import sys
 import utils
 
@@ -18,6 +19,7 @@ from flask import Response
 from flask_compress import Compress
 
 from psycopg2 import extras
+from psycopg2.extensions import AsIs
 from psycopg2.pool import ThreadedConnectionPool
 
 app = Flask(__name__, static_url_path='')
@@ -233,13 +235,16 @@ def get_data():
               "tab.%s, geojson_%s AS geometry " \
               "FROM {0}.%s AS bdy " \
               "INNER JOIN {1}.%s_%s AS tab ON bdy.id = tab.{2} " \
-              "WHERE bdy.geom && ST_MakeEnvelope(%s, %s, %s, %s, 4283)" \
+              "WHERE bdy.geom && ST_MakeEnvelope(%s, %s, %s, %s, 4283) LIMIT ALL" \
             .format(settings['web_schema'], settings['data_schema'], settings['region_id_field'])
 
         try:
-            print(pg_cur.mogrify(sql, (stat_id, stat_id, stat_id, display_zoom, boundary_name, boundary_name, table_id, map_left, map_bottom, map_right, map_top)))
+            # print(pg_cur.mogrify(sql, (AsIs(stat_id), AsIs(stat_id), AsIs(stat_id), AsIs(display_zoom), AsIs(boundary_name), AsIs(boundary_name), AsIs(table_id), AsIs(map_left), AsIs(map_bottom), AsIs(map_right), AsIs(map_top))))
 
-            pg_cur.execute(sql, (stat_id, stat_id, stat_id, display_zoom, boundary_name, boundary_name, table_id, map_left, map_bottom, map_right, map_top))
+            # yes, this is ridiculous - if someone can find a shorthand way of doing this then great!
+            pg_cur.execute(sql, (AsIs(stat_id), AsIs(stat_id), AsIs(stat_id), AsIs(display_zoom),
+                                 AsIs(boundary_name), AsIs(boundary_name), AsIs(table_id), AsIs(map_left),
+                                 AsIs(map_bottom), AsIs(map_right), AsIs(map_top)))
         except psycopg2.Error:
             return "I can't SELECT : " + sql
 
