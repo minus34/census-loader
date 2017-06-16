@@ -309,5 +309,5 @@ if __name__ == '__main__':
     # url = "http://127.0.0.1:8081/?stats=B2793&z=12"
     # threading.Timer(5, lambda: webbrowser.open(url)).start()
 
-    app.run(host='0.0.0.0', port=8081, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
 

@@ -25,8 +25,9 @@ var currentStatId;
 
 var highlightColour = "#ffff00"
 var colours;
-var percentColours = ["#1a1a1a", "#DD4132"];
-//var percentColours = ["#1a1a1a", "#92B558"];
+var percentColours = ["#1a1a1a", "#e45427"]; // dark grey > orange/red
+//var percentColours = ["#1a1a1a", "#DD4132"]; // dark grey > red
+//var percentColours = ["#1a1a1a", "#92B558"]; // dark grey > green
 
 // get querystring values
 // code from http://forum.jquery.com/topic/getting-value-from-a-querystring
@@ -377,7 +378,7 @@ function highlightFeature(e) {
 
     layer.setStyle({
         weight : 2.5,
-        opacity : 0.9,
+        opacity : 0.8,
         color : highlightColour
     });
 
