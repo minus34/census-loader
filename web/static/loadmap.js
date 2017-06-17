@@ -12,22 +12,22 @@ var geojsonLayer;
 var numClasses = 7; // number of classes (i.e colours) in map theme
 var minZoom = 4;
 var maxZoom = 16;
-var currentZoomLevel;
+var currentZoomLevel = 0;
 
-var statsArray;
+var statsArray = [];
 var currentStat;
 var boundaryZooms;
 var currentStats;
-var boundaryOverride;
+var boundaryOverride = "";
 
-var currentBoundary;
-var currentStatId;
+var currentBoundary = "";
+var currentStatId = "";
 
 var highlightColour = "#ffff00"
-var colours;
-var percentColours = ["#1a1a1a", "#e45427"]; // dark grey > orange/red
-//var percentColours = ["#1a1a1a", "#DD4132"]; // dark grey > red
-//var percentColours = ["#1a1a1a", "#92B558"]; // dark grey > green
+var colourRamp;
+var colourRange = ["#1a1a1a", "#e45427"]; // dark grey > orange/red
+//var colourRange = ["#1a1a1a", "#DD4132"]; // dark grey > red
+//var colourRange = ["#1a1a1a", "#92B558"]; // dark grey > green
 
 // get querystring values
 // code from http://forum.jquery.com/topic/getting-value-from-a-querystring
@@ -46,7 +46,7 @@ for (var i = 0; i < querystring.length; i++) {
 }
 
 //// get/set values from querystring
-//if (queryObj["census"] === undefined) {
+//if (!queryObj["census"]) {
 //    census = "2016";
 //} else {
 //    census = queryObj["stats"];
@@ -61,22 +61,22 @@ if (queryObj["b"] !== undefined) {
 }
 
 // start zoom level
-if (queryObj["z"] === undefined) {
+if (!queryObj["z"]) {
     currentZoomLevel = 11;
 } else {
     currentZoomLevel = queryObj["z"];
 }
 
 //// number of classes to theme the map - DOESN'T WORK YET
-//if (queryObj["n"] === undefined) {
+//if (!queryObj["n"]) {
 //    numClasses = 7;
 //} else {
 //    numClasses = queryObj["n"];
 //}
 
 // get the stat(s) - can include basic equations using + - * / and ()  e.g. B23 * (B45 + B678)
-if (queryObj["stats"] === undefined) {
-    statsArray = ["b1", "b2"]; // total_persons
+if (!queryObj["stats"]) {
+    statsArray = ["b3", "b1", "b2"]; // total_persons
 
 } else {
     statsArray = encodeURIComponent(queryObj["stats"].toLowerCase()).split("%2C");
@@ -84,14 +84,13 @@ if (queryObj["stats"] === undefined) {
 }
 
 function init() {
-
     // initial stat is the first one in the querystring
     currentStatId = statsArray[0]
 
     // create colour ramp
-    colours = new Rainbow();
-    colours.setNumberRange(1, numClasses);
-    colours.setSpectrum(percentColours[0], percentColours[1]);
+    colourRamp = new Rainbow();
+    colourRamp.setNumberRange(1, numClasses);
+    colourRamp.setSpectrum(colourRange[0], colourRange[1]);
 
     //Initialize the map on the "map" div - only use canvas if supported
     var elem = document.createElement( "canvas" );
@@ -153,9 +152,23 @@ function init() {
         return this._div;
     };
     info.update = function (props) {
-        this._div.innerHTML = (props ? '<h3>' + props.name + '</h3>' +
-                                       props[currentStatId].toLocaleString(['en-AU']) + ' of ' + props.population.toLocaleString(['en-AU']) + ' ' + currentStat.type +
-                                       '<h2>' + props.percent.toFixed(1).toLocaleString(['en-AU']) + '%</h2>' : 'pick a boundary');
+        var infoStr;
+
+        if (props) {
+            if (currentStat.maptype === "values") {
+                infoStr = '<h3>' + props.name + '</h3>' +
+                                '<span style="font_size: 3.0em;font-weight: bold">' + props[currentStatId].toLocaleString(['en-AU']) + ' ' + currentStat.type + '</span><br/>' +
+                                props.population.toLocaleString(['en-AU']) + ' people';
+            } else {
+                infoStr = '<h3>' + props.name + '</h3>' +
+                                '<span style="font_size: 3.0em;font-weight: bold">' + props.percent.toFixed(1).toLocaleString(['en-AU']) + '%</span><br/>' +
+                                props[currentStatId].toLocaleString(['en-AU']) + ' of ' + props.population.toLocaleString(['en-AU']) + ' ' + currentStat.type;
+            }
+        } else {
+            infoStr ='pick a boundary'
+        }
+        
+        this._div.innerHTML = infoStr;
     };
     info.addTo(map);
 
@@ -176,20 +189,12 @@ function init() {
         // event to trigger the map theme change
         $("input:radio[name=stat]").click(function () {
             currentStatId = $(this).val();
-            // update all stat metadata
+
+            // update stat metadata and map data
             getCurrentStatMetadata();
-
-//            // change styles for new stat - incompatible with current backend
-//            geojsonLayer.eachLayer(function (layer) {
-//                console.log(layer.feature);
-//
-//                layer.setStyle(style(layer.feature));
-//            });
-
-            // reload the data - NEEDS TO BE REPLACED WITH A MORE EFFICIENT WAY
             getData();
         });
-   };
+    };
     themer.addTo(map);
     themer.update('<b>L O A D I N G . . .</b>');
 
@@ -205,7 +210,7 @@ function init() {
         $.getJSON(bdyNamesUrl + "?min=" +  + minZoom.toString() + "&max=" + maxZoom.toString()),
         $.getJSON(metadataUrl + "?n=" +  + numClasses.toString() + "&stats=" + statsArray.join())
     ).done(function(bdysResponse, metadataResponse) {
-        if (boundaryOverride === undefined){
+        if (!boundaryOverride){
             boundaryZooms = bdysResponse[0];
         } else {
             // create array of zoom levels with the override boundary id
@@ -245,10 +250,6 @@ function setRadioButtons() {
 }
 
 function getCurrentStatMetadata() {
-    // get new zoom level and boundary
-    currentZoomLevel = map.getZoom();
-    currentBoundary = boundaryZooms[currentZoomLevel.toString()];
-
     // loop through the stats to get the current one
     for (var i = 0; i < currentStats.length; i++) {
         if (currentStats[i].id === currentStatId) {
@@ -274,6 +275,10 @@ function getCurrentStatMetadata() {
 function getData() {
 
     console.time("got boundaries");
+
+    // get new zoom level and boundary
+    currentZoomLevel = map.getZoom();
+    currentBoundary = boundaryZooms[currentZoomLevel.toString()];
 
     //restrict to the zoom levels that have data
     if (currentZoomLevel < minZoom) {
@@ -305,6 +310,8 @@ function getData() {
     ua.push(currentStat.table);
     ua.push("&b=");
     ua.push(currentBoundary);
+    ua.push("&m=");
+    ua.push(currentStat.maptype);
     ua.push("&z=");
     ua.push((currentZoomLevel).toString());
 
@@ -352,13 +359,13 @@ function style(feature) {
 function getColor(d) {
     var classes = currentStat[currentBoundary];
 
-    var colour = d > classes[6] ? colours.colourAt(7) :
-                 d > classes[5] ? colours.colourAt(6) :
-                 d > classes[4] ? colours.colourAt(5) :
-                 d > classes[3] ? colours.colourAt(4) :
-                 d > classes[2] ? colours.colourAt(3) :
-                 d > classes[1] ? colours.colourAt(2) :
-                                             colours.colourAt(1);
+    var colour = d > classes[6] ? colourRamp.colourAt(7) :
+                 d > classes[5] ? colourRamp.colourAt(6) :
+                 d > classes[4] ? colourRamp.colourAt(5) :
+                 d > classes[3] ? colourRamp.colourAt(4) :
+                 d > classes[2] ? colourRamp.colourAt(3) :
+                 d > classes[1] ? colourRamp.colourAt(2) :
+                                  colourRamp.colourAt(1);
 
     return "#" + colour;
 }

@@ -245,6 +245,10 @@ def get_data():
             .format(settings['web_schema'], settings['data_schema'], settings['region_id_field'])
 
         try:
+            # print(pg_cur.mogrify(sql, (AsIs(stat_id), AsIs(stat_id), AsIs(stat_id), AsIs(display_zoom),
+            #                      AsIs(boundary_name), AsIs(boundary_name), AsIs(table_id), AsIs(map_left),
+            #                      AsIs(map_bottom), AsIs(map_right), AsIs(map_top))))
+
             # yes, this is ridiculous - if someone can find a shorthand way of doing this then great!
             pg_cur.execute(sql, (AsIs(stat_id), AsIs(stat_id), AsIs(stat_id), AsIs(display_zoom),
                                  AsIs(boundary_name), AsIs(boundary_name), AsIs(table_id), AsIs(map_left),

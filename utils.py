@@ -306,7 +306,7 @@ def get_equal_interval_bins(data_table, boundary_table, stat_field, num_classes,
     # query to get min and max values (filter small populations that overly influence the map visualisation)
     try:
         if map_type == "values":
-            sql = "SELECT MIN(%s) AS min, MAX(%s) AS max FROM %s AS tab WHERE %s > 0".format(settings['region_id_field'])
+            sql = "SELECT MIN(%s) AS min, MAX(%s) AS max FROM %s AS tab WHERE %s > 5".format(settings['region_id_field'])
             pg_cur.execute(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table), AsIs(stat_field)))
         else:  # map_type == "percent"
             sql = "SELECT MIN(%s) AS min, MAX(%s) AS max FROM %s AS tab " \
@@ -316,7 +316,6 @@ def get_equal_interval_bins(data_table, boundary_table, stat_field, num_classes,
                 .format(settings['region_id_field'])
 
             # print(pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table), AsIs(stat_field))))
-
             pg_cur.execute(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table), AsIs(boundary_table),
                                  AsIs(stat_field), AsIs(stat_field)))
 
