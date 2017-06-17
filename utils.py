@@ -8,6 +8,7 @@ import psycopg2
 import subprocess
 import sys
 
+from psycopg2.extensions import AsIs
 
 # set the command line arguments for the script
 def set_arguments():
@@ -270,45 +271,48 @@ def get_decimal_places(zoom_level):
     return places
 
 
-def get_kmeans_bins(data_table, boundary_table, stat_field, pg_cur, settings):
-
-    sql = "WITH sub AS (" \
-          "WITH points AS (" \
-          "SELECT {0} as val, ST_MakePoint({0}, 0) AS pnt FROM {1} AS tab " \
-          "INNER JOIN {2} AS bdy ON tab.{3} = bdy.id) " \
-          "SELECT val, ST_ClusterKMeans(pnt, {4}) OVER () AS cluster_id FROM points) " \
-          "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val" \
-        .format(stat_field, data_table, boundary_table, settings['region_id_field'], settings['num_classes'])
-
-    print(sql)
-
-    try:
-        pg_cur.execute(sql)
-        rows = pg_cur.fetchall()
-
-    except Exception as ex:
-        print("{0} - {1} Failed: {2}".format(data_table, stat_field, ex))
-        return list()
-
-    # census_2011_data.ced_b23a - b4318
-
-    output_list = list()
-
-    for row in rows:
-        output_list.append(row["val"])
-
-    return output_list
+# def get_kmeans_bins(data_table, boundary_table, stat_field, pg_cur, settings):
+#
+#     sql = "WITH sub AS (" \
+#           "WITH points AS (" \
+#           "SELECT {0} as val, ST_MakePoint({0}, 0) AS pnt FROM {1} AS tab " \
+#           "INNER JOIN {2} AS bdy ON tab.{3} = bdy.id) " \
+#           "SELECT val, ST_ClusterKMeans(pnt, {4}) OVER () AS cluster_id FROM points) " \
+#           "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val" \
+#         .format(stat_field, data_table, boundary_table, settings['region_id_field'], settings['num_classes'])
+#
+#     print(sql)
+#
+#     try:
+#         pg_cur.execute(sql)
+#         rows = pg_cur.fetchall()
+#
+#     except Exception as ex:
+#         print("{0} - {1} Failed: {2}".format(data_table, stat_field, ex))
+#         return list()
+#
+#     # census_2011_data.ced_b23a - b4318
+#
+#     output_list = list()
+#
+#     for row in rows:
+#         output_list.append(row["val"])
+#
+#     return output_list
 
 
 def get_equal_interval_bins(data_table, boundary_table, stat_field, pg_cur, settings):
 
-    sql = "SELECT MIN({0}) AS min, MAX({0}) AS max FROM {1}  AS tab " \
-          "INNER JOIN {2} AS bdy ON tab.{3} = bdy.id " \
-          "WHERE {0} > 0 AND {0} < 100.0"\
-        .format(stat_field, data_table, boundary_table, settings['region_id_field'])
+    # filter to avoid small populations influencing the map classes
+    sql = "SELECT MIN(%s) AS min, MAX(%s) AS max FROM %s AS tab " \
+          "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
+          "WHERE %s > 0 AND %s < 100.0 " \
+          "AND bdy.population > 5"\
+        .format(settings['region_id_field'])
 
     try:
-        pg_cur.execute(sql)
+        pg_cur.execute(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table), AsIs(boundary_table),
+                             AsIs(stat_field), AsIs(stat_field)))
         row = pg_cur.fetchone()
 
     except Exception as ex:

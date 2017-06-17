@@ -126,7 +126,7 @@ def get_metadata():
           "replace(long_id, '_', ' ') AS description, " \
           "column_heading_description AS type, " \
           "CASE WHEN lower(long_id) LIKE '%%median%%' OR lower(long_id) LIKE '%%average%%' THEN 'values' " \
-          "ELSE 'normalised' END AS maptype " \
+          "ELSE 'percent' END AS maptype " \
           "FROM {0}.metadata_stats " \
           "WHERE lower(sequential_id) IN %s " \
           "ORDER BY sequential_id".format(settings["data_schema"], )
@@ -135,7 +135,7 @@ def get_metadata():
         try:
             pg_cur.execute(sql, (search_stats_tuple,))
         except psycopg2.Error:
-            return "I can't SELECT :\n\n" + sql
+            return "I can't SELECT:<br/><br/>" + sql
 
         # Retrieve the results of the query
         rows = pg_cur.fetchall()
@@ -207,9 +207,6 @@ def get_data():
     boundary_name = request.args.get('b')
     zoom_level = int(request.args.get('z'))
 
-    # # get the number of decimal places for the output GeoJSON to reduce response size & speed up rendering
-    # decimal_places = utils.get_decimal_places(zoom_level)
-
     # TODO: add support for equations
 
     # get the boundary table name from zoom level
@@ -217,10 +214,6 @@ def get_data():
         boundary_name = utils.get_boundary_name(zoom_level)
 
     display_zoom = str(zoom_level).zfill(2)
-
-    # stat_table_name = boundary_name + "_" + table_id
-    #
-    # boundary_table_name = "{0}".format(boundary_name)
 
     with get_db_cursor() as pg_cur:
         print("Connected to database in {0}".format(datetime.now() - start_time))
@@ -235,34 +228,25 @@ def get_data():
               "tab.%s, geojson_%s AS geometry " \
               "FROM {0}.%s AS bdy " \
               "INNER JOIN {1}.%s_%s AS tab ON bdy.id = tab.{2} " \
-              "WHERE bdy.geom && ST_MakeEnvelope(%s, %s, %s, %s, 4283) LIMIT ALL" \
+              "WHERE bdy.geom && ST_MakeEnvelope(%s, %s, %s, %s, 4283)" \
             .format(settings['web_schema'], settings['data_schema'], settings['region_id_field'])
 
         try:
-            # print(pg_cur.mogrify(sql, (AsIs(stat_id), AsIs(stat_id), AsIs(stat_id), AsIs(display_zoom), AsIs(boundary_name), AsIs(boundary_name), AsIs(table_id), AsIs(map_left), AsIs(map_bottom), AsIs(map_right), AsIs(map_top))))
-
             # yes, this is ridiculous - if someone can find a shorthand way of doing this then great!
             pg_cur.execute(sql, (AsIs(stat_id), AsIs(stat_id), AsIs(stat_id), AsIs(display_zoom),
                                  AsIs(boundary_name), AsIs(boundary_name), AsIs(table_id), AsIs(map_left),
                                  AsIs(map_bottom), AsIs(map_right), AsIs(map_top)))
         except psycopg2.Error:
-            return "I can't SELECT : " + sql
-
-        # print("Ran query in {0}".format(datetime.now() - start_time))
-        # start_time = datetime.now()
+            return "I can't SELECT:<br/><br/>" + sql
 
         # Retrieve the results of the query
         rows = pg_cur.fetchall()
-        # row_count = pg_cur.rowcount
 
         # Get the column names returned
         col_names = [desc[0] for desc in pg_cur.description]
 
     print("Got records from Postgres in {0}".format(datetime.now() - start_time))
     start_time = datetime.now()
-
-    # # Find the index of the column that holds the geometry
-    # geom_index = col_names.index("geometry")
 
     # output is the main content, row_output is the content from each record returned
     output_dict = dict()
