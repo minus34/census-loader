@@ -91,13 +91,20 @@ def get_boundary_name():
 @app.route("/get-metadata")
 def get_metadata():
     full_start_time = datetime.now()
-    start_time = datetime.now()
+    # start_time = datetime.now()
 
     # Get parameters from querystring
-    num_classes = int(request.args.get('n'))
+
+    # comma separated list of stat ids (i.e. sequential_ids) AND/OR equations contains stat ids
     raw_stats = request.args.get('stats')
 
-    # replace all maths operators to get list of all the stats we need
+    # get number of map classes
+    try:
+        num_classes = int(request.args.get('n'))
+    except TypeError:
+        num_classes = 7
+
+    # replace all maths operators to get list of all the stats we need to query for
     search_stats = raw_stats.upper().replace(" ", "").replace("(", "").replace(")", "") \
         .replace("+", ",").replace("-", ",").replace("/", ",").replace("*", ",").split(",")
 
@@ -125,7 +132,8 @@ def get_metadata():
           "lower(table_number) AS \"table\", " \
           "replace(long_id, '_', ' ') AS description, " \
           "column_heading_description AS type, " \
-          "CASE WHEN lower(long_id) LIKE '%%median%%' OR lower(long_id) LIKE '%%average%%' THEN 'values' " \
+          "CASE WHEN lower(sequential_id) = 'b3' OR lower(long_id) LIKE '%%median%%' OR lower(long_id) " \
+          "LIKE '%%average%%' THEN 'values' " \
           "ELSE 'percent' END AS maptype " \
           "FROM {0}.metadata_stats " \
           "WHERE lower(sequential_id) IN %s " \
@@ -169,10 +177,15 @@ def get_metadata():
 
             # get the values for the map classes
             with get_db_cursor() as pg_cur:
-                stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END" \
-                    .format(feature_dict["id"], )
+                if feature_dict["maptype"] == "values":
+                    stat_field = "tab.{0}" \
+                        .format(feature_dict["id"], )
+                else:  # feature_dict["maptype"] == "percent"
+                    stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END" \
+                        .format(feature_dict["id"], )
+
                 feature_dict[boundary_name] = utils.get_equal_interval_bins(
-                    data_table, boundary_table, stat_field, pg_cur, settings)
+                    data_table, boundary_table, stat_field, num_classes, feature_dict["maptype"], pg_cur, settings)
 
         # add dict to output array of metadata
         feature_array.append(feature_dict)
@@ -293,5 +306,5 @@ if __name__ == '__main__':
     # url = "http://127.0.0.1:8081/?stats=B2793&z=12"
     # threading.Timer(5, lambda: webbrowser.open(url)).start()
 
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=8081, debug=True)
 

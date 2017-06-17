@@ -58,10 +58,10 @@ def set_arguments():
         '--web-schema', default='census_' + census_year + '_web',
         help='Schema name to store web optimised boundary tables in. Defaults to \'census_' + census_year + '_web\'.')
 
-    # number of classes of data to map
-    parser.add_argument(
-        '--num-classes', type=int, default=7,
-        help='Number of classes (i.e breaks) shown in each map. Defaults to 7.')
+    # # number of classes of data to map
+    # parser.add_argument(
+    #     '--num-classes', type=int, default=7,
+    #     help='Number of classes (i.e breaks) shown in each map. Defaults to 7.')
 
     # directories
     parser.add_argument(
@@ -101,7 +101,7 @@ def get_settings(args):
     #     settings['data_pg_server_local_directory'] = settings['data_directory']
     settings['boundaries_local_directory'] = args.census_bdys_path.replace("\\", "/")
 
-    settings['num_classes'] = args.num_classes
+    # settings['num_classes'] = args.num_classes
 
     # create postgres connect string
     settings['pg_host'] = args.pghost or os.getenv("PGHOST", "localhost")
@@ -271,7 +271,7 @@ def get_decimal_places(zoom_level):
     return places
 
 
-# def get_kmeans_bins(data_table, boundary_table, stat_field, pg_cur, settings):
+# def get_kmeans_bins(data_table, boundary_table, stat_field, num_classes, pg_cur, settings):
 #
 #     sql = "WITH sub AS (" \
 #           "WITH points AS (" \
@@ -279,7 +279,7 @@ def get_decimal_places(zoom_level):
 #           "INNER JOIN {2} AS bdy ON tab.{3} = bdy.id) " \
 #           "SELECT val, ST_ClusterKMeans(pnt, {4}) OVER () AS cluster_id FROM points) " \
 #           "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val" \
-#         .format(stat_field, data_table, boundary_table, settings['region_id_field'], settings['num_classes'])
+#         .format(stat_field, data_table, boundary_table, settings['region_id_field'], num_classes)
 #
 #     print(sql)
 #
@@ -301,18 +301,25 @@ def get_decimal_places(zoom_level):
 #     return output_list
 
 
-def get_equal_interval_bins(data_table, boundary_table, stat_field, pg_cur, settings):
+def get_equal_interval_bins(data_table, boundary_table, stat_field, num_classes, map_type, pg_cur, settings):
 
-    # filter to avoid small populations influencing the map classes
-    sql = "SELECT MIN(%s) AS min, MAX(%s) AS max FROM %s AS tab " \
-          "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
-          "WHERE %s > 0 AND %s < 100.0 " \
-          "AND bdy.population > 5"\
-        .format(settings['region_id_field'])
-
+    # query to get min and max values (filter small populations that overly influence the map visualisation)
     try:
-        pg_cur.execute(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table), AsIs(boundary_table),
-                             AsIs(stat_field), AsIs(stat_field)))
+        if map_type == "values":
+            sql = "SELECT MIN(%s) AS min, MAX(%s) AS max FROM %s AS tab WHERE %s > 0".format(settings['region_id_field'])
+            pg_cur.execute(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table), AsIs(stat_field)))
+        else:  # map_type == "percent"
+            sql = "SELECT MIN(%s) AS min, MAX(%s) AS max FROM %s AS tab " \
+                  "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
+                  "WHERE %s > 0 AND %s < 100.0 " \
+                  "AND bdy.population > 5"\
+                .format(settings['region_id_field'])
+
+            # print(pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table), AsIs(stat_field))))
+
+            pg_cur.execute(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table), AsIs(boundary_table),
+                                 AsIs(stat_field), AsIs(stat_field)))
+
         row = pg_cur.fetchone()
 
     except Exception as ex:
@@ -323,12 +330,12 @@ def get_equal_interval_bins(data_table, boundary_table, stat_field, pg_cur, sett
 
     min = row["min"]
     max = row["max"]
-    delta = (max - min) / float(settings["num_classes"])
+    delta = (max - min) / float(num_classes)
     currVal = min
 
     # print("{0} : from {1} to {2}".format(boundary_table, min, max))
 
-    for i in range(0, settings["num_classes"]):
+    for i in range(0, num_classes):
         output_list.append(currVal)
         currVal += delta
 
