@@ -10,6 +10,7 @@ import sys
 
 from psycopg2.extensions import AsIs
 
+
 # set the command line arguments for the script
 def set_arguments():
     parser = argparse.ArgumentParser(
@@ -306,7 +307,8 @@ def get_equal_interval_bins(data_table, boundary_table, stat_field, num_classes,
     # query to get min and max values (filter small populations that overly influence the map visualisation)
     try:
         if map_type == "values":
-            sql = "SELECT MIN(%s) AS min, MAX(%s) AS max FROM %s AS tab WHERE %s > 5".format(settings['region_id_field'])
+            sql = "SELECT MIN(%s) AS min, MAX(%s) AS max FROM %s AS tab WHERE %s > 5"\
+                .format(settings['region_id_field'])
             pg_cur.execute(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table), AsIs(stat_field)))
         else:  # map_type == "percent"
             sql = "SELECT MIN(%s) AS min, MAX(%s) AS max FROM %s AS tab " \
@@ -327,16 +329,16 @@ def get_equal_interval_bins(data_table, boundary_table, stat_field, num_classes,
 
     output_list = list()
 
-    min = row["min"]
-    max = row["max"]
-    delta = (max - min) / float(num_classes)
-    currVal = min
+    min_val = row["min"]
+    max_val = row["max"]
+    delta = (max_val - min_val) / float(num_classes)
+    curr_val = min_val
 
     # print("{0} : from {1} to {2}".format(boundary_table, min, max))
 
     for i in range(0, num_classes):
-        output_list.append(currVal)
-        currVal += delta
+        output_list.append(curr_val)
+        curr_val += delta
 
     return output_list
 

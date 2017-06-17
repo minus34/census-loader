@@ -157,8 +157,7 @@ function init() {
         if (props) {
             if (currentStat.maptype === "values") {
                 infoStr = '<h3>' + props.name + '</h3>' +
-                                '<span style="font_size: 3.0em;font-weight: bold">' + props[currentStatId].toLocaleString(['en-AU']) + ' ' + currentStat.type + '</span><br/>' +
-                                props.population.toLocaleString(['en-AU']) + ' people';
+                                '<span style="font_size: 3.0em;font-weight: bold">' + props[currentStatId].toLocaleString(['en-AU']) + ' ' + currentStat.type + '</span>';
             } else {
                 infoStr = '<h3>' + props.name + '</h3>' +
                                 '<span style="font_size: 3.0em;font-weight: bold">' + props.percent.toFixed(1).toLocaleString(['en-AU']) + '%</span><br/>' +
@@ -344,7 +343,13 @@ function gotData(json) {
 }
 
 function style(feature) {
-    var renderVal = parseInt(feature.properties.percent);
+    var renderVal;
+
+    if (currentStat.maptype === "values") {
+        renderVal = parseInt(feature.properties[currentStatId]);
+    } else {
+        renderVal = parseInt(feature.properties.percent);
+    }
 
     return {
         weight : 2,
