@@ -6,7 +6,7 @@ var dataUrl = "../get-data";
 
 var map;
 var info;
-var themer;
+var legend;
 var geojsonLayer;
 
 var numClasses = 7; // number of classes (i.e colours) in map theme
@@ -171,6 +171,88 @@ function init() {
     };
     info.addTo(map);
 
+    //Create a legend control
+    legend = L.control({ position: 'bottomright' });
+
+    legend.onAdd = function (map) {
+        var div = L.DomUtil.create('div', 'info legend'),
+            grades = themeGrades,
+            labels = [],
+            from, to;
+
+        for (var i = 0; i < numClasses; i++) {
+            from = currentStat[currentBoundary][i];
+            to = currentStat[currentBoundary][i + 1];
+
+            labels.push(
+                '<i style="background:' + getColor(from) + '"></i> ' + from + (to ? '&ndash;' + to : '+'));
+        }
+
+        div.innerHTML = "<h4>Daily water use</h4>" +
+                        "<h4><select id='selectStat' class='dropdown'>" +
+                           "<option value='person'>per person</option>" +
+                           "<option value='household'>per household</option>" +
+                        "</select></h4>" +
+                        "<div id='mapLegend'>" + labels.join('<br/>') + '</div>';
+        return div;
+    };
+
+    legend.addTo(map);
+
+    //Change map theme when legend dropdown changes
+    $('#selectStat').change(function () {
+        var selection = this.value;
+
+        switch(selection)
+        {
+            case "person":
+                currStat = "l_pp_day_2009";
+                themeGrades = [0, 50, 100, 150, 200, 250, 300, 350];
+                break;
+            case "household":
+                currStat = "l_hh_day_2009";
+                themeGrades = [0, 100, 200, 300, 400, 500, 600, 700];
+                break;
+            default:
+                currStat = "l_pp_day_2009";
+                themeGrades = [0, 50, 100, 150, 200, 250, 300, 350];
+        }
+
+        //Display the boundaries
+        loadGeoJson(json);
+
+        //Update the legend
+        labels = []
+
+        for (var i = 0; i < themeGrades.length; i++) {
+            from = themeGrades[i];
+            to = themeGrades[i + 1];
+
+            labels.push(
+                '<i style="background:' + getColor(from + 1) + '"></i> ' +
+                from + (to ? '&ndash;' + to : '+'));
+        }
+
+        var data = labels.join('<br/>');
+
+        $("#mapLegend").hide().html(data).fadeIn('fast');
+
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // add radio buttons to choose stat to theme the map
     themer = L.control({
         position : 'bottomright'
@@ -239,9 +321,9 @@ function setRadioButtons() {
         var description = currentStats[i].description;
 
         if (value === currentStatId) {
-            radioButtons += '<div><input id="r' + i.toString() + '" type="radio" name="stat" value="' + value + '" checked="checked"><label for="r' + i.toString() + '"><span><span></span></span>' + description + '</label></div>';
+            radioButtons += '<div><input id="r' + i.toString() + '" type="radio" name="stat" value="' + value + '" checked="checked"><label for="r' + i.toString() + '">' + description + '</label></div>';
         } else {
-            radioButtons += '<div><input id="r' + i.toString() + '" type="radio" name="stat" value="' + value + '"><label for="r' + i.toString() + '"><span><span></span></span>' + description + '</label></div>';
+            radioButtons += '<div><input id="r' + i.toString() + '" type="radio" name="stat" value="' + value + '"><label for="r' + i.toString() + '">' + description + '</label></div>';
         }
      }
 
