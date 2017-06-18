@@ -349,6 +349,55 @@ def get_equal_interval_bins(data_table, boundary_table, stat_field, num_classes,
     return output_list
 
 
+def get_equal_count_bins(data_table, boundary_table, stat_field, num_classes, map_type, pg_cur, settings):
+
+    # query to get min and max values (filter small populations that overly influence the map visualisation)
+    try:
+        if map_type == "values":
+            sql = "WITH classes AS (" \
+                  "SELECT %s as val, ntile(7) OVER (ORDER BY %s) AS class_id " \
+                  "FROM %s AS tab " \
+                  "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
+                  "WHERE %s > 0.0 " \
+                  "AND bdy.population > 5.0"\
+                  ") " \
+                  "SELECT MAX(val) AS val, class_id FROM classes GROUP BY class_id ORDER BY class_id" \
+                .format(settings['region_id_field'])
+
+            sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
+                                              AsIs(boundary_table), AsIs(stat_field)))
+
+        else:  # map_type == "percent"
+            sql = "WITH classes AS (" \
+                  "SELECT %s as val, ntile(7) OVER (ORDER BY %s) AS class_id " \
+                  "FROM %s AS tab " \
+                  "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
+                  "WHERE %s > 0.0 AND %s < 100.0 " \
+                  "AND bdy.population > 5.0"\
+                  ") " \
+                  "SELECT MAX(val) AS val, class_id FROM classes GROUP BY class_id ORDER BY class_id" \
+                .format(settings['region_id_field'])
+
+            sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
+                                              AsIs(boundary_table), AsIs(stat_field), AsIs(stat_field)))
+
+        print(sql_string)
+
+        pg_cur.execute(sql_string)
+        rows = pg_cur.fetchall()
+
+    except Exception as ex:
+        print("{0} - {1} Failed: {2}".format(data_table, stat_field, ex))
+        return list()
+
+    output_list = list()
+
+    for row in rows:
+        output_list.append(row["val"])
+
+    return output_list
+
+
 # takes a list of sql queries or command lines and runs them using multiprocessing
 def multiprocess_csv_import(work_list, settings, logger):
     pool = multiprocessing.Pool(processes=settings['max_concurrent_processes'])
