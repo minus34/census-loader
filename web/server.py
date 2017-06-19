@@ -185,7 +185,7 @@ def get_metadata():
                         .format(feature_dict["id"], )
 
                 # feature_dict[boundary_name] = utils.get_equal_interval_bins(
-                feature_dict[boundary_name] = utils.get_equal_count_bins(
+                feature_dict[boundary_name] = utils.get_kmeans_bins(
                     data_table, boundary_table, stat_field, num_classes, feature_dict["maptype"], pg_cur, settings)
 
         # add dict to output array of metadata

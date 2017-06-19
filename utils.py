@@ -272,34 +272,60 @@ def get_decimal_places(zoom_level):
     return places
 
 
-# def get_kmeans_bins(data_table, boundary_table, stat_field, num_classes, pg_cur, settings):
-#
-#     sql = "WITH sub AS (" \
-#           "WITH points AS (" \
-#           "SELECT {0} as val, ST_MakePoint({0}, 0) AS pnt FROM {1} AS tab " \
-#           "INNER JOIN {2} AS bdy ON tab.{3} = bdy.id) " \
-#           "SELECT val, ST_ClusterKMeans(pnt, {4}) OVER () AS cluster_id FROM points) " \
-#           "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val" \
-#         .format(stat_field, data_table, boundary_table, settings['region_id_field'], num_classes)
-#
-#     print(sql)
-#
-#     try:
-#         pg_cur.execute(sql)
-#         rows = pg_cur.fetchall()
-#
-#     except Exception as ex:
-#         print("{0} - {1} Failed: {2}".format(data_table, stat_field, ex))
-#         return list()
-#
-#     # census_2011_data.ced_b23a - b4318
-#
-#     output_list = list()
-#
-#     for row in rows:
-#         output_list.append(row["val"])
-#
-#     return output_list
+def get_kmeans_bins(data_table, boundary_table, stat_field, num_classes, map_type, pg_cur, settings):
+
+    # query to get min and max values (filter small populations that overly influence the map visualisation)
+    try:
+        if map_type == "values":
+            sql = "WITH sub AS (" \
+                  "WITH points AS (" \
+                  "SELECT %s as val, ST_MakePoint(%s, 0) AS pnt " \
+                  "FROM %s AS tab " \
+                  "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
+                  "WHERE %s > 0.0 " \
+                  "AND bdy.population > 5.0" \
+                  ") " \
+                  "SELECT val, ST_ClusterKMeans(pnt, %s) OVER () AS cluster_id FROM points" \
+                  ") " \
+                  "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val" \
+                .format(settings['region_id_field'])
+
+            sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
+                                              AsIs(boundary_table), AsIs(stat_field), AsIs(num_classes)))
+
+        else:  # map_type == "percent"
+            sql = "WITH sub AS (" \
+                  "WITH points AS (" \
+                  "SELECT %s as val, ST_MakePoint(%s, 0) AS pnt " \
+                  "FROM %s AS tab " \
+                  "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
+                  "WHERE %s > 0.0 AND %s < 100.0 " \
+                  "AND bdy.population > 5.0" \
+                  ") " \
+                  "SELECT val, ST_ClusterKMeans(pnt, %s) OVER () AS cluster_id FROM points" \
+                  ") " \
+                  "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val" \
+                .format(settings['region_id_field'])
+
+            sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
+                                              AsIs(boundary_table), AsIs(stat_field), AsIs(stat_field),
+                                              AsIs(num_classes)))
+
+        pg_cur.execute(sql_string)
+        rows = pg_cur.fetchall()
+
+    except Exception as ex:
+        print("{0} - {1} Failed: {2}".format(data_table, stat_field, ex))
+        return list()
+
+    # census_2011_data.ced_b23a - b4318
+
+    output_list = list()
+
+    for row in rows:
+        output_list.append(row["val"])
+
+    return output_list
 
 
 def get_equal_interval_bins(data_table, boundary_table, stat_field, num_classes, map_type, pg_cur, settings):
@@ -355,7 +381,7 @@ def get_equal_count_bins(data_table, boundary_table, stat_field, num_classes, ma
     try:
         if map_type == "values":
             sql = "WITH classes AS (" \
-                  "SELECT %s as val, ntile(7) OVER (ORDER BY %s) AS class_id " \
+                  "SELECT %s as val, ntile(%s) OVER (ORDER BY %s) AS class_id " \
                   "FROM %s AS tab " \
                   "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
                   "WHERE %s > 0.0 " \
@@ -364,7 +390,7 @@ def get_equal_count_bins(data_table, boundary_table, stat_field, num_classes, ma
                   "SELECT MAX(val) AS val, class_id FROM classes GROUP BY class_id ORDER BY class_id" \
                 .format(settings['region_id_field'])
 
-            sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
+            sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(num_classes), AsIs(stat_field), AsIs(data_table),
                                               AsIs(boundary_table), AsIs(stat_field)))
 
         else:  # map_type == "percent"
