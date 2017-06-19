@@ -22,6 +22,7 @@ var currentStats;
 var boundaryOverride = "";
 
 var currentBoundary = "";
+var currentBoundaryMin = 5;
 var currentStatId = "";
 
 var highlightColour = "#ffff00"
@@ -286,7 +287,10 @@ function init() {
             // create array of zoom levels with the override boundary id
             boundaryZooms = {};
             for (var j = minZoom; j <= maxZoom; j++) {
-                boundaryZooms[j.toString()] = boundaryOverride;
+                var boundary = {};
+                boundary['name'] = boundaryOverride;
+                boundary['min'] = currentBoundaryMin
+                boundaryZooms[j] = boundary;
             }
         }
 
@@ -348,7 +352,8 @@ function getData() {
 
     // get new zoom level and boundary
     currentZoomLevel = map.getZoom();
-    currentBoundary = boundaryZooms[currentZoomLevel.toString()];
+    currentBoundary = boundaryZooms[currentZoomLevel.toString()].name;
+    currentBoundaryMin = boundaryZooms[currentZoomLevel.toString()].min;
 
     //restrict to the zoom levels that have data
     if (currentZoomLevel < minZoom) {
@@ -425,25 +430,31 @@ function style(feature) {
     return {
         weight : 2,
         opacity : 1.0,
-        color : getColor(renderVal),
+        color : getColor(renderVal, feature.properties.population),
         fillOpacity : 1.0,
-        fillColor : getColor(renderVal)
+        fillColor : getColor(renderVal, feature.properties.population)
     };
 }
 
 // get color depending on ratio of count versus max value
-function getColor(d) {
+function getColor(d, pop) {
     var classes = currentStat[currentBoundary];
 
-    var colour = d > classes[6] ? colourRamp.colourAt(7) :
-                 d > classes[5] ? colourRamp.colourAt(6) :
-                 d > classes[4] ? colourRamp.colourAt(5) :
-                 d > classes[3] ? colourRamp.colourAt(4) :
-                 d > classes[2] ? colourRamp.colourAt(3) :
-                 d > classes[1] ? colourRamp.colourAt(2) :
-                                  colourRamp.colourAt(1);
+    var colourNum = d > classes[6] ? 7 :
+                    d > classes[5] ? 6 :
+                    d > classes[4] ? 5 :
+                    d > classes[3] ? 4 :
+                    d > classes[2] ? 3 :
+                    d > classes[1] ? 2 :
+                                     1 ;
 
-    return "#" + colour;
+    // override if population is low and colour class is near to top (i.e. a small pop is distorting the map)
+//    if (pop <= currentBoundaryMin && colourNum > numClasses - 4) {
+    if (pop <= currentBoundaryMin && colourNum > 3) {
+        colourNum = colourNum - 3;
+    }
+
+    return "#" + colourRamp.colourAt(colourNum);
 }
 
 function onEachFeature(feature, layer) {

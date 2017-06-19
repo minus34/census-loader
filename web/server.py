@@ -83,7 +83,9 @@ def get_boundary_name():
     boundary_zoom_dict = dict()
 
     for zoom_level in range(min, max + 1):
-        boundary_zoom_dict["{0}".format(zoom_level)] = utils.get_boundary_name(zoom_level)
+        boundary_dict = dict()
+        boundary_dict["name"], boundary_dict["min"] = utils.get_boundary(zoom_level)
+        boundary_zoom_dict["{0}".format(zoom_level)] = boundary_dict
 
     return Response(json.dumps(boundary_zoom_dict), mimetype='application/json')
 
@@ -120,12 +122,19 @@ def get_metadata():
 
     # get all boundary names in all zoom levels
     boundary_names = list()
+    test_names = list()
 
     for zoom_level in range(0, 16):
-        bdy_name = utils.get_boundary_name(zoom_level)
+        bdy_name, min_val = utils.get_boundary(zoom_level)
 
-        if bdy_name not in boundary_names:
-            boundary_names.append(bdy_name)
+        # only add if bdy not in list
+        if bdy_name not in test_names:
+            bdy_dict = dict()
+            bdy_dict["name"] = bdy_name
+            bdy_dict["min"] = min_val
+            boundary_names.append(bdy_dict)
+
+            test_names.append(bdy_name)
 
     # get stats metadata, including the all important table number and map type (raw values based or normalised by pop)
     sql = "SELECT lower(sequential_id) AS id, " \
@@ -170,10 +179,10 @@ def get_metadata():
         feature_dict["id"] = feature_dict["id"].lower()
         feature_dict["table"] = feature_dict["table"].lower()
 
-        for boundary_name in boundary_names:
-            boundary_table = "{0}.{1}".format(settings["web_schema"], boundary_name)
+        for boundary in boundary_names:
+            boundary_table = "{0}.{1}".format(settings["web_schema"], boundary["name"])
 
-            data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary_name, feature_dict["table"])
+            data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary["name"], feature_dict["table"])
 
             # get the values for the map classes
             with get_db_cursor() as pg_cur:
@@ -185,8 +194,9 @@ def get_metadata():
                         .format(feature_dict["id"], )
 
                 # feature_dict[boundary_name] = utils.get_equal_interval_bins(
-                feature_dict[boundary_name] = utils.get_kmeans_bins(
-                    data_table, boundary_table, stat_field, num_classes, feature_dict["maptype"], pg_cur, settings)
+                feature_dict[boundary["name"]] = utils.get_kmeans_bins(
+                    data_table, boundary_table, stat_field, num_classes, boundary["min"], feature_dict["maptype"],
+                    pg_cur, settings)
 
         # add dict to output array of metadata
         feature_array.append(feature_dict)
@@ -225,7 +235,7 @@ def get_data():
 
     # get the boundary table name from zoom level
     if boundary_name is None:
-        boundary_name = utils.get_boundary_name(zoom_level)
+        boundary_name, min_val = utils.get_boundary(zoom_level)
 
     display_zoom = str(zoom_level).zfill(2)
 

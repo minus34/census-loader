@@ -196,25 +196,31 @@ def get_settings(args):
     return settings
 
 
-# get the boundary name that suits each (tiled map) zoom level
-def get_boundary_name(zoom_level):
+# get the boundary name that suits each (tiled map) zoom level and its minimum value to colour in
+def get_boundary(zoom_level):
 
     # if zoom_level < 7:
     #     boundary_name = "ste"
     if zoom_level < 7:
         boundary_name = "ste"
+        min_display_value = 80
     elif zoom_level < 9:
         boundary_name = "sa4"
+        min_display_value = 40
     elif zoom_level < 11:
         boundary_name = "sa3"
+        min_display_value = 20
     elif zoom_level < 14:
         boundary_name = "sa2"
+        min_display_value = 10
     elif zoom_level < 17:
         boundary_name = "sa1"
+        min_display_value = 5
     else:
         boundary_name = "mb"
+        min_display_value = 3
 
-    return boundary_name
+    return boundary_name, min_display_value
 
 
 # calculates the area tolerance (in m2) for vector simplification using the Visvalingam-Whyatt algorithm
@@ -272,7 +278,7 @@ def get_decimal_places(zoom_level):
     return places
 
 
-def get_kmeans_bins(data_table, boundary_table, stat_field, num_classes, map_type, pg_cur, settings):
+def get_kmeans_bins(data_table, boundary_table, stat_field, num_classes, min_val, map_type, pg_cur, settings):
 
     # query to get min and max values (filter small populations that overly influence the map visualisation)
     try:
@@ -283,12 +289,12 @@ def get_kmeans_bins(data_table, boundary_table, stat_field, num_classes, map_typ
                   "FROM %s AS tab " \
                   "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
                   "WHERE %s > 0.0 " \
-                  "AND bdy.population > 5.0" \
+                  "AND bdy.population > {1}" \
                   ") " \
                   "SELECT val, ST_ClusterKMeans(pnt, %s) OVER () AS cluster_id FROM points" \
                   ") " \
                   "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val" \
-                .format(settings['region_id_field'])
+                .format(settings['region_id_field'], float(min_val))
 
             sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
                                               AsIs(boundary_table), AsIs(stat_field), AsIs(num_classes)))
@@ -300,12 +306,12 @@ def get_kmeans_bins(data_table, boundary_table, stat_field, num_classes, map_typ
                   "FROM %s AS tab " \
                   "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
                   "WHERE %s > 0.0 AND %s < 100.0 " \
-                  "AND bdy.population > 5.0" \
+                  "AND bdy.population > {1}" \
                   ") " \
                   "SELECT val, ST_ClusterKMeans(pnt, %s) OVER () AS cluster_id FROM points" \
                   ") " \
                   "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val" \
-                .format(settings['region_id_field'])
+                .format(settings['region_id_field'], float(min_val))
 
             sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
                                               AsIs(boundary_table), AsIs(stat_field), AsIs(stat_field),
