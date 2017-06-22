@@ -247,7 +247,7 @@ def get_data():
         # geom_sql = "geojson_{0}".format(display_zoom)
 
         # build SQL with SQL injection protection
-        sql = "SELECT bdy.id, bdy.name, bdy.population, tab.%s / bdy.area AS density, " \
+        sql_template = "SELECT bdy.id, bdy.name, bdy.population, tab.%s / bdy.area AS density, " \
               "CASE WHEN bdy.population > 0 THEN tab.%s / bdy.population * 100.0 ELSE 0 END AS percent, " \
               "tab.%s, geojson_%s AS geometry " \
               "FROM {0}.%s AS bdy " \
@@ -255,17 +255,15 @@ def get_data():
               "WHERE bdy.geom && ST_MakeEnvelope(%s, %s, %s, %s, 4283)" \
             .format(settings['web_schema'], settings['data_schema'], settings['region_id_field'])
 
-        try:
-            # print(pg_cur.mogrify(sql, (AsIs(stat_id), AsIs(stat_id), AsIs(stat_id), AsIs(display_zoom),
-            #                      AsIs(boundary_name), AsIs(boundary_name), AsIs(table_id), AsIs(map_left),
-            #                      AsIs(map_bottom), AsIs(map_right), AsIs(map_top))))
+        sql = pg_cur.mogrify(sql_template, (AsIs(stat_id), AsIs(stat_id), AsIs(stat_id), AsIs(display_zoom),
+                                            AsIs(boundary_name), AsIs(boundary_name), AsIs(table_id), AsIs(map_left),
+                                            AsIs(map_bottom), AsIs(map_right), AsIs(map_top)))
 
+        try:
             # yes, this is ridiculous - if someone can find a shorthand way of doing this then great!
-            pg_cur.execute(sql, (AsIs(stat_id), AsIs(stat_id), AsIs(stat_id), AsIs(display_zoom),
-                                 AsIs(boundary_name), AsIs(boundary_name), AsIs(table_id), AsIs(map_left),
-                                 AsIs(map_bottom), AsIs(map_right), AsIs(map_top)))
+            pg_cur.execute(sql)
         except psycopg2.Error:
-            return "I can't SELECT:<br/><br/>" + sql
+            return "I can't SELECT:<br/><br/>" + str(sql)
 
         # Retrieve the results of the query
         rows = pg_cur.fetchall()
