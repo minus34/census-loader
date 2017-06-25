@@ -29,9 +29,9 @@
         .info {
             font: 1.5em Arial, Helvetica, sans-serif;
             padding: 6px 8px;
-            background: white;
+            /*background: white;*/
             background: rgba(255,255,255,0.8);
-            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            /*box-shadow: 0 0 15px rgba(0,0,0,0.2);*/
             border-radius: 5px;
             line-height: 1.5em;
         }
@@ -53,14 +53,18 @@
             /*width: 130px;*/
         }
 
-            .legend i {
-                width: 1.1em;
-                height: 1.1em;
+            .legend span {
+                width: 10.0em;
+                height: 2.0em;
                 float: left;
                 margin-right: 0.5em;
                 /*opacity: 0.8;*/
+                background: -webkit-linear-gradient(left, #1a1a1a , #e45427); /* For Safari 5.1 to 6.0 */
+                background: -o-linear-gradient(right, #1a1a1a, #e45427); /* For Opera 11.1 to 12.0 */
+                background: -moz-linear-gradient(right, #1a1a1a, #e45427); /* For Firefox 3.6 to 15 */
+                background: linear-gradient(to right, #1a1a1a , #e45427); /* Standard syntax */
             }
-            
+        
       /*.dropdown {
           font: 1.0em Arial, Helvetica, sans-serif;
           text-align: center;

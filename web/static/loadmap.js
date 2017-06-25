@@ -182,16 +182,17 @@ function init() {
             fromStr, toStr,
             fromVal, toVal;
 
-        for (var i = 0; i < numClasses; i++) {
-            fromVal = currentStat[currentBoundary][i];
-            toVal = currentStat[currentBoundary][i + 1];
-            fromStr = stringNumber(fromVal);
-            toStr = stringNumber(toVal);
+        // for (var i = 0; i < numClasses; i++) {
+        //     fromVal = currentStat[currentBoundary][i];
+        //     toVal = currentStat[currentBoundary][i + 1];
+        //     fromStr = stringNumber(fromVal);
+        //     toStr = stringNumber(toVal);
 
-            labels.push('<i style="background:' + getColor(fromVal) + '"></i> ' + fromStr + (toStr ? '&ndash;' + toStr : '+'));
-        }
+        //     labels.push('<i style="background:' + getColor(fromVal) + '"></i> ' + fromStr + (toStr ? '&ndash;' + toStr : '+'));
+        // }
 
-        div.innerHTML = "<div id='mapLegend'>" + labels.join('<br/>') + '</div>';
+        // div.innerHTML = "<div id='mapLegend'>" + labels.join('<br/>') + '</div>';
+        div.innerHTML = "<div id='mapLegend'><span>25% to 91%</span></div>";
         return div;
     };
 
