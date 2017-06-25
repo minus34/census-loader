@@ -72,6 +72,7 @@ def main():
     # START LOADING DATA
 
     # test runtime parameters:
+    # --pghost=192.168.0.7
     # --census-year=2011
     # --data-schema=census_2011_data
     # --boundary-schema=census_2011_bdys
