@@ -173,33 +173,25 @@ function init() {
     };
     info.addTo(map);
 
-    // //Create a legend control
-    // legend = L.control({ position: 'bottomright' });
+     //Create a legend control
+     legend = L.control({ position: 'bottomright' });
 
-    // legend.onAdd = function (map) {
-    //     var div = L.DomUtil.create('div', 'info legend'),
-    //         grades = themeGrades,
-    //         labels = [],
-    //         from, to;
+     legend.onAdd = function (map) {
+         var div = L.DomUtil.create('div', 'info legend'),
+             labels = [],
+             from, to;
 
-    //     for (var i = 0; i < numClasses; i++) {
-    //         from = currentStat[currentBoundary][i];
-    //         to = currentStat[currentBoundary][i + 1];
+         for (var i = 0; i < numClasses; i++) {
+             from = currentStat[currentBoundary][i];
+             to = currentStat[currentBoundary][i + 1];
 
-    //         labels.push(
-    //             '<i style="background:' + getColor(from) + '"></i> ' + from + (to ? '&ndash;' + to : '+'));
-    //     }
+             labels.push(
+                 '<i style="background:' + getColor(from) + '"></i> ' + from + (to ? '&ndash;' + to : '+'));
+         }
 
-    //     div.innerHTML = "<h4>Daily water use</h4>" +
-    //                     "<h4><select id='selectStat' class='dropdown'>" +
-    //                        "<option value='person'>per person</option>" +
-    //                        "<option value='household'>per household</option>" +
-    //                     "</select></h4>" +
-    //                     "<div id='mapLegend'>" + labels.join('<br/>') + '</div>';
-    //     return div;
-    // };
-
-    // legend.addTo(map);
+         div.innerHTML = "<div id='mapLegend'>" + labels.join('<br/>') + '</div>';
+         return div;
+     };
 
     // //Change map theme when legend dropdown changes
     // $('#selectStat').change(function () {
@@ -298,11 +290,14 @@ function init() {
         currentStats = metadataResponse[0].stats;
         getCurrentStatMetadata();
 
-        // create the radio buttons
-        setRadioButtons();
-
         // get the first lot of data
         getData();
+
+        //show legend
+        legend.addTo(map);
+
+        // create the radio buttons
+        setRadioButtons();
     });
 }
 
