@@ -175,17 +175,20 @@ function init() {
 
     //Create a legend control
     legend = L.control({ position: 'bottomleft' });
-
+    
     legend.onAdd = function (map) {
         var div = L.DomUtil.create('div', 'info legend'),
             labels = [],
-            from, to;
+            fromStr, toStr,
+            fromVal, toVal;
 
         for (var i = 0; i < numClasses; i++) {
-            from = currentStat[currentBoundary][i];
-            to = currentStat[currentBoundary][i + 1];
+            fromVal = currentStat[currentBoundary][i];
+            toVal = currentStat[currentBoundary][i + 1];
+            fromStr = stringNumber(fromVal);
+            toStr = stringNumber(toVal);
 
-            labels.push('<i style="background:' + getColor(from) + '"></i> ' + from + (to ? '&ndash;' + to : '+'));
+            labels.push('<i style="background:' + getColor(fromVal) + '"></i> ' + fromStr + (toStr ? '&ndash;' + toStr : '+'));
         }
 
         div.innerHTML = "<div id='mapLegend'>" + labels.join('<br/>') + '</div>';
@@ -292,9 +295,8 @@ function init() {
         // get the first lot of data
         getData();
 
-        //show legend
+        // show legend
         legend.addTo(map);
-
 
         // create the radio buttons
         setRadioButtons();
@@ -325,6 +327,19 @@ function getCurrentStatMetadata() {
             currentStat = currentStats[i];
         }
     }
+}
+
+function stringNumber(val) {
+    var numString = "";
+
+    if (currentStat.maptype == 'values') {
+        // format number to nearest 100's or 1000's
+    } else { // i.e. 'percent'
+        //round percentages
+        numString = Math.round(val).toString() + "%"; 
+    }
+
+    return numString;
 }
 
 //// format a number for display based on the number of digits or decimal places
