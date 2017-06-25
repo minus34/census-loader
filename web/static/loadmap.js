@@ -173,25 +173,24 @@ function init() {
     };
     info.addTo(map);
 
-     //Create a legend control
-     legend = L.control({ position: 'bottomright' });
+    //Create a legend control
+    legend = L.control({ position: 'bottomleft' });
 
-     legend.onAdd = function (map) {
-         var div = L.DomUtil.create('div', 'info legend'),
-             labels = [],
-             from, to;
+    legend.onAdd = function (map) {
+        var div = L.DomUtil.create('div', 'info legend'),
+            labels = [],
+            from, to;
 
-         for (var i = 0; i < numClasses; i++) {
-             from = currentStat[currentBoundary][i];
-             to = currentStat[currentBoundary][i + 1];
+        for (var i = 0; i < numClasses; i++) {
+            from = currentStat[currentBoundary][i];
+            to = currentStat[currentBoundary][i + 1];
 
-             labels.push(
-                 '<i style="background:' + getColor(from) + '"></i> ' + from + (to ? '&ndash;' + to : '+'));
-         }
+            labels.push('<i style="background:' + getColor(from) + '"></i> ' + from + (to ? '&ndash;' + to : '+'));
+        }
 
-         div.innerHTML = "<div id='mapLegend'>" + labels.join('<br/>') + '</div>';
-         return div;
-     };
+        div.innerHTML = "<div id='mapLegend'>" + labels.join('<br/>') + '</div>';
+        return div;
+    };
 
     // //Change map theme when legend dropdown changes
     // $('#selectStat').change(function () {
@@ -295,7 +294,7 @@ function init() {
 
         //show legend
         legend.addTo(map);
-        
+
 
         // create the radio buttons
         setRadioButtons();
