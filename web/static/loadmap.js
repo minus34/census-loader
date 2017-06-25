@@ -295,6 +295,7 @@ function init() {
 
         //show legend
         legend.addTo(map);
+        
 
         // create the radio buttons
         setRadioButtons();
