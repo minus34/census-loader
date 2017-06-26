@@ -171,10 +171,9 @@ function init() {
         
         this._div.innerHTML = infoStr;
     };
-    info.addTo(map);
 
     //Create a legend control
-    legend = L.control({ position: 'bottomleft' });
+    legend = L.control({ position: 'topright' });
     
     legend.onAdd = function (map) {
         var div = L.DomUtil.create('div', 'legend'),
@@ -192,7 +191,7 @@ function init() {
         // }
 
         // div.innerHTML = "<div id='mapLegend'>" + labels.join('<br/>') + '</div>';
-        div.innerHTML = "<div id='mapLegend'><ul><li>" + min + "%</li><li><span style='width: 10.0em'></span></li><li>" + max + "%</li></div>";
+        div.innerHTML = "<div id='mapLegend'><table><tr><td>" + min + "%</td><td class='colours' style='width: 15.0em'></td><td>" + max + "%</td></tr></table></div>";
         return div;
     };
 
@@ -235,8 +234,6 @@ function init() {
     //     $("#mapLegend").hide().html(data).fadeIn('fast');
 
     // });
-
-
 
     // add radio buttons to choose stat to theme the map
     themer = L.control({
@@ -296,8 +293,9 @@ function init() {
         // get the first lot of data
         getData();
 
-        // show legend
+        // show legend and info controls
         legend.addTo(map);
+        info.addTo(map);
 
         // create the radio buttons
         setRadioButtons();
