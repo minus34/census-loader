@@ -174,25 +174,16 @@ function init() {
 
     //Create a legend control
     legend = L.control({ position: 'topright' });
-    
-    legend.onAdd = function (map) {
-        var div = L.DomUtil.create('div', 'legend'),
-            labels = [],
-            min = Math.round(currentStat[currentBoundary][0]),
-            max = Math.round(currentStat[currentBoundary][numClasses - 1]);
+    legend.onAdd = function () {
+        this._div = L.DomUtil.create('div', 'legend');
+        this.update();
+        return this._div;
+    };
+    legend.update = function () {
+        var min = stringNumber(currentStat[currentBoundary][0]),
+            max = stringNumber(currentStat[currentBoundary][numClasses - 1]);
 
-        // for (var i = 0; i < numClasses; i++) {
-        //     fromVal = currentStat[currentBoundary][i];
-        //     toVal = currentStat[currentBoundary][i + 1];
-        //     fromStr = stringNumber(fromVal);
-        //     toStr = stringNumber(toVal);
-
-        //     labels.push('<i style="background:' + getColor(fromVal) + '"></i> ' + fromStr + (toStr ? '&ndash;' + toStr : '+'));
-        // }
-
-        // div.innerHTML = "<div id='mapLegend'>" + labels.join('<br/>') + '</div>';
-        div.innerHTML = "<div id='mapLegend'><table><tr><td>" + min + "%</td><td class='colours' style='width: 15.0em'></td><td>" + max + "%</td></tr></table></div>";
-        return div;
+        this._div.innerHTML = "<div><table><tr><td>" + min + "</td><td class='colours' style='width: 15.0em'></td><td>" + max + "</td></tr></table></div>";
     };
 
     // //Change map theme when legend dropdown changes
@@ -255,6 +246,7 @@ function init() {
 
             // update stat metadata and map data
             getCurrentStatMetadata();
+            legend.update();
             getData();
         });
     };
@@ -264,6 +256,7 @@ function init() {
     // get a new set of data when map panned or zoomed
     map.on('moveend', function () {
         getCurrentStatMetadata();
+        legend.update();
         getData();
     });
 
