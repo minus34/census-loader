@@ -177,10 +177,10 @@ function init() {
     legend = L.control({ position: 'bottomleft' });
     
     legend.onAdd = function (map) {
-        var div = L.DomUtil.create('div', 'info legend'),
+        var div = L.DomUtil.create('div', 'legend'),
             labels = [],
-            fromStr, toStr,
-            fromVal, toVal;
+            min = Math.round(currentStat[currentBoundary][0]),
+            max = Math.round(currentStat[currentBoundary][numClasses - 1]);
 
         // for (var i = 0; i < numClasses; i++) {
         //     fromVal = currentStat[currentBoundary][i];
@@ -192,7 +192,7 @@ function init() {
         // }
 
         // div.innerHTML = "<div id='mapLegend'>" + labels.join('<br/>') + '</div>';
-        div.innerHTML = "<div id='mapLegend'><span>25% to 91%</span></div>";
+        div.innerHTML = "<div id='mapLegend'><ul><li>" + min + "%</li><li><span style='width: 10.0em'></span></li><li>" + max + "%</li></div>";
         return div;
     };
 

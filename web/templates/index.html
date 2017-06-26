@@ -47,17 +47,32 @@
         }
 
         .legend {
-            text-align: left;
-            line-height: 1.3em;
+            font: 1.5em Arial, Helvetica, sans-serif;
+            padding: 6px 8px;
+            /*background: white;*/
+            background: rgba(255,255,255,0.8);
+            /*box-shadow: 0 0 15px rgba(0,0,0,0.2);*/
+            border-radius: 5px;
+            line-height: 1.5em;
             color: #666;
+            list-style: none;
             /*width: 130px;*/
         }
 
+            .legend ul {
+                float: left;
+            }
+
+            .legend li {
+                float: left;
+                margin-right: 10px;
+            }
+
             .legend span {
                 width: 10.0em;
-                height: 2.0em;
+                height: 1.0em;
                 float: left;
-                margin-right: 0.5em;
+                /*margin-right: 0.5em;*/
                 /*opacity: 0.8;*/
                 background: -webkit-linear-gradient(left, #1a1a1a , #e45427); /* For Safari 5.1 to 6.0 */
                 background: -o-linear-gradient(right, #1a1a1a, #e45427); /* For Opera 11.1 to 12.0 */
