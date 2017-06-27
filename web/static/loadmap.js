@@ -298,6 +298,14 @@ function stringNumber(val) {
 
     if (currentStat.maptype == 'values') {
         // format number to nearest 100's or 1000's
+        var len = val.toString().length - 2;
+
+        if (len > 0) {
+            var factor = Math.pow(10, len);
+            numString = (Math.round(val / factor) * factor).toString();
+        } else {
+            numString = val.toString();
+        }
     } else { // i.e. 'percent'
         //round percentages
         numString = Math.round(val).toString() + "%"; 
