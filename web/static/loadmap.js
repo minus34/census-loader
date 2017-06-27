@@ -117,14 +117,26 @@ function init() {
     // Layers in this pane are non-interactive and do not obscure mouse/touch events
     map.getPane('labels').style.pointerEvents = 'none';
 
-    // load CartoDB labels
-    L.tileLayer('http://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_only_labels/{z}/{x}/{y}.png', {
-        attribution : '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+    // // load CartoDB labels
+    // L.tileLayer('http://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_only_labels/{z}/{x}/{y}.png', {
+    //     attribution : '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+    //     subdomains : 'abcd',
+    //     minZoom : minZoom,
+    //     maxZoom : maxZoom,
+    //     pane: 'labels',
+    //     opacity: 0.9
+    // }).addTo(map);
+
+    // load CartoDB basemap
+    L.tileLayer('http://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png', {
+        // attribution : '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
         subdomains : 'abcd',
         minZoom : minZoom,
         maxZoom : maxZoom,
-        pane: 'labels'
+        pane: 'labels',
+        opacity: 0.4
     }).addTo(map);
+
 
     // set the view to a given center and zoom
     map.setView(new L.LatLng(-33.85, 151.15), currentZoomLevel);
