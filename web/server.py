@@ -4,6 +4,7 @@ import json
 # import math
 # import os
 import psycopg2
+
 # import sys
 import utils
 
@@ -18,6 +19,7 @@ from flask import Response
 from flask_compress import Compress
 
 from psycopg2 import extras
+from psycopg2.extensions import AsIs
 from psycopg2.pool import ThreadedConnectionPool
 
 app = Flask(__name__, static_url_path='')
@@ -81,183 +83,30 @@ def get_boundary_name():
     boundary_zoom_dict = dict()
 
     for zoom_level in range(min, max + 1):
-        boundary_zoom_dict["{0}".format(zoom_level)] = utils.get_boundary_name(zoom_level)
+        boundary_dict = dict()
+        boundary_dict["name"], boundary_dict["min"] = utils.get_boundary(zoom_level)
+        boundary_zoom_dict["{0}".format(zoom_level)] = boundary_dict
 
     return Response(json.dumps(boundary_zoom_dict), mimetype='application/json')
-
-
-# # this unused code uses the quantile method of creating map classes
-# @app.route("/get-metadata")
-# def get_metadata():
-#     # Get parameters from querystring
-#     num_classes = int(request.args.get('n'))
-#     raw_stats = request.args.get('stats')
-#
-#     # replace all maths operators to get list of all the stats we need
-#     search_stats = raw_stats.upper().replace(" ", "").replace("(", "").replace(")", "")\
-#         .replace("+", ",").replace("-", ",").replace("/", ",").replace("*", ",").split(",")
-#
-#     # TODO: add support for numbers in equations - need to strip them from search_stats list
-#
-#     # equation_stats = raw_stats.lower().split(",")
-#
-#     # print(equation_stats)
-#     # print(search_stats)
-#
-#     # get stats tuple for query input
-#     search_stats_tuple = tuple(search_stats)
-#
-#     # get percentile fraction
-#     percentile_fraction = 1.0 / float(num_classes)
-#
-#     # get all boundary names in all zoom levels
-#     boundary_names = list()
-#
-#     for zoom_level in range(0, 16):
-#         bdy_name = utils.get_boundary_name(zoom_level)
-#
-#         if bdy_name not in boundary_names:
-#             boundary_names.append(bdy_name)
-#
-#     # get stats metadata, including the all important table number
-#     sql = "SELECT sequential_id AS id, lower(table_number) AS table, replace(long_id, '_', ' ') AS description, " \
-#           "column_heading_description AS type " \
-#           "FROM {0}.metadata_stats " \
-#           "WHERE sequential_id IN %s " \
-#           "ORDER BY sequential_id".format(settings["data_schema"],)
-#
-#     with get_db_cursor() as pg_cur:
-#         try:
-#             pg_cur.execute(sql, (search_stats_tuple,))
-#         except psycopg2.Error:
-#             return "I can't SELECT :\n\n" + sql
-#
-#         # Retrieve the results of the query
-#         rows = pg_cur.fetchall()
-#
-#     # output is the main content, row_output is the content from each record returned
-#     response_dict = dict()
-#     response_dict["type"] = "StatsCollection"
-#     response_dict["classes"] = num_classes
-#
-#     output_array = list()
-#
-#     # get metadata for all boundaries (done in one go for frontend performance)
-#     for boundary_name in boundary_names:
-#         output_dict = dict()
-#         output_dict["boundary"] = boundary_name
-#
-#         # # get id and area fields for boundary
-#         # boundary_id_field = ""
-#         # boundary_area_field = ""
-#         #
-#         # for boundary_dict in settings['bdy_table_dicts']:
-#         #     if boundary_dict["boundary"] == boundary_name:
-#         #         boundary_id_field = boundary_dict["id_field"]
-#         #         boundary_area_field = boundary_dict["area_field"]
-#
-#         i = 0
-#         feature_array = list()
-#
-#         # For each row returned assemble a dictionary
-#         for row in rows:
-#             feature_dict = dict(row)
-#
-#             # get the values for the map classes
-#
-#             # 1 of 3 - values
-#             field_array = list()
-#             current_fraction = percentile_fraction
-#
-#             for j in range(0, num_classes):
-#                 field_array.append("percentile_disc({0}) within group (order by {1}) as \"{2}\""
-#                                    .format(current_fraction, feature_dict["id"], j + 1))
-#
-#                 current_fraction += percentile_fraction
-#
-#             sql = "SELECT {3} FROM {0}.{1}_{2}"\
-#                 .format(settings["data_schema"], boundary_name, feature_dict["table"], ",".join(field_array))
-#
-#             with get_db_cursor() as pg_cur:
-#                 pg_cur.execute(sql)
-#                 values = pg_cur.fetchone()
-#
-#                 feature_dict["values"] = dict(values)
-#
-#             # 2 of 3 - densities
-#             field_array = list()
-#             current_fraction = percentile_fraction
-#
-#             for j in range(0, num_classes):
-#                 the_field = "tab." + feature_dict["id"] + " / bdy.area"
-#
-#                 field_array.append("percentile_disc({0}) within group (order by {1}) as \"{2}\""
-#                                    .format(current_fraction, the_field, j + 1))
-#
-#                 current_fraction += percentile_fraction
-#
-#             sql = "SELECT {0} FROM {1}.{2}_{3} AS tab " \
-#                   "INNER JOIN {4}.{2}_zoom_10 AS bdy ON tab.{5} = bdy.id " \
-#                   "WHERE geom IS NOT NULL" \
-#                 .format(",".join(field_array), settings["data_schema"], boundary_name, feature_dict["table"],
-#                         settings["boundary_schema"] + "_display", settings['region_id_field'])
-#
-#             with get_db_cursor() as pg_cur:
-#                 pg_cur.execute(sql)
-#                 values = pg_cur.fetchone()
-#
-#                 feature_dict["densities"] = dict(values)
-#
-#             # 3 of 3 - normalised
-#             field_array = list()
-#             current_fraction = percentile_fraction
-#
-#             for j in range(0, num_classes):
-#                 the_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END"\
-#                     .format(feature_dict["id"],)
-#
-#                 field_array.append("percentile_disc({0}) within group (order by {1}) as \"{2}\""
-#                                    .format(current_fraction, the_field, j + 1))
-#
-#                 current_fraction += percentile_fraction
-#
-#             sql = "SELECT {0} FROM {1}.{2}_{3} AS tab " \
-#                   "INNER JOIN {4}.{2}_zoom_10 AS bdy ON tab.{5} = bdy.id " \
-#                   "WHERE bdy.geom IS NOT NULL " \
-#                   "AND bdy.population > 0" \
-#                 .format(",".join(field_array), settings["data_schema"], boundary_name, feature_dict["table"],
-#                         settings["boundary_schema"] + "_display", settings['region_id_field'])
-#
-#             with get_db_cursor() as pg_cur:
-#                 pg_cur.execute(sql)
-#                 values = pg_cur.fetchone()
-#
-#                 feature_dict["normalised"] = dict(values)
-#
-#             # add dict to output array oif metadata
-#             feature_array.append(feature_dict)
-#
-#             i += 1
-#
-#         output_dict["stats"] = feature_array
-#         output_array.append(output_dict)
-#
-#     # Assemble the JSON
-#     response_dict["boundaries"] = output_array
-#
-#     return Response(json.dumps(response_dict), mimetype='application/json')
 
 
 @app.route("/get-metadata")
 def get_metadata():
     full_start_time = datetime.now()
-    start_time = datetime.now()
+    # start_time = datetime.now()
 
     # Get parameters from querystring
-    num_classes = int(request.args.get('n'))
+
+    # comma separated list of stat ids (i.e. sequential_ids) AND/OR equations contains stat ids
     raw_stats = request.args.get('stats')
 
-    # replace all maths operators to get list of all the stats we need
+    # get number of map classes
+    try:
+        num_classes = int(request.args.get('n'))
+    except TypeError:
+        num_classes = 7
+
+    # replace all maths operators to get list of all the stats we need to query for
     search_stats = raw_stats.upper().replace(" ", "").replace("(", "").replace(")", "") \
         .replace("+", ",").replace("-", ",").replace("/", ",").replace("*", ",").split(",")
 
@@ -268,30 +117,42 @@ def get_metadata():
     # print(equation_stats)
     # print(search_stats)
 
-    # get stats tuple for query input
-    search_stats_tuple = tuple(search_stats)
+    # get stats tuple for query input (convert to lower case)
+    search_stats_tuple = tuple([stat.lower() for stat in search_stats])
 
     # get all boundary names in all zoom levels
     boundary_names = list()
+    test_names = list()
 
     for zoom_level in range(0, 16):
-        bdy_name = utils.get_boundary_name(zoom_level)
+        bdy_name, min_val = utils.get_boundary(zoom_level)
 
-        if bdy_name not in boundary_names:
-            boundary_names.append(bdy_name)
+        # only add if bdy not in list
+        if bdy_name not in test_names:
+            bdy_dict = dict()
+            bdy_dict["name"] = bdy_name
+            bdy_dict["min"] = min_val
+            boundary_names.append(bdy_dict)
 
-    # get stats metadata, including the all important table number
-    sql = "SELECT sequential_id AS id, lower(table_number) AS table, replace(long_id, '_', ' ') AS description, " \
-          "column_heading_description AS type " \
+            test_names.append(bdy_name)
+
+    # get stats metadata, including the all important table number and map type (raw values based or normalised by pop)
+    sql = "SELECT lower(sequential_id) AS id, " \
+          "lower(table_number) AS \"table\", " \
+          "replace(long_id, '_', ' ') AS description, " \
+          "column_heading_description AS type, " \
+          "CASE WHEN lower(sequential_id) = 'b3' OR lower(long_id) LIKE '%%median%%' OR lower(long_id) " \
+          "LIKE '%%average%%' THEN 'values' " \
+          "ELSE 'percent' END AS maptype " \
           "FROM {0}.metadata_stats " \
-          "WHERE sequential_id IN %s " \
+          "WHERE lower(sequential_id) IN %s " \
           "ORDER BY sequential_id".format(settings["data_schema"], )
 
     with get_db_cursor() as pg_cur:
         try:
             pg_cur.execute(sql, (search_stats_tuple,))
         except psycopg2.Error:
-            return "I can't SELECT :\n\n" + sql
+            return "I can't SELECT:<br/><br/>" + sql
 
         # Retrieve the results of the query
         rows = pg_cur.fetchall()
@@ -301,110 +162,56 @@ def get_metadata():
     response_dict["type"] = "StatsCollection"
     response_dict["classes"] = num_classes
 
-    output_array = list()
+    # output_array = list()
 
-    # get metadata for all boundaries (done in one go for frontend performance)
-    for boundary_name in boundary_names:
-        output_dict = dict()
-        output_dict["boundary"] = boundary_name
+    # # get metadata for all boundaries (done in one go for frontend performance)
+    # for boundary_name in boundary_names:
+    #     output_dict = dict()
+    #     output_dict["boundary"] = boundary_name
+    #
+    #     boundary_table = "{0}.{1}".format(settings["web_schema"], boundary_name)
 
-        # get id and area fields for boundary
-        bdy_id_field = ""
-        bdy_area_field = ""
+    feature_array = list()
 
-        for boundary_dict in settings['bdy_table_dicts']:
-            if boundary_dict["boundary"] == boundary_name:
-                bdy_id_field = boundary_dict["id_field"]
-                bdy_area_field = boundary_dict["area_field"]
+    # For each row returned assemble a dictionary
+    for row in rows:
+        feature_dict = dict(row)
+        feature_dict["id"] = feature_dict["id"].lower()
+        feature_dict["table"] = feature_dict["table"].lower()
 
-        i = 0
-        feature_array = list()
+        for boundary in boundary_names:
+            boundary_table = "{0}.{1}".format(settings["web_schema"], boundary["name"])
 
-        # For each row returned assemble a dictionary
-        for row in rows:
-            feature_dict = dict(row)
+            data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary["name"], feature_dict["table"])
 
             # get the values for the map classes
+            with get_db_cursor() as pg_cur:
+                if feature_dict["maptype"] == "values":
+                    stat_field = "tab.{0}" \
+                        .format(feature_dict["id"], )
+                else:  # feature_dict["maptype"] == "percent"
+                    stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END" \
+                        .format(feature_dict["id"], )
 
-            # 1 of 3 - values
-            stat_field = feature_dict["id"]
-            feature_dict["values"] = get_bins(boundary_name, feature_dict, num_classes, stat_field, bdy_id_field)
+                # feature_dict[boundary_name] = utils.get_equal_interval_bins(
+                feature_dict[boundary["name"]] = utils.get_kmeans_bins(
+                    data_table, boundary_table, stat_field, num_classes, boundary["min"], feature_dict["maptype"],
+                    pg_cur, settings)
 
-            # 2 of 3 - densities
-            stat_field = "CASE WHEN bdy.area > 0.0 THEN tab.{0} / bdy.area ELSE 0 END" \
-                .format(feature_dict["id"], bdy_area_field)
-            feature_dict["densities"] = get_bins(boundary_name, feature_dict, num_classes, stat_field, bdy_id_field)
+        # add dict to output array of metadata
+        feature_array.append(feature_dict)
 
-            # 3 of 3 - normalised
-            stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END" \
-                .format(feature_dict["id"], )
-            feature_dict["normalised"] = get_bins(boundary_name, feature_dict, num_classes, stat_field, bdy_id_field)
+    response_dict["stats"] = feature_array
+    # output_array.append(output_dict)
 
-            # add dict to output array of metadata
-            feature_array.append(feature_dict)
+    # print("Got metadata for {0} in {1}".format(boundary_name, datetime.now() - start_time))
 
-            i += 1
+    # # Assemble the JSON
+    # response_dict["boundaries"] = output_array
 
-        output_dict["stats"] = feature_array
-        output_array.append(output_dict)
-
-        print("Got metadata for {0} in {1}".format(boundary_name, datetime.now() - start_time))
-
-    # Assemble the JSON
-    response_dict["boundaries"] = output_array
-
-    print("Returned metadata in {1}".format(i, datetime.now() - full_start_time))
+    print("Returned metadata in {0}".format(datetime.now() - full_start_time))
 
     return Response(json.dumps(response_dict), mimetype='application/json')
-
-
-def get_bins(boundary_name, feature_dict, num_classes, stat_field, bdy_id_field):
-    value_dict = dict()
-
-    # kmeans cluster data to get the best set of classes
-    # (uses a nice idea from Alex Ignatov to use a value as a coordinate in the PostGIS ST_ClusterKMeans function!)
-    data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary_name, feature_dict["table"])
-    # bdy_table = "{0}.{1}_{2}_aust".format(settings["boundary_schema"], boundary_name, settings["census_year"])
-    bdy_table = "{0}.{1}_zoom_10".format(settings["web_schema"], boundary_name)
-
-    sql = "WITH sub AS (" \
-          "WITH points AS (" \
-          "SELECT {0} as val, ST_MakePoint({0}, 0) AS pnt FROM {1} AS tab " \
-          "INNER JOIN {2} AS bdy ON tab.{3} = bdy.id) " \
-          "SELECT val, ST_ClusterKMeans(pnt, {5}) OVER () AS cluster_id FROM points) " \
-          "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val" \
-        .format(stat_field, data_table, bdy_table, settings['region_id_field'], bdy_id_field, num_classes)
-
-    # print(sql)
-
-    with get_db_cursor() as pg_cur:
-        pg_cur.execute(sql)
-        rows = pg_cur.fetchall()
-
-        j = 0
-
-        for row in rows:
-            value_dict["{0}".format(j)] = row["val"]
-            j += 1
-
-    # # get max values
-    # sql = "SELECT MAX({0}) AS val FROM {1}.{2}_{3} AS tab " \
-    #       "INNER JOIN {4}.{2}_zoom_10 AS bdy ON tab.{5} = bdy.id " \
-    #       "WHERE geom IS NOT NULL" \
-    #     .format(stat_field, settings["data_schema"], boundary_name, feature_dict["table"],
-    #             settings["boundary_schema"] + "_display", settings['region_id_field'])
-    #
-    # with get_db_cursor() as pg_cur:
-    #     pg_cur.execute(sql)
-    #     row = pg_cur.fetchone()
-    #     max_value = row["val"]
-    #
-    # increment = max_value / float(num_classes)
-    #
-    # for j in range(0, num_classes):
-    #     value_dict["{0}".format(j)] = increment * float(j + 1)
-
-    return value_dict
 
 
 @app.route("/get-data")
@@ -424,59 +231,48 @@ def get_data():
     boundary_name = request.args.get('b')
     zoom_level = int(request.args.get('z'))
 
-    # get the number of decimal places for the output GeoJSON to reduce response size & speed up rendering
-    decimal_places = utils.get_decimal_places(zoom_level)
-
     # TODO: add support for equations
 
     # get the boundary table name from zoom level
     if boundary_name is None:
-        boundary_name = utils.get_boundary_name(zoom_level)
+        boundary_name, min_val = utils.get_boundary(zoom_level)
 
     display_zoom = str(zoom_level).zfill(2)
-
-    stat_table_name = boundary_name + "_" + table_id
-
-    boundary_table_name = "{0}_zoom_{1}".format(boundary_name, display_zoom)
 
     with get_db_cursor() as pg_cur:
         print("Connected to database in {0}".format(datetime.now() - start_time))
         start_time = datetime.now()
 
-        envelope_sql = "ST_MakeEnvelope({0}, {1}, {2}, {3}, 4283)".format(map_left, map_bottom, map_right, map_top)
+        # envelope_sql = "ST_MakeEnvelope({0}, {1}, {2}, {3}, 4283)".format(map_left, map_bottom, map_right, map_top)
+        # geom_sql = "geojson_{0}".format(display_zoom)
 
-        # TESTING - switch 3
-        geom_sql = "ST_AsGeoJSON(bdy.geom, {0})::jsonb".format(decimal_places)
+        # build SQL with SQL injection protection
+        sql_template = "SELECT bdy.id, bdy.name, bdy.population, tab.%s / bdy.area AS density, " \
+              "CASE WHEN bdy.population > 0 THEN tab.%s / bdy.population * 100.0 ELSE 0 END AS percent, " \
+              "tab.%s, geojson_%s AS geometry " \
+              "FROM {0}.%s AS bdy " \
+              "INNER JOIN {1}.%s_%s AS tab ON bdy.id = tab.{2} " \
+              "WHERE bdy.geom && ST_MakeEnvelope(%s, %s, %s, %s, 4283)" \
+            .format(settings['web_schema'], settings['data_schema'], settings['region_id_field'])
 
-        sql = "SELECT bdy.id, bdy.name, tab.{0} / bdy.area AS density, " \
-              "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END AS percent, " \
-              "tab.{0}, {1} AS geometry " \
-              "FROM {2}.{3} AS bdy " \
-              "INNER JOIN {4}.{5} AS tab ON bdy.id = tab.{6} " \
-              "WHERE bdy.geom && {7}" \
-            .format(stat_id, geom_sql, settings['web_schema'], boundary_table_name, settings['data_schema'],
-                    stat_table_name, settings['region_id_field'], envelope_sql)
+        sql = pg_cur.mogrify(sql_template, (AsIs(stat_id), AsIs(stat_id), AsIs(stat_id), AsIs(display_zoom),
+                                            AsIs(boundary_name), AsIs(boundary_name), AsIs(table_id), AsIs(map_left),
+                                            AsIs(map_bottom), AsIs(map_right), AsIs(map_top)))
 
         try:
+            # yes, this is ridiculous - if someone can find a shorthand way of doing this then great!
             pg_cur.execute(sql)
         except psycopg2.Error:
-            return "I can't SELECT : " + sql
-
-        # print("Ran query in {0}".format(datetime.now() - start_time))
-        # start_time = datetime.now()
+            return "I can't SELECT:<br/><br/>" + str(sql)
 
         # Retrieve the results of the query
         rows = pg_cur.fetchall()
-        # row_count = pg_cur.rowcount
 
         # Get the column names returned
         col_names = [desc[0] for desc in pg_cur.description]
 
     print("Got records from Postgres in {0}".format(datetime.now() - start_time))
     start_time = datetime.now()
-
-    # # Find the index of the column that holds the geometry
-    # geom_index = col_names.index("geometry")
 
     # output is the main content, row_output is the content from each record returned
     output_dict = dict()
@@ -523,5 +319,5 @@ if __name__ == '__main__':
     # url = "http://127.0.0.1:8081/?stats=B2793&z=12"
     # threading.Timer(5, lambda: webbrowser.open(url)).start()
 
-    app.run(host='0.0.0.0', port=8081, debug=False)
+    app.run(host='0.0.0.0', port=8081, debug=True)
 

@@ -23,7 +23,7 @@ Benchmarks are:
 To get a good load time you'll need to configure your Postgres server for performance. There's a good guide [here](http://revenant.ca/www/postgis/workshop/tuning.html), noting it's a few years old and some of the memory parameters can be beefed up if you have the RAM.
 
 ### Pre-requisites
-- Postgres 9.6+ with PostGIS 2.2+ (tested on 9.6 on macOS Sierra and Windows 10)
+- Postgres 9.6+ with PostGIS 2.3+ (tested on 9.6 on macOS Sierra and Windows 10)
 - Add the Postgres bin directory to your system PATH
 - Python 3.x with Psycopg2, xlrd & Pandas packages installed
 

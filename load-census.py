@@ -26,6 +26,7 @@ import logging.config
 import os
 import pandas  # module needs to be installed (IMPORTANT: need to install 'xlrd' module for Pandas to read .xlsx files)
 import psycopg2  # module needs to be installed
+import psycopg2.extensions
 import utils
 
 from datetime import datetime
@@ -61,34 +62,47 @@ def main():
         logger.fatal("Unable to add PostGIS extension\nACTION: Check your Postgres user privileges or PostGIS install")
         return False
 
-    # test if ST_SubDivide exists (only in PostGIS 2.2+). It's used to split boundaries for faster processing
+    # test if ST_ClusterKMeans exists (only in PostGIS 2.3+). It's used to create classes to display the data in the map
     utils.check_postgis_version(pg_cur, settings, logger)
+
+    if not settings['st_clusterkmeans_supported']:
+        logger.warning("YOU NEED TO INSTALL POSTGIS 2.3 OR HIGHER FOR THE MAP SERVER TO WORK\n"
+                       "t utilises the ST_ClusterKMeans() function in v2.3+")
 
     # START LOADING DATA
 
     # test runtime parameters:
+    # --pghost=192.168.0.7
     # --census-year=2011
     # --data-schema=census_2011_data
     # --boundary-schema=census_2011_bdys
+    # --web-schema=census_2011_web
     # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2011_data
     # --census-bdys-path=/Users/hugh.saalmans/minus34/data/abs_2011
 
     # PART 1 - load census data from CSV files
     logger.info("")
     start_time = datetime.now()
-    logger.info("Part 1 of 2 : Start census data load : {0}".format(start_time))
+    logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
     create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
     populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
                          settings['table_name_part'], settings['bdy_name_part'], settings)
-    logger.info("Part 1 of 2 : Census data loaded! : {0}".format(datetime.now() - start_time))
+    logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
 
-    # PART 2 - load census boundaries from Shapefiles
+    # PART 2 - load census boundaries from Shapefiles and optimise them for web visualisation
     logger.info("")
     start_time = datetime.now()
-    logger.info("Part 2 of 2 : Start census boundary load : {0}".format(start_time))
+    logger.info("Part 2 of 3 : Start census boundary load : {0}".format(start_time))
     load_boundaries(pg_cur, settings)
     create_display_boundaries(pg_cur, settings)
-    logger.info("Part 2 of 2 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
+    logger.info("Part 2 of 3 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
+
+    # # PART 3 - create tables of stats for all census data, for the visualisation
+    # logger.info("")
+    # start_time = datetime.now()
+    # logger.info("Part 3 of 3 : Start calculating statistics : {0}".format(start_time))
+    # create_data_statistics(pg_cur, settings)
+    # logger.info("Part 3 of 3 : Census data Statistics calculated! : {0}".format(datetime.now() - start_time))
 
     # close Postgres connection
     pg_cur.close()
@@ -364,78 +378,194 @@ def create_display_boundaries(pg_cur, settings):
     create_sql_list = list()
     insert_sql_list = list()
     vacuum_sql_list = list()
-    zoom_level = 4
 
-    while zoom_level < 19:
-        display_zoom = str(zoom_level).zfill(2)
+    for boundary_dict in settings['bdy_table_dicts']:
+        boundary_name = boundary_dict["boundary"]
 
-        for boundary_dict in settings['bdy_table_dicts']:
-            boundary_name = boundary_dict["boundary"]
+        if boundary_name != "mb":
+            id_field = boundary_dict["id_field"]
+            name_field = boundary_dict["name_field"]
+            area_field = boundary_dict["area_field"]
 
-            if boundary_name != "mb":
-                id_field = boundary_dict["id_field"]
-                name_field = boundary_dict["name_field"]
-                area_field = boundary_dict["area_field"]
+            input_pg_table = "{0}_{1}_aust".format(boundary_name, settings["census_year"])
+            pg_table = "{0}".format(boundary_name)
 
-                input_pg_table = "{0}_{1}_aust".format(boundary_name, settings["census_year"])
-                pg_table = "{0}_zoom_{1}".format(boundary_name, display_zoom)
+            # build create table statement
+            create_table_list = list()
+            create_table_list.append("DROP TABLE IF EXISTS {0}.{1} CASCADE;")
+            create_table_list.append("CREATE TABLE {0}.{1} (")
 
+            # build column list
+            column_list = list()
+            column_list.append("id text NOT NULL PRIMARY KEY")
+            column_list.append("name text NOT NULL")
+            column_list.append("area double precision NOT NULL")
+            column_list.append("population double precision NOT NULL")
+            column_list.append("geom geometry(MultiPolygon, 4283) NULL")
+
+            for zoom_level in range(4, 18):
+                display_zoom = str(zoom_level).zfill(2)
+                column_list.append("geojson_{0} jsonb NOT NULL".format(display_zoom))
+
+            # add columns to create table statement and finish it
+            create_table_list.append(",".join(column_list))
+            create_table_list.append(") WITH (OIDS=FALSE);")
+            create_table_list.append("ALTER TABLE {0}.{1} OWNER TO {2};")
+            create_table_list.append("CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);")
+            create_table_list.append("ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx")
+
+            sql = "".join(create_table_list).format(settings['web_schema'], pg_table, settings['pg_user'])
+            create_sql_list.append(sql)
+
+            # get population field and table
+            if boundary_name[:1] == "i":
+                pop_stat = "i3"
+                pop_table = "i01a"
+            elif settings["census_year"] == "2011":
+                pop_stat = "b3"
+                pop_table = "b01"
+            else:
+                pop_stat = "g3"
+                pop_table = "g01"
+
+            # build insert statement
+            insert_into_list = list()
+            insert_into_list.append("INSERT INTO {0}.{1}".format(settings['web_schema'], pg_table))
+            insert_into_list.append("SELECT bdy.{0} AS id, {1} AS name, SUM(bdy.{2}) AS area, tab.{3} AS population,"
+                                    .format(id_field, name_field, area_field, pop_stat))
+
+            # thin geometry to make querying faster
+            tolerance = utils.get_tolerance(10)
+            insert_into_list.append(
+                "ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {0}))), 4283),"
+                    .format(tolerance,))
+
+            # create statements for geojson optimised for each zoom level
+            geojson_list = list()
+
+            for zoom_level in range(4, 18):
                 # thin geometries to a default tolerance per zoom level
                 tolerance = utils.get_tolerance(zoom_level)
+                # trim coords to only the significant ones
+                decimal_places = utils.get_decimal_places(zoom_level)
 
-                # build create table statement
-                create_table_list = list()
-                create_table_list.append("DROP TABLE IF EXISTS {0}.{1} CASCADE;")
-                create_table_list.append("CREATE TABLE {0}.{1} (")
+                geojson_list.append("ST_AsGeoJSON(ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform("
+                                        "bdy.geom, 3577), {0}))), 4283), {1})::jsonb".format(tolerance, decimal_places))
 
-                # build column list
-                column_list = list()
-                column_list.append("id text NOT NULL PRIMARY KEY")
-                column_list.append("name text NOT NULL")
-                column_list.append("area double precision NULL")
-                column_list.append("population double precision NOT NULL")
-                column_list.append("geom geometry(MultiPolygon, 4283) NULL")
+            insert_into_list.append(",".join(geojson_list))
+            insert_into_list.append("FROM {0}.{1} AS bdy".format(settings['boundary_schema'], input_pg_table))
+            insert_into_list.append("INNER JOIN {0}.{1}_{2} AS tab".format(settings['data_schema'], boundary_name, pop_table))
+            insert_into_list.append("ON bdy.{0} = tab.{1}".format(id_field, settings["region_id_field"]))
+            insert_into_list.append("WHERE bdy.geom IS NOT NULL")
+            insert_into_list.append("GROUP BY {0}, {1}, {2}".format(id_field, name_field, pop_stat))
 
-                # add columsn to create table statement and finish it
-                create_table_list.append(",".join(column_list))
-                create_table_list.append(") WITH (OIDS=FALSE);")
-                create_table_list.append("ALTER TABLE {0}.{1} OWNER TO {2};")
-                create_table_list.append("CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);")
-                create_table_list.append("ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx")
+            sql = " ".join(insert_into_list)
+            insert_sql_list.append(sql)
 
-                sql = "".join(create_table_list).format(settings['web_schema'], pg_table, settings['pg_user'])
-                create_sql_list.append(sql)
-
-                # get population field and table
-                if boundary_name[:1] == "i":
-                    pop_stat = "i3"
-                    pop_table = "i01a"
-                elif settings["census_year"] == "2011":
-                    pop_stat = "b3"
-                    pop_table = "b01"
-                else:
-                    pop_stat = "g3"
-                    pop_table = "g01"
-
-                # build insert statement
-                insert_into_list = list()
-                insert_into_list.append("INSERT INTO {0}.{1}".format(settings['web_schema'], pg_table))
-                insert_into_list.append("SELECT {0} AS id, {1} AS name, SUM({2}) AS area, {3} AS population,"
-                                        .format(id_field, name_field, area_field, pop_stat))
-                insert_into_list.append("ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {0}))), 4283)".format(tolerance,))
-                insert_into_list.append("FROM {0}.{1} AS bdy".format(settings['boundary_schema'], input_pg_table))
-                insert_into_list.append("INNER JOIN {0}.{1}_{2} AS tab".format(settings['data_schema'], boundary_name, pop_table))
-                insert_into_list.append("ON bdy.{0} = tab.{1}".format(id_field, settings["region_id_field"]))
-                insert_into_list.append("GROUP BY {0}, {1}, {2}".format(id_field, name_field, pop_stat))
-
-                sql = " ".join(insert_into_list)
-                insert_sql_list.append(sql)
-
-                vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(settings['web_schema'], pg_table))
-
-        zoom_level += 1
+            vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(settings['web_schema'], pg_table))
 
     utils.multiprocess_list("sql", create_sql_list, settings, logger)
+    utils.multiprocess_list("sql", insert_sql_list, settings, logger)
+    utils.multiprocess_list("sql", vacuum_sql_list, settings, logger)
+
+    logger.info("\t- Step 2 of 2 : web optimised boundaries created : {0}".format(datetime.now() - start_time))
+
+
+def create_data_statistics(pg_cur, settings):
+    # Step 2 of 2 : create web optimised versions of the census boundaries
+    start_time = datetime.now()
+
+    # get dictionary of all census stats
+    # get stats metadata, including the all important table number
+    sql = "SELECT lower(sequential_id) AS id, lower(table_number) AS table " \
+          "FROM {0}.metadata_stats".format(settings["data_schema"], )
+    pg_cur.execute(sql)
+
+    # Retrieve the results of the query into a dictionary
+    data_list = list(pg_cur.fetchall())
+
+    # prepare statistics for all census data fields
+    insert_sql_list = list()
+    vacuum_sql_list = list()
+
+    for boundary_dict in settings['bdy_table_dicts']:
+        boundary_name = boundary_dict["boundary"]
+
+        if boundary_name != "mb":
+            id_field = boundary_dict["id_field"]
+            name_field = boundary_dict["name_field"]
+            area_field = boundary_dict["area_field"]
+
+            boundary_table = "{0}.{1}".format(settings["web_schema"], boundary_name)
+            output_table = "{0}_stats".format(boundary_name,)
+
+            # build create table statement
+            create_table_list = list()
+            create_table_list.append("DROP TABLE IF EXISTS {0}.{1} CASCADE;")
+            create_table_list.append("CREATE TABLE {0}.{1} (")
+
+            # build column list
+            column_list = list()
+            column_list.append("id text NOT NULL PRIMARY KEY")
+            column_list.append("table_number text NOT NULL")
+            # column_list.append("mean double precision NOT NULL")
+            column_list.append("values double precision[] NOT NULL")
+            column_list.append("density double precision[] NOT NULL")
+            column_list.append("percent double precision[] NOT NULL")
+
+            # add columns to create table statement and finish it
+            create_table_list.append(",".join(column_list))
+            create_table_list.append(") WITH (OIDS=FALSE);")
+            create_table_list.append("ALTER TABLE {0}.{1} OWNER TO {2};")
+            # create_table_list.append("ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx")
+
+            sql = "".join(create_table_list).format(settings['web_schema'], output_table, settings['pg_user'])
+            pg_cur.execute(sql)
+
+            # insert a row for each stat
+            for data in data_list:
+                stat = data[0]
+                table = data[1]
+
+                data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary_name, table)
+
+                # check if table exists for that boundary, if not ignore and move on
+                sql = "SELECT EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = '{0}' AND tablename = '{1}_{2}')"\
+                    .format(settings["data_schema"], boundary_name, table)
+                pg_cur.execute(sql)
+
+                result = pg_cur.fetchone()[0]
+
+                if result:
+                    row = dict()
+                    row["id"] = stat
+                    row["table_number"] = table
+
+                    # TODO: min, max, mean - for all 3 sets of data ?
+
+                    # 1 of 3 kmeans classes - values
+                    row["values"] = utils.get_bins(data_table, boundary_table, stat, pg_cur, settings)
+
+                    # 2 of 3 kmeans classes  - densities per sq km
+                    stat_field = "CASE WHEN bdy.area > 0.0 THEN tab.{0} / bdy.area ELSE 0 END".format(stat)
+                    row["density"] = utils.get_bins(data_table, boundary_table, stat_field, pg_cur, settings)
+
+                    # 3 of 3 kmeans classes  - normalised against population
+                    stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END"\
+                        .format(stat,)
+                    row["percent"] = utils.get_bins(data_table, boundary_table, stat_field, pg_cur, settings)
+
+                    # build insert statement
+                    columns = row.keys()
+                    values = [row[column] for column in columns]
+
+                    sql = 'INSERT INTO {0}.{1} (%s) VALUES %s'.format(settings['web_schema'], output_table)
+
+                    sql = pg_cur.mogrify(sql, (psycopg2.extensions.AsIs(','.join(columns)), tuple(values)))
+                    insert_sql_list.append(sql)
+
+            vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(settings['web_schema'], output_table))
+
     utils.multiprocess_list("sql", insert_sql_list, settings, logger)
     utils.multiprocess_list("sql", vacuum_sql_list, settings, logger)
 
