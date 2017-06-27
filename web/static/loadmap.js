@@ -171,11 +171,13 @@ function init() {
         if (props) {
             if (currentStat.maptype === "values") {
                 infoStr = '<h3>' + props.name + '</h3>' +
-                                '<span style="font_size: 3.0em;font-weight: bold">' + props[currentStatId].toLocaleString(['en-AU']) + ' ' + currentStat.type + '</span>';
-            } else {
+                                '<span style="font_size: 3.0em;font-weight: bold">' + currentStat.type + ': ' + props[currentStatId].toLocaleString(['en-AU']) + '</span><br/>' +
+                                'Persons: ' + props.population.toLocaleString(['en-AU']);
+
+            } else { // "percent"
                 infoStr = '<h3>' + props.name + '</h3>' +
-                                '<span style="font_size: 3.0em;font-weight: bold">' + props.percent.toFixed(1).toLocaleString(['en-AU']) + '%</span><br/>' +
-                                props[currentStatId].toLocaleString(['en-AU']) + ' of ' + props.population.toLocaleString(['en-AU']) + ' ' + currentStat.type;
+                                '<span style="font_size: 3.0em;font-weight: bold">' + currentStat.description + ': ' + props.percent.toFixed(1).toLocaleString(['en-AU']) + '%</span><br/>' +
+                                props[currentStatId].toLocaleString(['en-AU']) + ' of ' + props.population.toLocaleString(['en-AU']) + ' persons ';
             }
         } else {
             infoStr ='pick a boundary'
@@ -314,20 +316,6 @@ function stringNumber(val) {
     return numString;
 }
 
-//// format a number for display based on the number of digits or decimal places
-//function formatNumber(number) {
-//    var s = number.toString();
-//
-//    var output;
-//
-//    if (s.indexOf('.') > 3) output = parseInt(s.split("."));
-//    if (s.indexOf('.') > 1) output = parseInt(s.split("."));
-//
-//    while (s.length < s.indexOf('.') + 4) s += '0';
-//
-//    return output;
-//}
-
 function getData() {
 
     console.time("got boundaries");
@@ -405,19 +393,22 @@ function gotData(json) {
 
 function style(feature) {
     var renderVal;
+    var props = feature.properties;
 
     if (currentStat.maptype === "values") {
-        renderVal = parseInt(feature.properties[currentStatId]);
+        renderVal = parseInt(props[currentStatId]);
     } else {
-        renderVal = parseInt(feature.properties.percent);
+        renderVal = parseInt(props.percent);
     }
+
+    var col = getColor(renderVal, props.population);
 
     return {
         weight : 2,
         opacity : 1.0,
-        color : getColor(renderVal, feature.properties.population),
+        color : col,
         fillOpacity : 1.0,
-        fillColor : getColor(renderVal, feature.properties.population)
+        fillColor : col
     };
 }
 
@@ -425,21 +416,26 @@ function style(feature) {
 function getColor(d, pop) {
     var classes = currentStat[currentBoundary];
 
-    var colourNum = d > classes[6] ? 7 :
-                    d > classes[5] ? 6 :
-                    d > classes[4] ? 5 :
-                    d > classes[3] ? 4 :
-                    d > classes[2] ? 3 :
-                    d > classes[1] ? 2 :
-                                     1 ;
+    // show generic gray if no population
+    if (pop == 0){
+        return "#422";
+    } else {
+        var colourNum = d > classes[6] ? 7 :
+                        d > classes[5] ? 6 :
+                        d > classes[4] ? 5 :
+                        d > classes[3] ? 4 :
+                        d > classes[2] ? 3 :
+                        d > classes[1] ? 2 :
+                                        1 ;
 
-    // override if population is low and colour class is near to top (i.e. a small pop is distorting the map)
-//    if (pop <= currentBoundaryMin && colourNum > numClasses - 4) {
-    if (pop <= currentBoundaryMin && colourNum > 3) {
-        colourNum = colourNum - 3;
+        // override if population is low and colour class is near to top (i.e. a small pop is distorting the map)
+    //    if (pop <= currentBoundaryMin && colourNum > numClasses - 4) {
+        if (pop <= currentBoundaryMin && colourNum > 3) {
+            colourNum = colourNum - 3;
+        }
+
+        return "#" + colourRamp.colourAt(colourNum);
     }
-
-    return "#" + colourRamp.colourAt(colourNum);
 }
 
 function onEachFeature(feature, layer) {
