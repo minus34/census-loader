@@ -22,7 +22,7 @@ var currentStats;
 var boundaryOverride = "";
 
 var currentBoundary = "";
-var currentBoundaryMin = 5;
+var currentBoundaryMin = 7;
 var currentStatId = "";
 
 var highlightColour = "#ffff00"
@@ -129,7 +129,7 @@ function init() {
 
     // load CartoDB basemap
     L.tileLayer('http://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png', {
-        // attribution : '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+        attribution : '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
         subdomains : 'abcd',
         minZoom : minZoom,
         maxZoom : maxZoom,
@@ -188,55 +188,16 @@ function init() {
     legend = L.control({ position: 'topright' });
     legend.onAdd = function () {
         this._div = L.DomUtil.create('div', 'legend');
-        this.update();
+        // this.update();
         return this._div;
     };
     legend.update = function () {
-        var min = stringNumber(currentStat[currentBoundary][0]),
-            max = stringNumber(currentStat[currentBoundary][numClasses - 1]);
+        var len = currentStat[currentBoundary].length,
+            min = stringNumber(currentStat[currentBoundary][0]),
+            max = stringNumber(currentStat[currentBoundary][len - 1]);
 
         this._div.innerHTML = "<div><table><tr><td>" + min + "</td><td class='colours' style='width: 15.0em'></td><td>" + max + "</td></tr></table></div>";
     };
-
-    // //Change map theme when legend dropdown changes
-    // $('#selectStat').change(function () {
-    //     var selection = this.value;
-
-    //     switch(selection)
-    //     {
-    //         case "person":
-    //             currStat = "l_pp_day_2009";
-    //             themeGrades = [0, 50, 100, 150, 200, 250, 300, 350];
-    //             break;
-    //         case "household":
-    //             currStat = "l_hh_day_2009";
-    //             themeGrades = [0, 100, 200, 300, 400, 500, 600, 700];
-    //             break;
-    //         default:
-    //             currStat = "l_pp_day_2009";
-    //             themeGrades = [0, 50, 100, 150, 200, 250, 300, 350];
-    //     }
-
-    //     //Display the boundaries
-    //     loadGeoJson(json);
-
-    //     //Update the legend
-    //     labels = []
-
-    //     for (var i = 0; i < themeGrades.length; i++) {
-    //         from = themeGrades[i];
-    //         to = themeGrades[i + 1];
-
-    //         labels.push(
-    //             '<i style="background:' + getColor(from + 1) + '"></i> ' +
-    //             from + (to ? '&ndash;' + to : '+'));
-    //     }
-
-    //     var data = labels.join('<br/>');
-
-    //     $("#mapLegend").hide().html(data).fadeIn('fast');
-
-    // });
 
     // add radio buttons to choose stat to theme the map
     themer = L.control({
@@ -258,7 +219,6 @@ function init() {
 
             // update stat metadata and map data
             getCurrentStatMetadata();
-            legend.update();
             getData();
         });
     };
@@ -268,7 +228,6 @@ function init() {
     // get a new set of data when map panned or zoomed
     map.on('moveend', function () {
         getCurrentStatMetadata();
-        legend.update();
         getData();
     });
 
@@ -295,12 +254,13 @@ function init() {
         currentStats = metadataResponse[0].stats;
         getCurrentStatMetadata();
 
-        // get the first lot of data
-        getData();
-
         // show legend and info controls
         legend.addTo(map);
         info.addTo(map);
+
+        // get the first lot of data
+        getData();
+
 
         // create the radio buttons
         setRadioButtons();
@@ -368,6 +328,9 @@ function getData() {
     currentZoomLevel = map.getZoom();
     currentBoundary = boundaryZooms[currentZoomLevel.toString()].name;
     currentBoundaryMin = boundaryZooms[currentZoomLevel.toString()].min;
+
+    //update the legend with the new stat min and max
+    legend.update();
 
     //restrict to the zoom levels that have data
     if (currentZoomLevel < minZoom) {

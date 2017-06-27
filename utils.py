@@ -215,7 +215,7 @@ def get_boundary(zoom_level):
         min_display_value = 10
     elif zoom_level < 17:
         boundary_name = "sa1"
-        min_display_value = 5
+        min_display_value = 7
     else:
         boundary_name = "mb"
         min_display_value = 3
