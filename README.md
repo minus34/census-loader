@@ -5,7 +5,7 @@ A quick way to get started with Australian Bureau of Statistics (ABS) Census 201
 1. A quick way to load the entire census into Postgres
 2. A map server for quickly visualising census data and trends
 
-![sydney_b56.png](https://github.com/minus34/census-loader/blob/master/sample-images/sydney_b56.png)
+![sydney_b2793.png](https://github.com/minus34/census-loader/blob/master/sample-images/sydney_b2793.png)
 
 ### There are 3 options for loading the data
 1. [Run](https://github.com/minus34/census-loader#option-1---run-loadgnafpy) the load-census Python script and build the database schemas in a single step

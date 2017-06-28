@@ -52,7 +52,7 @@ for (var i = 0; i < querystring.length; i++) {
 //    census = "2016";
 //} else {
 //    census = queryObj["stats"];
-//    // TODO: check census value is valid
+//    // TODO: CHECK CENSUS YEAR VALUE IS VALID (2011 OR 2016 ONLY)
 //}
 
 // get/set values from querystring
@@ -69,7 +69,7 @@ if (!queryObj["z"]) {
     currentZoomLevel = queryObj["z"];
 }
 
-//// number of classes to theme the map - DOESN"T WORK YET
+//// number of classes to theme the map - TODO: ADD SUPPORT FOR CUSTOM NUMBER OF MAP CLASSES
 //if (!queryObj["n"]) {
 //    numClasses = 7;
 //} else {
