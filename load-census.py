@@ -13,11 +13,15 @@
 #
 # Copyright:
 #  - Code is licensed under an Apache License, version 2.0
-#  - Data is copyright ABS - licensed under a Creative Commons (By Attribution) license.
+#  - Data is copyright ABS - licensed under Creative Commons (By Attribution) license.
 #    See http://abs.gov.au for the correct attribution
 
 # Process:
-#   1. 
+#   1. load census metadata Excel files using Pandas dataframes
+#   2. load all census data CSV files
+#   3. load census boundary Shapefiles
+#   4. create web display optimised census boundaries using Visvalingam-Whyatt simplification
+#   5. fire up the map server and party on!
 #
 # *********************************************************************************************************************
 
@@ -83,26 +87,19 @@ def main():
     # PART 1 - load census data from CSV files
     logger.info("")
     start_time = datetime.now()
-    logger.info("Part 1 of 3 : Start census data load : {0}".format(start_time))
+    logger.info("Part 1 of 2 : Start census data load : {0}".format(start_time))
     create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
     populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
                          settings['table_name_part'], settings['bdy_name_part'], settings)
-    logger.info("Part 1 of 3 : Census data loaded! : {0}".format(datetime.now() - start_time))
+    logger.info("Part 1 of 2 : Census data loaded! : {0}".format(datetime.now() - start_time))
 
     # PART 2 - load census boundaries from Shapefiles and optimise them for web visualisation
     logger.info("")
     start_time = datetime.now()
-    logger.info("Part 2 of 3 : Start census boundary load : {0}".format(start_time))
+    logger.info("Part 2 of 2 : Start census boundary load : {0}".format(start_time))
     load_boundaries(pg_cur, settings)
     create_display_boundaries(pg_cur, settings)
-    logger.info("Part 2 of 3 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
-
-    # # PART 3 - create tables of stats for all census data, for the visualisation
-    # logger.info("")
-    # start_time = datetime.now()
-    # logger.info("Part 3 of 3 : Start calculating statistics : {0}".format(start_time))
-    # create_data_statistics(pg_cur, settings)
-    # logger.info("Part 3 of 3 : Census data Statistics calculated! : {0}".format(datetime.now() - start_time))
+    logger.info("Part 2 of 2 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
     # close Postgres connection
     pg_cur.close()
@@ -192,10 +189,7 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
                         df_clean.to_csv(tsv_file, sep="\t", index=False, header=False)
                         tsv_file.seek(0)  # move position back to beginning of file before reading
 
-                        # # import into Postgres
-                        # pg_cur.copy_from(tsv_file, "{0}.{1}"
-                        #                  .format(settings['data_schema'], table_dict["table"]),
-                        #                  sep="\t", null="")
+                        # import into Postgres
                         sql = "COPY {0}.{1} FROM stdin WITH CSV DELIMITER as '\t' NULL as ''" \
                             .format(settings['data_schema'], table_dict["table"])
                         pg_cur.copy_expert(sql, tsv_file)
@@ -209,11 +203,6 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
     # clean up invalid rows
     pg_cur.execute("DELETE FROM {0}.metadata_tables WHERE table_number IS NULL".format(settings['data_schema']))
 
-    # # get rid of _Persons_Persons and replace with _Persons in metadata_stats - can't do this as it reorders the rows
-    # pg_cur.execute("UPDATE {0}.metadata_stats "
-    #                "SET long_id = replace(long_id, '_Persons_Persons', '_Persons') "
-    #                "WHERE long_id LIKE '%_Persons_Persons'".format(settings['data_schema']))
-
     # add primary keys
     pg_cur.execute("ALTER TABLE {0}.metadata_tables ADD CONSTRAINT metadata_tables_pkey PRIMARY KEY (table_number)"
                    .format(settings['data_schema']))
@@ -223,26 +212,6 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
     # cluster tables on primary key (for minor performance improvement)
     pg_cur.execute("ALTER TABLE {0}.metadata_tables CLUSTER ON metadata_tables_pkey".format(settings['data_schema']))
     pg_cur.execute("ALTER TABLE {0}.metadata_stats CLUSTER ON metadata_stats_pkey".format(settings['data_schema']))
-
-    # # add cell type field to cells table
-    # pg_cur.execute("ALTER TABLE {0}.metadata_stats ADD COLUMN stat_type text".format(settings['data_schema']))
-
-    # populate cell type field
-    # pg_cur.execute("UPDATE {0}.metadata_stats "
-    #                "SET stat_type = 'double precision' "
-    #                "WHERE lower(long_id) like '%median%' "
-    #                "OR lower(long_id) like '%average%' "
-    #                "OR lower(long_id) like '%percent%' "
-    #                "OR lower(long_id) like '%proportion%' "
-    #                .format(settings['data_schema']))
-    #
-    # pg_cur.execute("UPDATE {0}.metadata_stats "
-    #                "SET stat_type = 'integer' "
-    #                "WHERE stat_type IS NULL"
-    #                .format(settings['data_schema']))
-
-    # pg_cur.execute("UPDATE {0}.metadata_stats "
-    #                "SET stat_type = 'double precision'".format(settings['data_schema']))
 
     # update stats
     pg_cur.execute("VACUUM ANALYZE {0}.metadata_tables".format(settings['data_schema']))
@@ -436,9 +405,8 @@ def create_display_boundaries(pg_cur, settings):
 
             # thin geometry to make querying faster
             tolerance = utils.get_tolerance(10)
-            insert_into_list.append(
-                "ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(geom, 3577), {0}))), 4283),"
-                    .format(tolerance,))
+            insert_into_list.append("ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW("
+                                    "ST_Transform(geom, 3577), {0}))), 4283),".format(tolerance,))
 
             # create statements for geojson optimised for each zoom level
             geojson_list = list()
@@ -450,11 +418,13 @@ def create_display_boundaries(pg_cur, settings):
                 decimal_places = utils.get_decimal_places(zoom_level)
 
                 geojson_list.append("ST_AsGeoJSON(ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform("
-                                        "bdy.geom, 3577), {0}))), 4283), {1})::jsonb".format(tolerance, decimal_places))
+                                    "bdy.geom, 3577), {0}))), 4283), {1})::jsonb"
+                                    .format(tolerance, decimal_places))
 
             insert_into_list.append(",".join(geojson_list))
             insert_into_list.append("FROM {0}.{1} AS bdy".format(settings['boundary_schema'], input_pg_table))
-            insert_into_list.append("INNER JOIN {0}.{1}_{2} AS tab".format(settings['data_schema'], boundary_name, pop_table))
+            insert_into_list.append("INNER JOIN {0}.{1}_{2} AS tab"
+                                    .format(settings['data_schema'], boundary_name, pop_table))
             insert_into_list.append("ON bdy.{0} = tab.{1}".format(id_field, settings["region_id_field"]))
             insert_into_list.append("WHERE bdy.geom IS NOT NULL")
             insert_into_list.append("GROUP BY {0}, {1}, {2}".format(id_field, name_field, pop_stat))
@@ -465,107 +435,6 @@ def create_display_boundaries(pg_cur, settings):
             vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(settings['web_schema'], pg_table))
 
     utils.multiprocess_list("sql", create_sql_list, settings, logger)
-    utils.multiprocess_list("sql", insert_sql_list, settings, logger)
-    utils.multiprocess_list("sql", vacuum_sql_list, settings, logger)
-
-    logger.info("\t- Step 2 of 2 : web optimised boundaries created : {0}".format(datetime.now() - start_time))
-
-
-def create_data_statistics(pg_cur, settings):
-    # Step 2 of 2 : create web optimised versions of the census boundaries
-    start_time = datetime.now()
-
-    # get dictionary of all census stats
-    # get stats metadata, including the all important table number
-    sql = "SELECT lower(sequential_id) AS id, lower(table_number) AS table " \
-          "FROM {0}.metadata_stats".format(settings["data_schema"], )
-    pg_cur.execute(sql)
-
-    # Retrieve the results of the query into a dictionary
-    data_list = list(pg_cur.fetchall())
-
-    # prepare statistics for all census data fields
-    insert_sql_list = list()
-    vacuum_sql_list = list()
-
-    for boundary_dict in settings['bdy_table_dicts']:
-        boundary_name = boundary_dict["boundary"]
-
-        if boundary_name != "mb":
-            id_field = boundary_dict["id_field"]
-            name_field = boundary_dict["name_field"]
-            area_field = boundary_dict["area_field"]
-
-            boundary_table = "{0}.{1}".format(settings["web_schema"], boundary_name)
-            output_table = "{0}_stats".format(boundary_name,)
-
-            # build create table statement
-            create_table_list = list()
-            create_table_list.append("DROP TABLE IF EXISTS {0}.{1} CASCADE;")
-            create_table_list.append("CREATE TABLE {0}.{1} (")
-
-            # build column list
-            column_list = list()
-            column_list.append("id text NOT NULL PRIMARY KEY")
-            column_list.append("table_number text NOT NULL")
-            # column_list.append("mean double precision NOT NULL")
-            column_list.append("values double precision[] NOT NULL")
-            column_list.append("density double precision[] NOT NULL")
-            column_list.append("percent double precision[] NOT NULL")
-
-            # add columns to create table statement and finish it
-            create_table_list.append(",".join(column_list))
-            create_table_list.append(") WITH (OIDS=FALSE);")
-            create_table_list.append("ALTER TABLE {0}.{1} OWNER TO {2};")
-            # create_table_list.append("ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx")
-
-            sql = "".join(create_table_list).format(settings['web_schema'], output_table, settings['pg_user'])
-            pg_cur.execute(sql)
-
-            # insert a row for each stat
-            for data in data_list:
-                stat = data[0]
-                table = data[1]
-
-                data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary_name, table)
-
-                # check if table exists for that boundary, if not ignore and move on
-                sql = "SELECT EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = '{0}' AND tablename = '{1}_{2}')"\
-                    .format(settings["data_schema"], boundary_name, table)
-                pg_cur.execute(sql)
-
-                result = pg_cur.fetchone()[0]
-
-                if result:
-                    row = dict()
-                    row["id"] = stat
-                    row["table_number"] = table
-
-                    # TODO: min, max, mean - for all 3 sets of data ?
-
-                    # 1 of 3 kmeans classes - values
-                    row["values"] = utils.get_bins(data_table, boundary_table, stat, pg_cur, settings)
-
-                    # 2 of 3 kmeans classes  - densities per sq km
-                    stat_field = "CASE WHEN bdy.area > 0.0 THEN tab.{0} / bdy.area ELSE 0 END".format(stat)
-                    row["density"] = utils.get_bins(data_table, boundary_table, stat_field, pg_cur, settings)
-
-                    # 3 of 3 kmeans classes  - normalised against population
-                    stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END"\
-                        .format(stat,)
-                    row["percent"] = utils.get_bins(data_table, boundary_table, stat_field, pg_cur, settings)
-
-                    # build insert statement
-                    columns = row.keys()
-                    values = [row[column] for column in columns]
-
-                    sql = 'INSERT INTO {0}.{1} (%s) VALUES %s'.format(settings['web_schema'], output_table)
-
-                    sql = pg_cur.mogrify(sql, (psycopg2.extensions.AsIs(','.join(columns)), tuple(values)))
-                    insert_sql_list.append(sql)
-
-            vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(settings['web_schema'], output_table))
-
     utils.multiprocess_list("sql", insert_sql_list, settings, logger)
     utils.multiprocess_list("sql", vacuum_sql_list, settings, logger)
 
