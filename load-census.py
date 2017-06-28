@@ -5,7 +5,7 @@
 # load-census.py
 # *********************************************************************************************************************
 #
-# A script for loading Australian Bureau of Statistics Census 2016 data and boundaries
+# A script for loading Australian Bureau of Statistics Census 2011 or 2016 data and boundaries
 #
 # Author: Hugh Saalmans
 # GitHub: minus34

@@ -89,6 +89,7 @@ def get_settings(args):
     settings = dict()
 
     settings['max_concurrent_processes'] = args.max_processes
+    # settings['num_classes'] = args.num_classes
     settings['census_year'] = args.census_year
     # settings['states_to_load'] = args.states
     settings['states'] = ["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"]
@@ -96,13 +97,7 @@ def get_settings(args):
     settings['boundary_schema'] = args.boundary_schema
     settings['web_schema'] = args.web_schema
     settings['data_directory'] = args.census_data_path.replace("\\", "/")
-    # if args.local_server_dir:
-    #     settings['data_pg_server_local_directory'] = args.local_server_dir.replace("\\", "/")
-    # else:
-    #     settings['data_pg_server_local_directory'] = settings['data_directory']
     settings['boundaries_local_directory'] = args.census_bdys_path.replace("\\", "/")
-
-    # settings['num_classes'] = args.num_classes
 
     # create postgres connect string
     settings['pg_host'] = args.pghost or os.getenv("PGHOST", "localhost")
@@ -199,8 +194,6 @@ def get_settings(args):
 # get the boundary name that suits each (tiled map) zoom level and its minimum value to colour in
 def get_boundary(zoom_level):
 
-    # if zoom_level < 7:
-    #     boundary_name = "ste"
     if zoom_level < 7:
         boundary_name = "ste"
         min_display_value = 80
@@ -235,17 +228,7 @@ def get_tolerance(zoom_level):
     # the tolerance (metres) for vector simplification using the VW algorithm
     square_metres_per_pixel = math.pow(metres_per_pixel, 2.0)
 
-    # # rough metres to degrees conversation, using spherical WGS84 datum radius for simplicity and speed
-    # metres2degrees = (2.0 * math.pi * 6378137.0) / 360.0
-
-    # # the tolerance for thinning data and limiting decimal places in GeoJSON responses
-    # degrees_per_pixel = metres_per_pixel / metres2degrees
-
-    # # the tolerance (degrees) for vector simplification using the VW algorithm
-    # square_degrees_per_pixel = math.pow(degrees_per_pixel, 2.0)
-
     # tolerance to use
-    # tolerance = square_degrees_per_pixel * tolerance_square_pixels
     tolerance = square_metres_per_pixel * tolerance_square_pixels
 
     return tolerance
@@ -462,13 +445,9 @@ def run_csv_import_multiprocessing(args):
 
     # CREATE TABLE
 
-    # get the census fields for the table
+    # get the census fields to use in the create table statement
     field_list = list()
 
-    # sql = "SELECT sequential_id || ' ' || stat_type AS field " \
-    #       "FROM {0}.metadata_stats " \
-    #       "WHERE lower(table_number) LIKE '{1}%'" \
-    #     .format(settings['data_schema'], table_number)
     sql = "SELECT sequential_id || ' double precision' AS field " \
           "FROM {0}.metadata_stats " \
           "WHERE lower(table_number) LIKE '{1}%'" \
@@ -499,7 +478,7 @@ def run_csv_import_multiprocessing(args):
         # read CSV into a string
         raw_string = open(file_dict["path"], 'r').read()
 
-        # clean whitespace and non-ascii characters
+        # clean whitespace and rogue non-ascii characters
         clean_string = raw_string.lstrip().rstrip().replace(" ", "").replace("\x1A", "")
 
         # convert to in memory stream
@@ -588,38 +567,6 @@ def run_command_line(cmd):
         result = "COMMAND FAILED! : {0} : {1}".format(cmd, ex)
 
     return result
-
-
-# def open_sql_file(file_name, settings):
-#     sql = open(os.path.join(settings['sql_dir'], file_name), "r").read()
-#     return prep_sql(sql, settings)
-#
-#
-# # change schema names in an array of SQL script if schemas not the default
-# def prep_sql_list(sql_list, settings):
-#     output_list = []
-#     for sql in sql_list:
-#         output_list.append(prep_sql(sql, settings))
-#     return output_list
-
-
-# # set schema names in the SQL script
-# def prep_sql(sql, settings):
-#
-#     if settings['raw_gnaf_schema'] is not None:
-#         sql = sql.replace(" raw_gnaf.", " {0}.".format(settings['raw_gnaf_schema'], ))
-#     if settings['raw_admin_bdys_schema'] is not None:
-#         sql = sql.replace(" raw_admin_bdys.", " {0}.".format(settings['raw_admin_bdys_schema'], ))
-#     if settings['gnaf_schema'] is not None:
-#         sql = sql.replace(" gnaf.", " {0}.".format(settings['gnaf_schema'], ))
-#     if settings['admin_bdys_schema'] is not None:
-#         sql = sql.replace(" admin_bdys.", " {0}.".format(settings['admin_bdys_schema'], ))
-#
-#     if settings['pg_user'] != "postgres":
-#         # alter create table script to run with correct Postgres user name
-#         sql = sql.replace(" postgres;", " {0};".format(settings['pg_user'], ))
-#
-#     return sql
 
 
 def split_sql_into_list(pg_cur, the_sql, table_schema, table_name, table_alias, table_gid, settings, logger):
