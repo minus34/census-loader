@@ -156,15 +156,19 @@ function init() {
         var infoStr;
 
         if (props) {
-            if (currentStat.maptype === "values") {
-                infoStr = "<h3>" + props.name + "</h3>" +
-                                "<span style='font-weight: bold'>" + currentStat.type + ": " + props[currentStatId].toLocaleString(["en-AU"]) + "</span><br/>" +
-                                "Persons: " + props.population.toLocaleString(["en-AU"]);
+            if (props.population === 0) {
+                infoStr = "<h3>" + props.name + "</h3><span style='font-size: 1.1em; font-weight: bold'>no population";
+            } else {
+                if (currentStat.maptype === "values") {
+                    infoStr = "<h3>" + props.name + "</h3>" +
+                        "<span style='font-size: 1.1em; font-weight: bold'>" + currentStat.type + ": " + props[currentStatId].toLocaleString(["en-AU"]) + "</span><br/>" +
+                        "Persons: " + props.population.toLocaleString(["en-AU"]);
 
-            } else { // "percent"
-                infoStr = "<h3>" + props.name + "</h3>" +
-                                "<span style='font-weight: bold'>" + currentStat.description + ": " + props.percent.toFixed(1).toLocaleString(["en-AU"]) + "%</span><br/>" +
-                                props[currentStatId].toLocaleString(["en-AU"]) + " of " + props.population.toLocaleString(["en-AU"]) + " persons ";
+                } else { // "percent"
+                    infoStr = "<h3>" + props.name + "</h3>" +
+                        "<span style='font-size: 1.1em; font-weight: bold'>" + currentStat.description + ": " + props.percent.toFixed(1).toLocaleString(["en-AU"]) + "%</span><br/>" +
+                        props[currentStatId].toLocaleString(["en-AU"]) + " of " + props.population.toLocaleString(["en-AU"]) + " persons ";
+                }
             }
         } else {
             infoStr ="pick a boundary"
