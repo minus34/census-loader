@@ -25,7 +25,7 @@ var currentBoundary = "";
 var currentBoundaryMin = 7;
 var currentStatId = "";
 
-var highlightColour = "#ffff00"
+var highlightColour = "#ffff00";
 var colourRamp;
 var colourRange = ["#1a1a1a", "#e45427"]; // dark grey > orange/red
 //var colourRange = ["#1a1a1a", "#DD4132"]; // dark grey > red
@@ -34,7 +34,7 @@ var colourRange = ["#1a1a1a", "#e45427"]; // dark grey > orange/red
 // get querystring values
 // code from http://forum.jquery.com/topic/getting-value-from-a-querystring
 // get querystring as an array split on "&"
-var querystring = location.search.replace('?', '').split('&');
+var querystring = location.search.replace("?", "").split("&");
 
 // declare object
 var queryObj = {};
@@ -42,9 +42,9 @@ var queryObj = {};
 // loop through each name-value pair and populate object
 for (var i = 0; i < querystring.length; i++) {
     // get name and value
-    var name = querystring[i].split('=')[0];
+    var name = querystring[i].split("=")[0];
     // populate object
-    queryObj[name] = querystring[i].split('=')[1];
+    queryObj[name] = querystring[i].split("=")[1];
 }
 
 //// get/set values from querystring
@@ -52,12 +52,12 @@ for (var i = 0; i < querystring.length; i++) {
 //    census = "2016";
 //} else {
 //    census = queryObj["stats"];
-//    // TODO: check census value is valid
+//    // TODO: CHECK CENSUS YEAR VALUE IS VALID (2011 OR 2016 ONLY)
 //}
 
 // get/set values from querystring
 
-// auto-boundary override (for screenshots only! will create performance issues. e.g showing SA1's nationally!)
+// auto-boundary override (for screenshots only! will create performance issues. e.g showing SA1"s nationally!)
 if (queryObj["b"] !== undefined) {
     boundaryOverride = queryObj["b"].toLowerCase();
 }
@@ -69,7 +69,7 @@ if (!queryObj["z"]) {
     currentZoomLevel = queryObj["z"];
 }
 
-//// number of classes to theme the map - DOESN'T WORK YET
+//// number of classes to theme the map - TODO: ADD SUPPORT FOR CUSTOM NUMBER OF MAP CLASSES
 //if (!queryObj["n"]) {
 //    numClasses = 7;
 //} else {
@@ -87,7 +87,7 @@ if (!queryObj["stats"]) {
 
 function init() {
     // initial stat is the first one in the querystring
-    currentStatId = statsArray[0]
+    currentStatId = statsArray[0];
 
     // create colour ramp
     colourRamp = new Rainbow();
@@ -98,45 +98,30 @@ function init() {
     var elem = document.createElement("canvas");
 
     if (elem.getContext && elem.getContext("2d")) {
-        map = new L.Map('map', { preferCanvas: true });
+        map = new L.Map("map", { preferCanvas: true });
     } else {
-        map = new L.Map('map', { preferCanvas: false });
+        map = new L.Map("map", { preferCanvas: false });
     }
 
-    // map = new L.Map('map', { preferCanvas: false }); // canvas slows Safari down versus Chrome (IE & edge are untested)
+    // map = new L.Map("map", { preferCanvas: false }); // canvas slows Safari down versus Chrome (IE & edge are untested)
 
     // acknowledge the data provider
-    map.attributionControl.addAttribution('Census data &copy; <a href="http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material">ABS</a>');
+    map.attributionControl.addAttribution("Census data &copy; <a href='http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material'>ABS</a>");
 
-    // create pane for map labels - a non-interactive pane (i.e. no mouse events)
-    map.createPane('labels');
-
-    // This pane is above markers but below popups
-    map.getPane('labels').style.zIndex = 650;
-
-    // Layers in this pane are non-interactive and do not obscure mouse/touch events
-    map.getPane('labels').style.pointerEvents = 'none';
-
-    // // load CartoDB labels
-    // L.tileLayer('http://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_only_labels/{z}/{x}/{y}.png', {
-    //     attribution : '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
-    //     subdomains : 'abcd',
-    //     minZoom : minZoom,
-    //     maxZoom : maxZoom,
-    //     pane: 'labels',
-    //     opacity: 0.9
-    // }).addTo(map);
+    // create non-interactive pane (i.e. no mouse events) for basemap tiles
+    map.createPane("basemap");
+    map.getPane("basemap").style.zIndex = 650;
+    map.getPane("basemap").style.pointerEvents = "none";
 
     // load CartoDB basemap
-    L.tileLayer('http://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png', {
-        attribution : '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
-        subdomains : 'abcd',
+    L.tileLayer("http://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png", {
+        attribution : "&copy; <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> &copy; <a href='http://cartodb.com/attributions'>CartoDB</a>",
+        subdomains : "abcd",
         minZoom : minZoom,
         maxZoom : maxZoom,
-        pane: 'labels',
+        pane: "basemap",
         opacity: 0.4
     }).addTo(map);
-
 
     // set the view to a given center and zoom
     map.setView(new L.LatLng(-33.85, 151.15), currentZoomLevel);
@@ -144,7 +129,7 @@ function init() {
     // get bookmarks
     var bmStorage = {
         getAllItems : function (callback) {
-            $.getJSON('bookmarks.json',
+            $.getJSON("bookmarks.json",
                 function (json) {
                     callback(json);
             });
@@ -153,7 +138,7 @@ function init() {
 
     // add bookmark control to map
     var bm = new L.Control.Bookmarks({
-        position : 'topleft',
+        position : "topleft",
         localStorage : false,
         storage : bmStorage
     }).addTo(map);
@@ -161,7 +146,9 @@ function init() {
     // add control that shows info on mouseover
     info = L.control();
     info.onAdd = function () {
-        this._div = L.DomUtil.create('div', 'info');
+        this._div = L.DomUtil.create("div", "info");
+        L.DomEvent.disableScrollPropagation(this._div);
+        L.DomEvent.disableClickPropagation(this._div);
         this.update();
         return this._div;
     };
@@ -169,27 +156,38 @@ function init() {
         var infoStr;
 
         if (props) {
-            if (currentStat.maptype === "values") {
-                infoStr = '<h3>' + props.name + '</h3>' +
-                                '<span style="font_size: 3.0em;font-weight: bold">' + currentStat.type + ': ' + props[currentStatId].toLocaleString(['en-AU']) + '</span><br/>' +
-                                'Persons: ' + props.population.toLocaleString(['en-AU']);
+            // improve the formatting of multi-name bdys
+            var re = new RegExp(" - ", 'g');
+            var name = props.name.replace(re, "<br/>");
 
-            } else { // "percent"
-                infoStr = '<h3>' + props.name + '</h3>' +
-                                '<span style="font_size: 3.0em;font-weight: bold">' + currentStat.description + ': ' + props.percent.toFixed(1).toLocaleString(['en-AU']) + '%</span><br/>' +
-                                props[currentStatId].toLocaleString(['en-AU']) + ' of ' + props.population.toLocaleString(['en-AU']) + ' persons ';
+            // if no pop, nothing to display
+            if (props.population === 0) {
+                infoStr = "<h3>" + name + "</h3><span style='font-size: 1.1em; font-weight: bold'>no population";
+            } else {
+                if (currentStat.maptype === "values") {
+                    infoStr = "<h3>" + name + "</h3>" +
+                        "<span style='font-weight: bold'>" + currentStat.type + ": " + props[currentStatId].toLocaleString(["en-AU"]) + "</span><br/>" +
+                        "Persons: " + props.population.toLocaleString(["en-AU"]);
+
+                } else { // "percent"
+                    infoStr = "<h3>" + name + "</h3>" +
+                        "<span style='font-weight: bold'>" + currentStat.description + ": " + props.percent.toFixed(1).toLocaleString(["en-AU"]) + "%</span><br/>" +
+                        props[currentStatId].toLocaleString(["en-AU"]) + " of " + props.population.toLocaleString(["en-AU"]) + " persons ";
+                }
             }
         } else {
-            infoStr ='pick a boundary'
+            infoStr ="pick a boundary"
         }
-        
+
         this._div.innerHTML = infoStr;
     };
 
     //Create a legend control
-    legend = L.control({ position: 'topright' });
+    legend = L.control({ position: "topright" });
     legend.onAdd = function () {
-        this._div = L.DomUtil.create('div', 'legend');
+        this._div = L.DomUtil.create("div", "legend");
+        L.DomEvent.disableScrollPropagation(this._div);
+        L.DomEvent.disableClickPropagation(this._div);
         // this.update();
         return this._div;
     };
@@ -203,11 +201,13 @@ function init() {
 
     // add radio buttons to choose stat to theme the map
     themer = L.control({
-        position : 'bottomright'
+        position : "bottomright"
     });
 
     themer.onAdd = function () {
-        this._div = L.DomUtil.create('div', 'info themer');
+        this._div = L.DomUtil.create("div", "info themer");
+        L.DomEvent.disableScrollPropagation(this._div);
+        L.DomEvent.disableClickPropagation(this._div);
         this.update();
         return this._div;
     };
@@ -225,10 +225,10 @@ function init() {
         });
     };
     themer.addTo(map);
-    themer.update('<b>L O A D I N G . . .</b>');
+    themer.update("<b>L O A D I N G . . .</b>");
 
     // get a new set of data when map panned or zoomed
-    map.on('moveend', function () {
+    map.on("moveend", function () {
         getCurrentStatMetadata();
         getData();
     });
@@ -246,13 +246,13 @@ function init() {
             boundaryZooms = {};
             for (var j = minZoom; j <= maxZoom; j++) {
                 var boundary = {};
-                boundary['name'] = boundaryOverride;
-                boundary['min'] = currentBoundaryMin
+                boundary["name"] = boundaryOverride;
+                boundary["min"] = currentBoundaryMin;
                 boundaryZooms[j] = boundary;
             }
         }
 
-        // get the initial stat's metadata
+        // get the initial stat"s metadata
         currentStats = metadataResponse[0].stats;
         getCurrentStatMetadata();
 
@@ -263,23 +263,25 @@ function init() {
         // get the first lot of data
         getData();
 
-
         // create the radio buttons
         setRadioButtons();
     });
 }
 
 function setRadioButtons() {
-    var radioButtons = '<h4>Active stat</h4>';
+    var radioButtons = "<h4>Active stat</h4>";
 
     for (var i = 0; i < currentStats.length; i++){
         var value = currentStats[i].id;
         var description = currentStats[i].description;
 
         if (value === currentStatId) {
-            radioButtons += '<div><input id="r' + i.toString() + '" type="radio" name="stat" value="' + value + '" checked="checked"><label for="r' + i.toString() + '"><span><span></span></span>' + description + '</label></div>';
+            radioButtons += "<div><input id='r" + i.toString() + "' type='radio' name='stat' value='" + value +
+                "' checked='checked'><label for='r" + i.toString() + "'><span><span></span></span>" + description +
+                "</label></div>";
         } else {
-            radioButtons += '<div><input id="r' + i.toString() + '" type="radio" name="stat" value="' + value + '"><label for="r' + i.toString() + '"><span><span></span></span>' + description + '</label></div>';
+            radioButtons += "<div><input id='r" + i.toString() + "' type='radio' name='stat' value='" + value +
+                "'><label for='r" + i.toString() + "'><span><span></span></span>" + description + "</label></div>";
         }
      }
 
@@ -298,8 +300,8 @@ function getCurrentStatMetadata() {
 function stringNumber(val) {
     var numString = "";
 
-    if (currentStat.maptype == 'values') {
-        // format number to nearest 100's or 1000's
+    if (currentStat.maptype === "values") {
+        // format number to nearest 100"s or 1000"s
         var len = val.toString().length - 2;
 
         if (len > 0) {
@@ -308,9 +310,9 @@ function stringNumber(val) {
         } else {
             numString = val.toString();
         }
-    } else { // i.e. 'percent'
+    } else { // i.e. "percent"
         //round percentages
-        numString = Math.round(val).toString() + "%"; 
+        numString = Math.round(val).toString() + "%";
     }
 
     return numString;
@@ -363,7 +365,7 @@ function getData() {
     ua.push("&z=");
     ua.push((currentZoomLevel).toString());
 
-    var requestString = ua.join('');
+    var requestString = ua.join("");
 
 //    console.log(requestString);
 
@@ -417,7 +419,7 @@ function getColor(d, pop) {
     var classes = currentStat[currentBoundary];
 
     // show generic gray if no population
-    if (pop == 0){
+    if (pop === 0){
         return "#422";
     } else {
         var colourNum = d > classes[6] ? 7 :
