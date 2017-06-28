@@ -108,12 +108,10 @@ function init() {
     // acknowledge the data provider
     map.attributionControl.addAttribution("Census data &copy; <a href='http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material'>ABS</a>");
 
-    // create pane for map labels - a non-interactive pane (i.e. no mouse events)
-    // This pane is above markers but below popups
-    // Layers in this pane are non-interactive and do not obscure mouse/touch events
-    map.createPane("labels");
-    map.getPane("labels").style.zIndex = 650;
-    map.getPane("labels").style.pointerEvents = "none";
+    // create non-interactive pane (i.e. no mouse events) for basemap tiles
+    map.createPane("basemap");
+    map.getPane("basemap").style.zIndex = 650;
+    map.getPane("basemap").style.pointerEvents = "none";
 
     // load CartoDB basemap
     L.tileLayer("http://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png", {
@@ -121,7 +119,7 @@ function init() {
         subdomains : "abcd",
         minZoom : minZoom,
         maxZoom : maxZoom,
-        pane: "labels",
+        pane: "basemap",
         opacity: 0.4
     }).addTo(map);
 
@@ -149,6 +147,8 @@ function init() {
     info = L.control();
     info.onAdd = function () {
         this._div = L.DomUtil.create("div", "info");
+        L.DomEvent.disableScrollPropagation(this._div);
+        L.DomEvent.disableClickPropagation(this._div);
         this.update();
         return this._div;
     };
@@ -156,17 +156,22 @@ function init() {
         var infoStr;
 
         if (props) {
+            // improve the formatting of multi-name bdys
+            var re = new RegExp(" - ", 'g');
+            var name = props.name.replace(re, "<br/>");
+
+            // if no pop, nothing to display
             if (props.population === 0) {
-                infoStr = "<h3>" + props.name + "</h3><span style='font-size: 1.1em; font-weight: bold'>no population";
+                infoStr = "<h3>" + name + "</h3><span style='font-size: 1.1em; font-weight: bold'>no population";
             } else {
                 if (currentStat.maptype === "values") {
-                    infoStr = "<h3>" + props.name + "</h3>" +
-                        "<span style='font-size: 1.1em; font-weight: bold'>" + currentStat.type + ": " + props[currentStatId].toLocaleString(["en-AU"]) + "</span><br/>" +
+                    infoStr = "<h3>" + name + "</h3>" +
+                        "<span style='font-weight: bold'>" + currentStat.type + ": " + props[currentStatId].toLocaleString(["en-AU"]) + "</span><br/>" +
                         "Persons: " + props.population.toLocaleString(["en-AU"]);
 
                 } else { // "percent"
-                    infoStr = "<h3>" + props.name + "</h3>" +
-                        "<span style='font-size: 1.1em; font-weight: bold'>" + currentStat.description + ": " + props.percent.toFixed(1).toLocaleString(["en-AU"]) + "%</span><br/>" +
+                    infoStr = "<h3>" + name + "</h3>" +
+                        "<span style='font-weight: bold'>" + currentStat.description + ": " + props.percent.toFixed(1).toLocaleString(["en-AU"]) + "%</span><br/>" +
                         props[currentStatId].toLocaleString(["en-AU"]) + " of " + props.population.toLocaleString(["en-AU"]) + " persons ";
                 }
             }
@@ -181,6 +186,8 @@ function init() {
     legend = L.control({ position: "topright" });
     legend.onAdd = function () {
         this._div = L.DomUtil.create("div", "legend");
+        L.DomEvent.disableScrollPropagation(this._div);
+        L.DomEvent.disableClickPropagation(this._div);
         // this.update();
         return this._div;
     };
@@ -199,6 +206,8 @@ function init() {
 
     themer.onAdd = function () {
         this._div = L.DomUtil.create("div", "info themer");
+        L.DomEvent.disableScrollPropagation(this._div);
+        L.DomEvent.disableClickPropagation(this._div);
         this.update();
         return this._div;
     };
