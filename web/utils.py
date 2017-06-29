@@ -8,6 +8,8 @@ import psycopg2
 import subprocess
 import sys
 
+from psycopg2.extensions import AsIs
+
 
 # set the command line arguments for the script
 def set_arguments():
@@ -57,10 +59,10 @@ def set_arguments():
         '--web-schema', default='census_' + census_year + '_web',
         help='Schema name to store web optimised boundary tables in. Defaults to \'census_' + census_year + '_web\'.')
 
-    # number of classes of data to map
-    parser.add_argument(
-        '--num-classes', type=int, default=7,
-        help='Number of classes (i.e breaks) shown in each map. Defaults to 7.')
+    # # number of classes of data to map
+    # parser.add_argument(
+    #     '--num-classes', type=int, default=7,
+    #     help='Number of classes (i.e breaks) shown in each map. Defaults to 7.')
 
     # directories
     parser.add_argument(
@@ -267,25 +269,154 @@ def get_decimal_places(zoom_level):
     return places
 
 
-def get_bins(data_table, bdy_table, stat_field, pg_cur, settings):
+def get_kmeans_bins(data_table, boundary_table, stat_field, num_classes, min_val, map_type, pg_cur, settings):
 
-    sql = "WITH sub AS (" \
-          "WITH points AS (" \
-          "SELECT {0} as val, ST_MakePoint({0}, 0) AS pnt FROM {1} AS tab " \
-          "INNER JOIN {2} AS bdy ON tab.{3} = bdy.id) " \
-          "SELECT val, ST_ClusterKMeans(pnt, {4}) OVER () AS cluster_id FROM points) " \
-          "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val" \
-        .format(stat_field, data_table, bdy_table, settings['region_id_field'], settings['num_classes'])
+    # query to get min and max values (filter small populations that overly influence the map visualisation)
+    try:
+        if map_type == "values":
+            sql = "WITH sub AS (" \
+                  "WITH points AS (" \
+                  "SELECT %s as val, ST_MakePoint(%s, 0) AS pnt " \
+                  "FROM %s AS tab " \
+                  "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
+                  "WHERE %s > 0.0 " \
+                  "AND bdy.population > {1}" \
+                  ") " \
+                  "SELECT val, ST_ClusterKMeans(pnt, %s) OVER () AS cluster_id FROM points" \
+                  ") " \
+                  "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val" \
+                .format(settings['region_id_field'], float(min_val))
 
-    print(sql)
+            sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
+                                              AsIs(boundary_table), AsIs(stat_field), AsIs(num_classes)))
 
-    pg_cur.execute(sql)
-    rows = pg_cur.fetchall()
+        else:  # map_type == "percent"
+            sql = "WITH sub AS (" \
+                  "WITH points AS (" \
+                  "SELECT %s as val, ST_MakePoint(%s, 0) AS pnt " \
+                  "FROM %s AS tab " \
+                  "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
+                  "WHERE %s > 0.0 AND %s < 100.0 " \
+                  "AND bdy.population > {1}" \
+                  ") " \
+                  "SELECT val, ST_ClusterKMeans(pnt, %s) OVER () AS cluster_id FROM points" \
+                  ") " \
+                  "SELECT MAX(val) AS val FROM sub GROUP BY cluster_id ORDER BY val" \
+                .format(settings['region_id_field'], float(min_val))
+
+            sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
+                                              AsIs(boundary_table), AsIs(stat_field), AsIs(stat_field),
+                                              AsIs(num_classes)))
+
+        pg_cur.execute(sql_string)
+        rows = pg_cur.fetchall()
+
+    except Exception as ex:
+        print("{0} - {1} Failed: {2}".format(data_table, stat_field, ex))
+        return list()
+
+    # census_2011_data.ced_b23a - b4318
 
     output_list = list()
 
     for row in rows:
-        output_list.append(row[0])
+        output_list.append(row["val"])
+
+    return output_list
+
+
+def get_equal_interval_bins(data_table, boundary_table, stat_field, num_classes, map_type, pg_cur, settings):
+
+    # query to get min and max values (filter small populations that overly influence the map visualisation)
+    try:
+        if map_type == "values":
+            sql = "SELECT MIN(%s) AS min, MAX(%s) AS max FROM %s AS tab " \
+                  "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
+                  "WHERE %s > 0 " \
+                  "AND bdy.population > 5" \
+                .format(settings['region_id_field'])
+
+            sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
+                                              AsIs(boundary_table), AsIs(stat_field)))
+
+        else:  # map_type == "percent"
+            sql = "SELECT MIN(%s) AS min, MAX(%s) AS max FROM %s AS tab " \
+                  "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
+                  "WHERE %s > 0 AND %s < 100.0 " \
+                  "AND bdy.population > 5" \
+                .format(settings['region_id_field'])
+
+            sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
+                                              AsIs(boundary_table), AsIs(stat_field), AsIs(stat_field)))
+
+        pg_cur.execute(sql_string)
+        row = pg_cur.fetchone()
+
+    except Exception as ex:
+        print("{0} - {1} Failed: {2}".format(data_table, stat_field, ex))
+        return list()
+
+    output_list = list()
+
+    min_val = row["min"]
+    max_val = row["max"]
+    delta = (max_val - min_val) / float(num_classes)
+    curr_val = min_val
+
+    # print("{0} : from {1} to {2}".format(boundary_table, min, max))
+
+    for i in range(0, num_classes):
+        output_list.append(curr_val)
+        curr_val += delta
+
+    return output_list
+
+
+def get_equal_count_bins(data_table, boundary_table, stat_field, num_classes, map_type, pg_cur, settings):
+
+    # query to get min and max values (filter small populations that overly influence the map visualisation)
+    try:
+        if map_type == "values":
+            sql = "WITH classes AS (" \
+                  "SELECT %s as val, ntile(%s) OVER (ORDER BY %s) AS class_id " \
+                  "FROM %s AS tab " \
+                  "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
+                  "WHERE %s > 0.0 " \
+                  "AND bdy.population > 5.0" \
+                  ") " \
+                  "SELECT MAX(val) AS val, class_id FROM classes GROUP BY class_id ORDER BY class_id" \
+                .format(settings['region_id_field'])
+
+            sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(num_classes), AsIs(stat_field), AsIs(data_table),
+                                              AsIs(boundary_table), AsIs(stat_field)))
+
+        else:  # map_type == "percent"
+            sql = "WITH classes AS (" \
+                  "SELECT %s as val, ntile(7) OVER (ORDER BY %s) AS class_id " \
+                  "FROM %s AS tab " \
+                  "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
+                  "WHERE %s > 0.0 AND %s < 100.0 " \
+                  "AND bdy.population > 5.0" \
+                  ") " \
+                  "SELECT MAX(val) AS val, class_id FROM classes GROUP BY class_id ORDER BY class_id" \
+                .format(settings['region_id_field'])
+
+            sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
+                                              AsIs(boundary_table), AsIs(stat_field), AsIs(stat_field)))
+
+        print(sql_string)
+
+        pg_cur.execute(sql_string)
+        rows = pg_cur.fetchall()
+
+    except Exception as ex:
+        print("{0} - {1} Failed: {2}".format(data_table, stat_field, ex))
+        return list()
+
+    output_list = list()
+
+    for row in rows:
+        output_list.append(row["val"])
 
     return output_list
 
@@ -363,7 +494,7 @@ def run_csv_import_multiprocessing(args):
         csv_file.seek(0)  # move position back to beginning of file before reading
 
         # import into Postgres
-        sql = "COPY {0}.{1} FROM stdin WITH CSV HEADER DELIMITER as ',' NULL as '..'"\
+        sql = "COPY {0}.{1} FROM stdin WITH CSV HEADER DELIMITER as ',' NULL as '..'" \
             .format(settings['data_schema'], table_name)
         pg_cur.copy_expert(sql, csv_file)
 
@@ -479,7 +610,7 @@ def split_sql_into_list(pg_cur, the_sql, table_schema, table_name, table_alias, 
         for i in range(0, processes):
             end_pkey = start_pkey + rows_per_request
 
-            where_clause = " WHERE {0}.{3} > {1} AND {0}.{3} <= {2}"\
+            where_clause = " WHERE {0}.{3} > {1} AND {0}.{3} <= {2}" \
                 .format(table_alias, start_pkey, end_pkey, table_gid)
 
             if "WHERE " in the_sql:
@@ -528,7 +659,7 @@ def check_postgis_version(pg_cur, settings, logger):
     postgis_version_num = 0.0
     geos_version = "UNKNOWN"
     geos_version_num = 0.0
-    settings['st_subdivide_supported'] = False
+    settings['st_clusterkmeans_supported'] = False
     for lib_string in lib_strings:
         if lib_string[:8] == "POSTGIS=":
             postgis_version = lib_string.replace("POSTGIS=", "")
@@ -537,7 +668,7 @@ def check_postgis_version(pg_cur, settings, logger):
             geos_version = lib_string.replace("GEOS=", "")
             geos_version_num = float(geos_version[:3])
     if postgis_version_num >= 2.2 and geos_version_num >= 3.5:
-        settings['st_subdivide_supported'] = True
+        settings['st_clusterkmeans_supported'] = True
     logger.info("\t- using Postgres {0} and PostGIS {1} (with GEOS {2})"
                 .format(pg_version, postgis_version, geos_version))
 
@@ -600,7 +731,7 @@ def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_
         spatial_or_dbf_flags = "-G -n"
 
     # build shp2pgsql command line
-    shp2pgsql_cmd = "shp2pgsql {0} {1} -i \"{2}\" {3}.{4}"\
+    shp2pgsql_cmd = "shp2pgsql {0} {1} -i \"{2}\" {3}.{4}" \
         .format(delete_append_flag, spatial_or_dbf_flags, file_path, pg_schema, pg_table)
     # print(shp2pgsql_cmd)
 
