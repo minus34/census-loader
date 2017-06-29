@@ -66,7 +66,7 @@ def set_arguments():
 
     # directories
     parser.add_argument(
-        '--census-data-path', required=True,
+        '--census-data-path',
         help='Path to source census data tables (*.csv files). '
              'This directory must be accessible by the Postgres server, and the local path to the directory for the '
              'server must be set via the local-server-dir argument if it differs from this path.')
@@ -74,7 +74,7 @@ def set_arguments():
     #     '--local-server-dir',
     #     help='Local path on server corresponding to census-data-path, if different to census-data-path.')
     parser.add_argument(
-        '--census-bdys-path', required=True, help='Local path to source admin boundary files.')
+        '--census-bdys-path', help='Local path to source admin boundary files.')
 
     # # states to load
     # parser.add_argument('--states', nargs='+', choices=["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"],
@@ -88,23 +88,31 @@ def set_arguments():
 def get_settings(args):
     settings = dict()
 
+    census_data_path = args.census_data_path or ""
+    census_bdys_path = args.census_bdys_path or ""
+
     settings['max_concurrent_processes'] = args.max_processes
-    # settings['num_classes'] = args.num_classes
     settings['census_year'] = args.census_year
     # settings['states_to_load'] = args.states
     settings['states'] = ["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"]
     settings['data_schema'] = args.data_schema
     settings['boundary_schema'] = args.boundary_schema
     settings['web_schema'] = args.web_schema
-    settings['data_directory'] = args.census_data_path.replace("\\", "/")
-    settings['boundaries_local_directory'] = args.census_bdys_path.replace("\\", "/")
+    settings['data_directory'] = census_data_path.replace("\\", "/")
+    # if args.local_server_dir:
+    #     settings['data_pg_server_local_directory'] = args.local_server_dir.replace("\\", "/")
+    # else:
+    #     settings['data_pg_server_local_directory'] = settings['data_directory']
+    settings['boundaries_local_directory'] = census_bdys_path.replace("\\", "/")
+
+    # settings['num_classes'] = args.num_classes
 
     # create postgres connect string
     settings['pg_host'] = args.pghost or os.getenv("PGHOST", "localhost")
     settings['pg_port'] = args.pgport or os.getenv("PGPORT", 5432)
-    settings['pg_db'] = args.pgdb or os.getenv("PGDATABASE", "geo")
-    settings['pg_user'] = args.pguser or os.getenv("PGUSER", "postgres")
-    settings['pg_password'] = args.pgpassword or os.getenv("PGPASSWORD", "password")
+    settings['pg_db'] = args.pgdb or os.getenv("POSTGRES_USER", "geo")
+    settings['pg_user'] = args.pguser or os.getenv("POSTGRES_USER", "postgres")
+    settings['pg_password'] = args.pgpassword or os.getenv("POSTGRES_PASSWORD", "password")
 
     settings['pg_connect_string'] = "dbname='{0}' host='{1}' port='{2}' user='{3}' password='{4}'".format(
         settings['pg_db'], settings['pg_host'], settings['pg_port'], settings['pg_user'], settings['pg_password'])
@@ -734,6 +742,8 @@ def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_
     except:
         return "Importing {0} - Couldn't convert Shapefile to SQL".format(file_path)
 
+    print("SQL object is this long: {}".format(len(sql_obj)))
+    print("Error is: {}".format(err))
     # prep Shapefile SQL
     sql = sql_obj.decode("utf-8")  # this is required for Python 3
     sql = sql.replace("Shapefile type: ", "-- Shapefile type: ")
@@ -753,7 +763,7 @@ def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_
         pg_cur.execute(sql)
     except:
         # if import fails for some reason - output sql to file for debugging
-        target = open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test.sql'), "w")
+        target = open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fail_{}.sql'.format(pg_table)), "w")
         target.write(sql)
 
         return "\tImporting {0} - Couldn't run Shapefile SQL\nshp2pgsql result was: {1} ".format(file_path, err)

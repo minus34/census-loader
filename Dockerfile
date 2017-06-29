@@ -1,27 +1,18 @@
-FROM python:3.6
-MAINTAINER Grahame Bowland <grahame@angrygoats.net>
+FROM mdillon/postgis:9.6
+MAINTAINER Alex Leith <aleith@crcsi.com.au>
 
-RUN echo deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main > /etc/apt/sources.list.d/jessie-pgdg.list
-RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+# Do this first so it's cached
+RUN apt-get update && \
+	apt-get install -y python3 python3-pip \
+	python3-pandas python3-xlrd python3-psycopg2
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      postgresql-client-9.6 postgis && \
-  apt-get autoremove -y --purge && \
-  apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# Override these if necessary.
+ENV POSTGRES_USER=census
+ENV POSTGRES_PASSWORD=census
 
+COPY . /app
 WORKDIR /app
 
-RUN pip install psycopg2
-RUN pip install xlrd
-RUN pip install pandas
-
-RUN adduser --system --uid 1000 --shell /bin/bash loader
-#USER loader
-ENV HOME /app
-
-VOLUME ["/data"]
-COPY . /app
-
-# entrypoint shell script that by default starts runserver
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["loader"]
+# Launch the DB and wait until it is running
+RUN ls 
+RUN /app/docker-pg-loader.sh
