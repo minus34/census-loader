@@ -204,19 +204,19 @@ def get_boundary(zoom_level):
 
     if zoom_level < 7:
         boundary_name = "ste"
-        min_display_value = 80
+        min_display_value = 400
     elif zoom_level < 9:
         boundary_name = "sa4"
-        min_display_value = 40
+        min_display_value = 200
     elif zoom_level < 11:
         boundary_name = "sa3"
-        min_display_value = 20
+        min_display_value = 100
     elif zoom_level < 14:
         boundary_name = "sa2"
-        min_display_value = 15
+        min_display_value = 50
     elif zoom_level < 17:
         boundary_name = "sa1"
-        min_display_value = 10
+        min_display_value = 25
     else:
         boundary_name = "mb"
         min_display_value = 3
