@@ -77,16 +77,16 @@ When using the resulting data from this process - you will need to adhere to the
 
 ## Option 2 - Build the database in a docker environment
 
-__IMPORTANT: THIS IS UNTESTED__
-
 Create a Docker container with Census data and ASGS boundaries ready to go, so they can be deployed anywhere.
 
 ### Process
 1. Download [ABS Census 2016 CSV Files](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/2079.02016) or [ABS Census 2011 CSV Files](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login)
 2. Download [ABS 2016 ASGS boundaries](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/1270.0.55.001July%202016) or [ABS 2011 ASGS boundaries](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login) **IMPORTANT - download the ESRI Shapefile versions**
 3. Unzip Census data and ASGS boundaries in the data/ directory of this repository
-4. Run docker-compose: `docker-compose up`. The database will be built.
+4. Run docker-compose: `docker-compose up`. The database will be built and the webapp will be run.
 5. Use the constructed database as you wish.
+
+If you want only the db running, do `docker-compose up db`. If you want to view the webapp, navigate to `localhost`, or the docker machine IP on (if you're doing Docker the old way!).
 
 ## Option 3 - Load PG_DUMP Files
 Download Postgres dump files and restore them in your database.
