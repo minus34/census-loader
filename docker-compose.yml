@@ -1,11 +1,5 @@
 version: "2"
 services:
-  data:
-    image: python:3.6
-    volumes:
-      - ./:/app
-      - ./data:/data
-
   # shares volume with other images so we can use COPY
   db:
     build: .
@@ -14,8 +8,6 @@ services:
     environment:
       - POSTGRES_USER=census
       - POSTGRES_PASSWORD=census
-    volumes_from:
-      - data
 
   app:
     build:
