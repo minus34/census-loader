@@ -219,7 +219,7 @@ def get_boundary(zoom_level):
         min_display_value = 25
     else:
         boundary_name = "mb"
-        min_display_value = 3
+        min_display_value = 5
 
     return boundary_name, min_display_value
 
@@ -267,6 +267,35 @@ def get_decimal_places(zoom_level):
             trigger = "don't do anything else"  # used to cleanly exit the loop
 
     return places
+
+
+def get_min_max(data_table, boundary_table, stat_field, num_classes, min_val, map_type, pg_cur, settings):
+
+    # query to get min and max values (filter small populations that overly influence the map visualisation)
+    try:
+        # if map_type == "values":
+        sql = "SELECT MIN(%s) AS min, MAX(%s) AS max FROM %s AS tab " \
+              "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
+              "WHERE %s > 0 " \
+              "AND bdy.population > {1}" \
+            .format(settings['region_id_field'], float(min_val))
+
+        sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
+                                          AsIs(boundary_table), AsIs(stat_field)))
+
+        pg_cur.execute(sql_string)
+        row = pg_cur.fetchone()
+
+    except Exception as ex:
+        print("{0} - {1} Failed: {2}".format(data_table, stat_field, ex))
+        return list()
+
+    output_dict = {
+        "min": row["min"],
+        "max": row["max"]
+    }
+
+    return output_dict
 
 
 def get_kmeans_bins(data_table, boundary_table, stat_field, num_classes, min_val, map_type, pg_cur, settings):
@@ -324,44 +353,6 @@ def get_kmeans_bins(data_table, boundary_table, stat_field, num_classes, min_val
 
     return output_list
 
-
-def get_min_max(data_table, boundary_table, stat_field, num_classes, min_val, map_type, pg_cur, settings):
-
-    # query to get min and max values (filter small populations that overly influence the map visualisation)
-    try:
-        if map_type == "values":
-            sql = "SELECT MIN(%s) AS min, MAX(%s) AS max FROM %s AS tab " \
-                  "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
-                  "WHERE %s > 0 " \
-                  "AND bdy.population > {1}" \
-                .format(settings['region_id_field'], float(min_val))
-
-            sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
-                                              AsIs(boundary_table), AsIs(stat_field)))
-
-        else:  # map_type == "percent"
-            sql = "SELECT MIN(%s) AS min, MAX(%s) AS max FROM %s AS tab " \
-                  "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
-                  "WHERE %s > 0 AND %s < 100.0 " \
-                  "AND bdy.population > {1}" \
-                .format(settings['region_id_field'], float(min_val))
-
-            sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
-                                              AsIs(boundary_table), AsIs(stat_field), AsIs(stat_field)))
-
-        pg_cur.execute(sql_string)
-        row = pg_cur.fetchone()
-
-    except Exception as ex:
-        print("{0} - {1} Failed: {2}".format(data_table, stat_field, ex))
-        return list()
-
-    output_dict = {
-        "min": row["min"],
-        "max": row["max"]
-    }
-
-    return output_dict
 
 def get_equal_interval_bins(data_table, boundary_table, stat_field, num_classes, min_val, map_type, pg_cur, settings):
 
