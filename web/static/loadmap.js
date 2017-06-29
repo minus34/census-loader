@@ -93,7 +93,6 @@ function init() {
 
     // create colour ramp
     colourRamp = new Rainbow();
-    colourRamp.setNumberRange(1, numClasses);
     colourRamp.setSpectrum(colourRange[0], colourRange[1]);
 
     //Initialize the map on the "map" div - only use canvas if supported
@@ -166,15 +165,17 @@ function init() {
             if (props.population === 0) {
                 infoStr = "<h3>" + name + "</h3><span style='font-size: 1.1em; font-weight: bold'>no population";
             } else {
+                var valStr = props[currentStatId].toLocaleString(["en-AU"]);
+                var popStr = props.population.toLocaleString(["en-AU"]);
+
                 if (currentStat.maptype === "values") {
                     infoStr = "<h3>" + name + "</h3>" +
-                        "<span style='font-weight: bold'>" + currentStat.type + ": " + props[currentStatId].toLocaleString(["en-AU"]) + "</span><br/>" +
-                        "Persons: " + props.population.toLocaleString(["en-AU"]);
+                        "<span style='font-weight: bold'>" + currentStat.type + ": " + valStr + "</span><br/>Persons: " + popStr;
 
                 } else { // "percent"
                     infoStr = "<h3>" + name + "</h3>" +
                         "<span style='font-weight: bold'>" + currentStat.description + ": " + props.percent.toFixed(1).toLocaleString(["en-AU"]) + "%</span><br/>" +
-                        props[currentStatId].toLocaleString(["en-AU"]) + " of " + props.population.toLocaleString(["en-AU"]) + " persons ";
+                        valStr + " of " + popStr + " persons ";
                 }
             }
         } else {
@@ -190,16 +191,14 @@ function init() {
         this._div = L.DomUtil.create("div", "legend");
         L.DomEvent.disableScrollPropagation(this._div);
         L.DomEvent.disableClickPropagation(this._div);
-        // setLegendColours();
-        // this.update();
         return this._div;
     };
     legend.update = function () {
-        // var len = currentStat[currentBoundary].length,
-        //     min = stringNumber(currentStat[currentBoundary][0]),
-        //     max = stringNumber(currentStat[currentBoundary][len - 1]);
+        //format values
+        var minStr = stringNumber(currMapMin);
+        var maxStr = stringNumber(currMapMax);
 
-        this._div.innerHTML = "<div><table><tr><td>" + currMapMin + "</td><td class='colours' style='width: 15.0em'></td><td>" + currMapMax + "</td></tr></table></div>";
+        this._div.innerHTML = "<div><table><tr><td>" + minStr + "</td><td class='colours' style='width: 15.0em'></td><td>" + maxStr + "</td></tr></table></div>";
     };
 
     // add radio buttons to choose stat to theme the map
@@ -271,19 +270,6 @@ function init() {
     });
 }
 
-// function setLegendColours(){
-//     var styles = {
-//         opacity: 0.8,
-//         background: "-webkit-linear-gradient('left', '" + colourRange[0] + "', '" + colourRange[1] + "')", /* For Safari 5.1 to 6.0 */
-//         background: "-o-linear-gradient('right', '" + colourRange[0] + "', '" + colourRange[1] + "')", /* For Opera 11.1 to 12.0 */
-//         background: "-moz-linear-gradient('right', '" + colourRange[0] + "', '" + colourRange[1] + "')", /* For Firefox 3.6 to 15 */
-//         background: "linear-gradient('to right', '" + colourRange[0] + "', '" + colourRange[1] + "')" /* Standard syntax */
-//     };
-//
-//     $("#colours").css(styles);
-// }
-
-
 function setRadioButtons() {
     var radioButtons = "<h4>Active stat</h4>";
 
@@ -319,16 +305,19 @@ function stringNumber(val) {
     if (currentStat.maptype === "values") {
         // format number to nearest 100"s or 1000"s
         var len = val.toString().length - 2;
+        var valStr = val.toString();
 
-        if (len > 0) {
+        // only nultiply if an integer
+        if (len > 0 && valStr.substr(valStr.length - 2) == ".0") {
             var factor = Math.pow(10, len);
             numString = (Math.round(val / factor) * factor).toString();
         } else {
-            numString = val.toString();
+            console.log(val);
+            numString = val.toLocaleString(["en-AU"]);
         }
     } else { // i.e. "percent"
         //round percentages
-        numString = Math.round(val).toString() + "%";
+        numString = val.toFixed(1).toLocaleString(["en-AU"]) + "%";
     }
 
     return numString;
@@ -403,22 +392,32 @@ function gotData(json) {
 
         for (var i = 0; i < features.length; i++){
             var props = features[i].properties;
-            var val = 0;
 
-            if (currentStat.maptype === "values") {
-                val = props[currentStatId];
-            } else { // "percent"
-                val = props.percent;
-            }
+            // only include if pop is significant
+            if (props.population > currentBoundaryMin){ 
+                var val = 0;
 
-            if (val < currMapMin) { currMapMin = val }
-            if (val > currMapMax) { currMapMax = val }
+                if (currentStat.maptype === "values") {
+                    val = props[currentStatId];
+                } else { // "percent"
+                    val = props.percent;
+                }
+
+                if (val < currMapMin) { currMapMin = val }
+                if (val > currMapMax) { currMapMax = val }
+            }    
         }
 
         // correct max percents over 100% (where pop is less than stat, for whatever reason)
         if (currentStat.maptype === "percent" && currMapMax > 100.0) { currMapMax = 100.0 }
 
-        //update the legend with the new stat min and max
+        // set the number range for the colour gradient (allow for decimals, convert to ints)
+        var minInt = parseInt(currMapMin.toFixed(1).toString().replace(".",""));
+        var maxInt = parseInt(currMapMax.toFixed(1).toString().replace(".",""));
+
+        colourRamp.setNumberRange(minInt, maxInt);
+
+        //update the legend with the new min and max
         legend.update();
 
         // console.log(currMapMin);
@@ -441,9 +440,9 @@ function style(feature) {
     var props = feature.properties;
 
     if (currentStat.maptype === "values") {
-        renderVal = parseInt(props[currentStatId]);
+        renderVal = props[currentStatId];
     } else {
-        renderVal = parseInt(props.percent);
+        renderVal = props.percent;
     }
 
     var col = getColor(renderVal, props.population);
@@ -458,29 +457,19 @@ function style(feature) {
 }
 
 // get color depending on ratio of count versus max value
-function getColor(d, pop) {
-    var classes = currentStat[currentBoundary];
+function getColor(val, pop) {
+    var colour = "";
 
-    // show generic gray if no population
-    if (pop === 0){
-        return "#422";
+    // show dark red/gray if low population (these can dominate the map)
+    if (pop <= currentBoundaryMin){
+        colour =  "#422";
     } else {
-        var colourNum = d > classes[6] ? 7 :
-                        d > classes[5] ? 6 :
-                        d > classes[4] ? 5 :
-                        d > classes[3] ? 4 :
-                        d > classes[2] ? 3 :
-                        d > classes[1] ? 2 :
-                                        1 ;
-
-        // override if population is low and colour class is near to top (i.e. a small pop is distorting the map)
-    //    if (pop <= currentBoundaryMin && colourNum > numClasses - 4) {
-        if (pop <= currentBoundaryMin && colourNum > 3) {
-            colourNum = colourNum - 3;
-        }
-
-        return "#" + colourRamp.colourAt(colourNum);
+        //convert value to int to get the right colour
+        var valInt = parseInt(val.toFixed(1).toString().replace(".",""));
+        colour = "#" + colourRamp.colourAt(valInt);
     }
+
+    return colour;
 }
 
 function onEachFeature(feature, layer) {
