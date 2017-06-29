@@ -31,7 +31,7 @@ import os
 import pandas  # module needs to be installed (IMPORTANT: need to install 'xlrd' module for Pandas to read .xlsx files)
 import psycopg2  # module needs to be installed
 import psycopg2.extensions
-import utils
+import web.utils as utils
 
 from datetime import datetime
 
@@ -69,7 +69,7 @@ def main():
     # test if ST_ClusterKMeans exists (only in PostGIS 2.3+). It's used to create classes to display the data in the map
     utils.check_postgis_version(pg_cur, settings, logger)
 
-    if not settings['st_clusterkmeans_supported']:
+    if not settings.get('st_clusterkmeans_supported'):
         logger.warning("YOU NEED TO INSTALL POSTGIS 2.3 OR HIGHER FOR THE MAP SERVER TO WORK\n"
                        "t utilises the ST_ClusterKMeans() function in v2.3+")
 
@@ -243,12 +243,15 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, setting
                     if "." in boundary:
                         boundary = "aust"
 
-                    file_dict = dict()
-                    file_dict["path"] = file_path
-                    file_dict["table"] = table
-                    file_dict["boundary"] = boundary
+                    file_dict = {
+                        "path": file_path,
+                        "table": table,
+                        "boundary": boundary,
+                        "name": file_name
+                    }
 
                     # if boundary == "ced":  # for testing
+                    print(file_dict)
                     file_list.append(file_dict)
 
     # are there any files to load?
@@ -278,12 +281,12 @@ def load_boundaries(pg_cur, settings):
 
     # get a dictionary of Shapefile paths
     for root, dirs, files in os.walk(settings['boundaries_local_directory']):
-        for file_name in files:
-            file_name = file_name.lower()
+        for original_file_name in files:
+            file_name = original_file_name.lower()
 
-            if file_name.endswith(".shp"):
+            if file_name.endswith(".shp") or file_name.endswith(".SHP"):
                 file_dict = dict()
-                file_dict['file_path'] = os.path.join(root, file_name)
+                file_dict['file_path'] = os.path.join(root, original_file_name)
 
                 if file_name.startswith("mb_"):
                     for state in settings['states']:

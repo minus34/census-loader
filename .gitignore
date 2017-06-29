@@ -90,3 +90,5 @@ ENV/
 .idea/
 /test.sql
 
+data/*
+fail*.sql
