@@ -17,6 +17,8 @@ var currentZoomLevel = 0;
 
 var statsArray = [];
 var currentStat;
+var currMapMin = 0;
+var currMapMax = 0;
 var boundaryZooms;
 var currentStats;
 var boundaryOverride = "";
@@ -193,11 +195,11 @@ function init() {
         return this._div;
     };
     legend.update = function () {
-        var len = currentStat[currentBoundary].length,
-            min = stringNumber(currentStat[currentBoundary][0]),
-            max = stringNumber(currentStat[currentBoundary][len - 1]);
+        // var len = currentStat[currentBoundary].length,
+        //     min = stringNumber(currentStat[currentBoundary][0]),
+        //     max = stringNumber(currentStat[currentBoundary][len - 1]);
 
-        this._div.innerHTML = "<div><table><tr><td>" + min + "</td><td class='colours' style='width: 15.0em'></td><td>" + max + "</td></tr></table></div>";
+        this._div.innerHTML = "<div><table><tr><td>" + currMapMin + "</td><td class='colours' style='width: 15.0em'></td><td>" + currMapMax + "</td></tr></table></div>";
     };
 
     // add radio buttons to choose stat to theme the map
@@ -341,9 +343,6 @@ function getData() {
     currentBoundary = boundaryZooms[currentZoomLevel.toString()].name;
     currentBoundaryMin = boundaryZooms[currentZoomLevel.toString()].min;
 
-    //update the legend with the new stat min and max
-    legend.update();
-
     //restrict to the zoom levels that have data
     if (currentZoomLevel < minZoom) {
         currentZoomLevel = minZoom;
@@ -396,6 +395,36 @@ function gotData(json) {
             geojsonLayer.clearLayers();
         }
 
+        // get min and max values
+        currMapMin = 999999999;
+        currMapMax = -999999999;
+
+        var features = json.features;
+
+        for (var i = 0; i < features.length; i++){
+            var props = features[i].properties;
+            var val = 0;
+
+            if (currentStat.maptype === "values") {
+                val = props[currentStatId];
+            } else { // "percent"
+                val = props.percent;
+            }
+
+            if (val < currMapMin) { currMapMin = val }
+            if (val > currMapMax) { currMapMax = val }
+        }
+
+        // correct max percents over 100% (where pop is less than stat, for whatever reason)
+        if (currentStat.maptype === "percent" && currMapMax > 100.0) { currMapMax = 100.0 }
+
+        //update the legend with the new stat min and max
+        legend.update();
+
+        // console.log(currMapMin);
+        // console.log(currMapMax);
+
+        // add data to map layer
         geojsonLayer = L.geoJson(json, {
             style : style,
             onEachFeature : onEachFeature
