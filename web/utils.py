@@ -105,7 +105,7 @@ def get_settings(args):
     #     settings['data_pg_server_local_directory'] = settings['data_directory']
     settings['boundaries_local_directory'] = census_bdys_path.replace("\\", "/")
 
-    settings['num_classes'] = args.num_classes
+    # settings['num_classes'] = args.num_classes
 
     # create postgres connect string
     settings['pg_host'] = args.pghost or os.getenv("PGHOST", "localhost")
