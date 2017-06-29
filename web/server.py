@@ -1,15 +1,10 @@
 
 import ast
 import json
-# import math
-# import os
 import psycopg2
-
-# import sys
 import utils
 
 from datetime import datetime
-
 from contextlib import contextmanager
 
 from flask import Flask
@@ -162,15 +157,6 @@ def get_metadata():
     response_dict["type"] = "StatsCollection"
     response_dict["classes"] = num_classes
 
-    # output_array = list()
-
-    # # get metadata for all boundaries (done in one go for frontend performance)
-    # for boundary_name in boundary_names:
-    #     output_dict = dict()
-    #     output_dict["boundary"] = boundary_name
-    #
-    #     boundary_table = "{0}.{1}".format(settings["web_schema"], boundary_name)
-
     feature_array = list()
 
     # For each row returned assemble a dictionary
@@ -193,8 +179,10 @@ def get_metadata():
                     stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END" \
                         .format(feature_dict["id"], )
 
+                # get range of stat values
                 # feature_dict[boundary_name] = utils.get_equal_interval_bins(
-                feature_dict[boundary["name"]] = utils.get_kmeans_bins(
+                # feature_dict[boundary["name"]] = utils.get_kmeans_bins(
+                feature_dict[boundary["name"]] = utils.get_min_max(
                     data_table, boundary_table, stat_field, num_classes, boundary["min"], feature_dict["maptype"],
                     pg_cur, settings)
 
@@ -217,7 +205,7 @@ def get_metadata():
 @app.route("/get-data")
 def get_data():
     full_start_time = datetime.now()
-    start_time = datetime.now()
+    # start_time = datetime.now()
 
     # Get parameters from querystring
 
@@ -240,8 +228,8 @@ def get_data():
     display_zoom = str(zoom_level).zfill(2)
 
     with get_db_cursor() as pg_cur:
-        print("Connected to database in {0}".format(datetime.now() - start_time))
-        start_time = datetime.now()
+        # print("Connected to database in {0}".format(datetime.now() - start_time))
+        # start_time = datetime.now()
 
         # envelope_sql = "ST_MakeEnvelope({0}, {1}, {2}, {3}, 4283)".format(map_left, map_bottom, map_right, map_top)
         # geom_sql = "geojson_{0}".format(display_zoom)
@@ -271,8 +259,8 @@ def get_data():
         # Get the column names returned
         col_names = [desc[0] for desc in pg_cur.description]
 
-    print("Got records from Postgres in {0}".format(datetime.now() - start_time))
-    start_time = datetime.now()
+    # print("Got records from Postgres in {0}".format(datetime.now() - start_time))
+    # start_time = datetime.now()
 
     # output is the main content, row_output is the content from each record returned
     output_dict = dict()
@@ -307,8 +295,8 @@ def get_data():
     # Assemble the GeoJSON
     output_dict["features"] = feature_array
 
-    print("Parsed records into JSON in {1}".format(i, datetime.now() - start_time))
-    print("Returned {0} records  {1}".format(i, datetime.now() - full_start_time))
+    # print("Parsed records into JSON in {1}".format(i, datetime.now() - start_time))
+    print("get-data: returned {0} records  {1}".format(i, datetime.now() - full_start_time))
 
     return Response(json.dumps(output_dict), mimetype='application/json')
 
