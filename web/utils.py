@@ -404,7 +404,7 @@ def get_equal_count_bins(data_table, boundary_table, stat_field, num_classes, ma
             sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
                                               AsIs(boundary_table), AsIs(stat_field), AsIs(stat_field)))
 
-        print(sql_string)
+        # print(sql_string)
 
         pg_cur.execute(sql_string)
         rows = pg_cur.fetchall()
@@ -742,8 +742,9 @@ def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_
     except:
         return "Importing {0} - Couldn't convert Shapefile to SQL".format(file_path)
 
-    print("SQL object is this long: {}".format(len(sql_obj)))
-    print("Error is: {}".format(err))
+    # print("SQL object is this long: {}".format(len(sql_obj)))
+    # print("Error is: {}".format(err))
+
     # prep Shapefile SQL
     sql = sql_obj.decode("utf-8")  # this is required for Python 3
     sql = sql.replace("Shapefile type: ", "-- Shapefile type: ")

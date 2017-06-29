@@ -71,7 +71,7 @@ def main():
 
     if not settings.get('st_clusterkmeans_supported'):
         logger.warning("YOU NEED TO INSTALL POSTGIS 2.3 OR HIGHER FOR THE MAP SERVER TO WORK\n"
-                       "t utilises the ST_ClusterKMeans() function in v2.3+")
+                       "it utilises the ST_ClusterKMeans() function in v2.3+")
 
     # START LOADING DATA
 
@@ -251,7 +251,7 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, setting
                     }
 
                     # if boundary == "ced":  # for testing
-                    print(file_dict)
+                    # print(file_dict)
                     file_list.append(file_dict)
 
     # are there any files to load?
