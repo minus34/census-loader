@@ -27,7 +27,7 @@ var currentStatId = "";
 
 var highlightColour = "#ffff00";
 var colourRamp;
-var colourRange = ["#1a1a1a", "#e45427"]; // dark grey > orange/red
+var colourRange = ["#1f1f1f", "#e45427"]; // dark grey > orange/red
 //var colourRange = ["#1a1a1a", "#DD4132"]; // dark grey > red
 //var colourRange = ["#1a1a1a", "#92B558"]; // dark grey > green
 
@@ -157,7 +157,7 @@ function init() {
 
         if (props) {
             // improve the formatting of multi-name bdys
-            var re = new RegExp(" - ", 'g');
+            var re = new RegExp(" - ", "g");
             var name = props.name.replace(re, "<br/>");
 
             // if no pop, nothing to display
@@ -188,6 +188,7 @@ function init() {
         this._div = L.DomUtil.create("div", "legend");
         L.DomEvent.disableScrollPropagation(this._div);
         L.DomEvent.disableClickPropagation(this._div);
+        // setLegendColours();
         // this.update();
         return this._div;
     };
@@ -267,6 +268,19 @@ function init() {
         setRadioButtons();
     });
 }
+
+// function setLegendColours(){
+//     var styles = {
+//         opacity: 0.8,
+//         background: "-webkit-linear-gradient('left', '" + colourRange[0] + "', '" + colourRange[1] + "')", /* For Safari 5.1 to 6.0 */
+//         background: "-o-linear-gradient('right', '" + colourRange[0] + "', '" + colourRange[1] + "')", /* For Opera 11.1 to 12.0 */
+//         background: "-moz-linear-gradient('right', '" + colourRange[0] + "', '" + colourRange[1] + "')", /* For Firefox 3.6 to 15 */
+//         background: "linear-gradient('to right', '" + colourRange[0] + "', '" + colourRange[1] + "')" /* Standard syntax */
+//     };
+//
+//     $("#colours").css(styles);
+// }
+
 
 function setRadioButtons() {
     var radioButtons = "<h4>Active stat</h4>";
