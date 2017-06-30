@@ -42,11 +42,10 @@ var querystring = location.search.replace("?", "").split("&");
 var queryObj = {};
 
 // loop through each name-value pair and populate object
-for (var i = 0; i < querystring.length; i++) {
+var i;
+for (i = 0; i < querystring.length; i+=1) {
     // get name and value
-    var name = querystring[i].split("=")[0];
-    // populate object
-    queryObj[name] = querystring[i].split("=")[1];
+    queryObj[querystring[i].split("=")[0]] = querystring[i].split("=")[1];
 }
 
 //// get/set values from querystring
@@ -60,15 +59,15 @@ for (var i = 0; i < querystring.length; i++) {
 // get/set values from querystring
 
 // auto-boundary override (for screenshots only! will create performance issues. e.g showing SA1"s nationally!)
-if (queryObj["b"] !== undefined) {
-    boundaryOverride = queryObj["b"].toLowerCase();
+if (queryObj.b !== undefined) {
+    boundaryOverride = queryObj.b.toLowerCase();
 }
 
 // start zoom level
-if (!queryObj["z"]) {
+if (!queryObj.z) {
     currentZoomLevel = 11;
 } else {
-    currentZoomLevel = queryObj["z"];
+    currentZoomLevel = queryObj.z;
 }
 
 //// number of classes to theme the map - TODO: ADD SUPPORT FOR CUSTOM NUMBER OF MAP CLASSES
@@ -79,11 +78,11 @@ if (!queryObj["z"]) {
 //}
 
 // get the stat(s) - can include basic equations using + - * / and ()  e.g. B23 * (B45 + B678)
-if (!queryObj["stats"]) {
+if (!queryObj.stats) {
     statsArray = ["b3", "b1", "b2"]; // total_persons
 
 } else {
-    statsArray = encodeURIComponent(queryObj["stats"].toLowerCase()).split("%2C");
+    statsArray = encodeURIComponent(queryObj.stats.toLowerCase()).split("%2C");
     // TODO: handle maths operators as well as plain stats
 }
 
@@ -179,7 +178,7 @@ function init() {
                 }
             }
         } else {
-            infoStr ="pick a boundary"
+            infoStr ="pick a boundary";
         }
 
         this._div.innerHTML = infoStr;
@@ -246,11 +245,12 @@ function init() {
         } else {
             // create array of zoom levels with the override boundary id
             boundaryZooms = {};
-            for (var j = minZoom; j <= maxZoom; j++) {
-                var boundary = {};
-                boundary["name"] = boundaryOverride;
-                boundary["min"] = currentBoundaryMin;
-                boundaryZooms[j] = boundary;
+            var j;
+            for (j = minZoom; j <= maxZoom; j+=1) {
+                boundaryZooms[j] = {
+                    name: boundaryOverride,
+                    min: currentBoundaryMin
+                };
             }
         }
 
@@ -308,7 +308,7 @@ function stringNumber(val) {
         var valStr = val.toString();
 
         // only nultiply if an integer
-        if (len > 0 && valStr.substr(valStr.length - 2) == ".0") {
+        if (len > 0 && valStr.substr(valStr.length - 2) === ".0") {
             var factor = Math.pow(10, len);
             numString = (Math.round(val / factor) * factor).toString();
         } else {
@@ -394,7 +394,7 @@ function gotData(json) {
             var props = features[i].properties;
 
             // only include if pop is significant
-            if (props.population > currentBoundaryMin){ 
+            if (props.population > currentBoundaryMin){
                 var val = 0;
 
                 if (currentStat.maptype === "values") {
@@ -405,7 +405,7 @@ function gotData(json) {
 
                 if (val < currMapMin) { currMapMin = val }
                 if (val > currMapMax) { currMapMax = val }
-            }    
+            }
         }
 
         // correct max percents over 100% (where pop is less than stat, for whatever reason)

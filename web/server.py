@@ -72,12 +72,12 @@ def homepage():
 @app.route("/get-bdy-names")
 def get_boundary_name():
     # Get parameters from querystring
-    min = int(request.args.get('min'))
-    max = int(request.args.get('max'))
+    min_val = int(request.args.get('min'))
+    max_val = int(request.args.get('max'))
 
     boundary_zoom_dict = dict()
 
-    for zoom_level in range(min, max + 1):
+    for zoom_level in range(min_val, max_val + 1):
         boundary_dict = dict()
         boundary_dict["name"], boundary_dict["min"] = utils.get_boundary(zoom_level)
         boundary_zoom_dict["{0}".format(zoom_level)] = boundary_dict
@@ -136,8 +136,10 @@ def get_metadata():
           "lower(table_number) AS \"table\", " \
           "replace(long_id, '_', ' ') AS description, " \
           "column_heading_description AS type, " \
-          "CASE WHEN lower(sequential_id) = 'b3' OR lower(long_id) LIKE '%%median%%' OR lower(long_id) " \
-          "LIKE '%%average%%' THEN 'values' " \
+          "CASE WHEN lower(sequential_id) = 'b3' " \
+          "OR lower(long_id) LIKE '%%median%%' " \
+          "OR lower(long_id) LIKE '%%average%%' " \
+          "THEN 'values' " \
           "ELSE 'percent' END AS maptype " \
           "FROM {0}.metadata_stats " \
           "WHERE lower(sequential_id) IN %s " \
