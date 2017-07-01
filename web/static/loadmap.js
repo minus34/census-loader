@@ -160,22 +160,27 @@ function init() {
             var re = new RegExp(" - ", "g");
             var name = props.name.replace(re, "<br/>");
 
-            infoStr = "<h3>" + name + "</h3>";
+            infoStr = "<span style='font-weight: bold; font-size:1.5em'>" + name + "</span><br/>";
 
             // if no pop, nothing to display
             if (props.population === 0) {
-                infoStr += "<span style='font-size: 1.1em; font-weight: bold'>no population";
+                infoStr += "<span class='highlight' style='line-height: 3em; background:" + colour + "'>no population</span>";
             } else {
                 var valStr = props[currentStatId].toLocaleString(["en-AU"]);
-                var popStr = props.population.toLocaleString(["en-AU"]);
+                var popStr = props.population.toLocaleString(["en-AU"]) + " persons";
 
-                infoStr += "<div class='highlight' style='background:" + colour + "'>"
+                infoStr += "<span class='highlight' style='background:" + colour + "'>"
 
                 if (currentStat.maptype === "values") {
-                    infoStr += currentStat.type + ": " + valStr + "</div><br/>Persons: " + popStr;
+                    infoStr += currentStat.type + ": " + valStr + "</span><br/>" + popStr;
 
                 } else { // "percent"
-                    infoStr += currentStat.description + ": " + props.percent.toFixed(1).toLocaleString(["en-AU"]) + "%</div><br/>" + valStr + " of " + popStr + " persons ";
+                    infoStr += currentStat.description + ": " + props.percent.toFixed(1).toLocaleString(["en-AU"]) + "%</span><br/>" + valStr + " of " + popStr;
+                }
+
+                // add note for low populations
+                if (props.population <= currentBoundaryMin) {
+                    infoStr += " (low pop. area)"
                 }
             }
         } else {
