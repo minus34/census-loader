@@ -164,7 +164,7 @@ function init() {
 
             // if no pop, nothing to display
             if (props.population === 0) {
-                infoStr += "<span class='highlight' style='line-height: 3em; background:" + colour + "'>no population</span>";
+                infoStr += "<span class='highlight' style='background:" + colour + "'>no population</span>";
             } else {
                 var valStr = props[currentStatId].toLocaleString(["en-AU"]);
                 var popStr = props.population.toLocaleString(["en-AU"]) + " persons";
@@ -189,22 +189,6 @@ function init() {
 
         this._div.innerHTML = infoStr;
     };
-
-    // //Create a legend control
-    // legend = L.control({ position: "topright" });
-    // legend.onAdd = function () {
-    //     this._div = L.DomUtil.create("div", "legend");
-    //     L.DomEvent.disableScrollPropagation(this._div);
-    //     L.DomEvent.disableClickPropagation(this._div);
-    //     return this._div;
-    // };
-    // legend.update = function () {
-    //     //format values
-    //     var minStr = stringNumber(currMapMin);
-    //     var maxStr = stringNumber(currMapMax);
-
-    //     this._div.innerHTML = "<div><table><tr><td>" + minStr + "</td><td class='colours' style='width: 15.0em'></td><td>" + maxStr + "</td></tr></table></div>";
-    // };
 
     // add radio buttons to choose stat to theme the map
     themer = L.control({
