@@ -180,7 +180,8 @@ function init() {
 
                 // add note for low populations
                 if (props.population <= currentBoundaryMin) {
-                    infoStr += " (low pop. area)"
+                    // infoStr += " (low pop. area)"
+                    infoStr += "<br/><span class='highlight' style='background:" + colour + "'>low population</span>";
                 }
             }
         } else {
