@@ -6,7 +6,7 @@ var dataUrl = "../get-data";
 
 var map;
 var info;
-var legend;
+// var legend;
 var themer;
 var geojsonLayer;
 
@@ -184,21 +184,21 @@ function init() {
         this._div.innerHTML = infoStr;
     };
 
-    //Create a legend control
-    legend = L.control({ position: "topright" });
-    legend.onAdd = function () {
-        this._div = L.DomUtil.create("div", "legend");
-        L.DomEvent.disableScrollPropagation(this._div);
-        L.DomEvent.disableClickPropagation(this._div);
-        return this._div;
-    };
-    legend.update = function () {
-        //format values
-        var minStr = stringNumber(currMapMin);
-        var maxStr = stringNumber(currMapMax);
+    // //Create a legend control
+    // legend = L.control({ position: "topright" });
+    // legend.onAdd = function () {
+    //     this._div = L.DomUtil.create("div", "legend");
+    //     L.DomEvent.disableScrollPropagation(this._div);
+    //     L.DomEvent.disableClickPropagation(this._div);
+    //     return this._div;
+    // };
+    // legend.update = function () {
+    //     //format values
+    //     var minStr = stringNumber(currMapMin);
+    //     var maxStr = stringNumber(currMapMax);
 
-        this._div.innerHTML = "<div><table><tr><td>" + minStr + "</td><td class='colours' style='width: 15.0em'></td><td>" + maxStr + "</td></tr></table></div>";
-    };
+    //     this._div.innerHTML = "<div><table><tr><td>" + minStr + "</td><td class='colours' style='width: 15.0em'></td><td>" + maxStr + "</td></tr></table></div>";
+    // };
 
     // add radio buttons to choose stat to theme the map
     themer = L.control({
@@ -259,28 +259,30 @@ function init() {
         getCurrentStatMetadata();
 
         // show legend and info controls
-        legend.addTo(map);
+        // legend.addTo(map);
         info.addTo(map);
 
         // get the first lot of data
         getData();
-
-        // create the radio buttons
-        setRadioButtons();
     });
 }
 
 function setRadioButtons() {
-    var radioButtons = "<h4>Active stat</h4>";
+    // var radioButtons = "<h4>Active stat</h4>";
+    var radioButtons = "";
 
     for (var i = 0; i < currentStats.length; i++){
         var value = currentStats[i].id;
         var description = currentStats[i].description;
 
         if (value === currentStatId) {
+            //format values
+            var minStr = stringNumber(currMapMin);
+            var maxStr = stringNumber(currMapMax);
+
             radioButtons += "<div><input id='r" + i.toString() + "' type='radio' name='stat' value='" + value +
-                "' checked='checked'><label for='r" + i.toString() + "'><span><span></span></span>" + description +
-                "</label></div>";
+                "' checked='checked'><label for='r" + i.toString() + "'><span><span></span></span>" + description + "</label>" +
+                "<div style='padding: 0.2em 0em 0.6em 1.8em'><table class='colours' ><tr><td>" + minStr + "</td><td style='width: 10em'></td><td>" + maxStr + "</td></tr></table></div></div>";
         } else {
             radioButtons += "<div><input id='r" + i.toString() + "' type='radio' name='stat' value='" + value +
                 "'><label for='r" + i.toString() + "'><span><span></span></span>" + description + "</label></div>";
@@ -418,7 +420,10 @@ function gotData(json) {
         colourRamp.setNumberRange(minInt, maxInt);
 
         //update the legend with the new min and max
-        legend.update();
+        // legend.update();
+
+        // create the radio buttons
+        setRadioButtons();
 
         // console.log(currMapMin);
         // console.log(currMapMax);

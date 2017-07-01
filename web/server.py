@@ -237,6 +237,7 @@ def get_data():
         # geom_sql = "geojson_{0}".format(display_zoom)
 
         # build SQL with SQL injection protection
+        # yes, this is ridiculous - if someone can find a shorthand way of doing this then great!
         sql_template = "SELECT bdy.id, bdy.name, bdy.population, tab.%s / bdy.area AS density, " \
               "CASE WHEN bdy.population > 0 THEN tab.%s / bdy.population * 100.0 ELSE 0 END AS percent, " \
               "tab.%s, geojson_%s AS geometry " \
@@ -250,7 +251,6 @@ def get_data():
                                             AsIs(map_bottom), AsIs(map_right), AsIs(map_top)))
 
         try:
-            # yes, this is ridiculous - if someone can find a shorthand way of doing this then great!
             pg_cur.execute(sql)
         except psycopg2.Error:
             return "I can't SELECT:<br/><br/>" + str(sql)
