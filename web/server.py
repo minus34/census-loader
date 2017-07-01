@@ -167,26 +167,27 @@ def get_metadata():
         feature_dict["id"] = feature_dict["id"].lower()
         feature_dict["table"] = feature_dict["table"].lower()
 
-        for boundary in boundary_names:
-            boundary_table = "{0}.{1}".format(settings["web_schema"], boundary["name"])
-
-            data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary["name"], feature_dict["table"])
-
-            # get the values for the map classes
-            with get_db_cursor() as pg_cur:
-                if feature_dict["maptype"] == "values":
-                    stat_field = "tab.{0}" \
-                        .format(feature_dict["id"], )
-                else:  # feature_dict["maptype"] == "percent"
-                    stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END" \
-                        .format(feature_dict["id"], )
-
-                # get range of stat values
-                # feature_dict[boundary_name] = utils.get_equal_interval_bins(
-                # feature_dict[boundary["name"]] = utils.get_kmeans_bins(
-                feature_dict[boundary["name"]] = utils.get_min_max(
-                    data_table, boundary_table, stat_field, num_classes, boundary["min"], feature_dict["maptype"],
-                    pg_cur, settings)
+        # # get ranges of stat values per boundary type
+        # for boundary in boundary_names:
+        #     boundary_table = "{0}.{1}".format(settings["web_schema"], boundary["name"])
+        #
+        #     data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary["name"], feature_dict["table"])
+        #
+        #     # get the values for the map classes
+        #     with get_db_cursor() as pg_cur:
+        #         if feature_dict["maptype"] == "values":
+        #             stat_field = "tab.{0}" \
+        #                 .format(feature_dict["id"], )
+        #         else:  # feature_dict["maptype"] == "percent"
+        #             stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END" \
+        #                 .format(feature_dict["id"], )
+        #
+        #         # get range of stat values
+        #         # feature_dict[boundary_name] = utils.get_equal_interval_bins(
+        #         # feature_dict[boundary["name"]] = utils.get_kmeans_bins(
+        #         feature_dict[boundary["name"]] = utils.get_min_max(
+        #             data_table, boundary_table, stat_field, num_classes, boundary["min"], feature_dict["maptype"],
+        #             pg_cur, settings)
 
         # add dict to output array of metadata
         feature_array.append(feature_dict)
@@ -237,6 +238,7 @@ def get_data():
         # geom_sql = "geojson_{0}".format(display_zoom)
 
         # build SQL with SQL injection protection
+        # yes, this is ridiculous - if someone can find a shorthand way of doing this then great!
         sql_template = "SELECT bdy.id, bdy.name, bdy.population, tab.%s / bdy.area AS density, " \
               "CASE WHEN bdy.population > 0 THEN tab.%s / bdy.population * 100.0 ELSE 0 END AS percent, " \
               "tab.%s, geojson_%s AS geometry " \
@@ -250,7 +252,6 @@ def get_data():
                                             AsIs(map_bottom), AsIs(map_right), AsIs(map_top)))
 
         try:
-            # yes, this is ridiculous - if someone can find a shorthand way of doing this then great!
             pg_cur.execute(sql)
         except psycopg2.Error:
             return "I can't SELECT:<br/><br/>" + str(sql)

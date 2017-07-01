@@ -6,7 +6,7 @@ var dataUrl = "../get-data";
 
 var map;
 var info;
-var legend;
+// var legend;
 var themer;
 var geojsonLayer;
 
@@ -28,6 +28,7 @@ var currentBoundaryMin = 7;
 var currentStatId = "";
 
 var highlightColour = "#ffff00";
+var lowPopColour = "#422";
 var colourRamp;
 var colourRange = ["#1f1f1f", "#e45427"]; // dark grey > orange/red
 //var colourRange = ["#1a1a1a", "#DD4132"]; // dark grey > red
@@ -94,9 +95,8 @@ function init() {
     colourRamp = new Rainbow();
     colourRamp.setSpectrum(colourRange[0], colourRange[1]);
 
-    //Initialize the map on the "map" div - only use canvas if supported
+    //Initialize the map on the "map" div - only use canvas if supported (can be slow on Safari)
     var elem = document.createElement("canvas");
-
     if (elem.getContext && elem.getContext("2d")) {
         map = new L.Map("map", { preferCanvas: true });
     } else {
@@ -152,7 +152,7 @@ function init() {
         this.update();
         return this._div;
     };
-    info.update = function (props) {
+    info.update = function (props, colour) {
         var infoStr;
 
         if (props) {
@@ -160,21 +160,27 @@ function init() {
             var re = new RegExp(" - ", "g");
             var name = props.name.replace(re, "<br/>");
 
+            infoStr = "<span style='font-weight: bold; font-size:1.5em'>" + name + "</span><br/>";
+
             // if no pop, nothing to display
             if (props.population === 0) {
-                infoStr = "<h3>" + name + "</h3><span style='font-size: 1.1em; font-weight: bold'>no population";
+                infoStr += "<span class='highlight' style='background:" + colour + "'>no population</span>";
             } else {
                 var valStr = props[currentStatId].toLocaleString(["en-AU"]);
-                var popStr = props.population.toLocaleString(["en-AU"]);
+                var popStr = props.population.toLocaleString(["en-AU"]) + " persons";
+
+                infoStr += "<span class='highlight' style='background:" + colour + "'>"
 
                 if (currentStat.maptype === "values") {
-                    infoStr = "<h3>" + name + "</h3>" +
-                        "<span style='font-weight: bold'>" + currentStat.type + ": " + valStr + "</span><br/>Persons: " + popStr;
+                    infoStr += currentStat.type + ": " + valStr + "</span><br/>" + popStr;
 
                 } else { // "percent"
-                    infoStr = "<h3>" + name + "</h3>" +
-                        "<span style='font-weight: bold'>" + currentStat.description + ": " + props.percent.toFixed(1).toLocaleString(["en-AU"]) + "%</span><br/>" +
-                        valStr + " of " + popStr + " persons ";
+                    infoStr += currentStat.description + ": " + props.percent.toFixed(1).toLocaleString(["en-AU"]) + "%</span><br/>" + valStr + " of " + popStr;
+                }
+
+                // add note for low populations
+                if (props.population <= currentBoundaryMin) {
+                    infoStr += " (low pop. area)"
                 }
             }
         } else {
@@ -182,22 +188,6 @@ function init() {
         }
 
         this._div.innerHTML = infoStr;
-    };
-
-    //Create a legend control
-    legend = L.control({ position: "topright" });
-    legend.onAdd = function () {
-        this._div = L.DomUtil.create("div", "legend");
-        L.DomEvent.disableScrollPropagation(this._div);
-        L.DomEvent.disableClickPropagation(this._div);
-        return this._div;
-    };
-    legend.update = function () {
-        //format values
-        var minStr = stringNumber(currMapMin);
-        var maxStr = stringNumber(currMapMax);
-
-        this._div.innerHTML = "<div><table><tr><td>" + minStr + "</td><td class='colours' style='width: 15.0em'></td><td>" + maxStr + "</td></tr></table></div>";
     };
 
     // add radio buttons to choose stat to theme the map
@@ -259,28 +249,30 @@ function init() {
         getCurrentStatMetadata();
 
         // show legend and info controls
-        legend.addTo(map);
+        // legend.addTo(map);
         info.addTo(map);
 
         // get the first lot of data
         getData();
-
-        // create the radio buttons
-        setRadioButtons();
     });
 }
 
 function setRadioButtons() {
-    var radioButtons = "<h4>Active stat</h4>";
+    // var radioButtons = "<h4>Active stat</h4>";
+    var radioButtons = "";
 
     for (var i = 0; i < currentStats.length; i++){
         var value = currentStats[i].id;
         var description = currentStats[i].description;
 
         if (value === currentStatId) {
+            //format values
+            var minStr = stringNumber(currMapMin);
+            var maxStr = stringNumber(currMapMax);
+
             radioButtons += "<div><input id='r" + i.toString() + "' type='radio' name='stat' value='" + value +
-                "' checked='checked'><label for='r" + i.toString() + "'><span><span></span></span>" + description +
-                "</label></div>";
+                "' checked='checked'><label for='r" + i.toString() + "'><span><span></span></span><b>" + description + "</b></label>" +
+                "<div style='padding: 0.2em 0em 0.6em 1.8em'><table class='colours' ><tr><td>" + minStr + "</td><td style='width: 10em'></td><td>" + maxStr + "</td></tr></table></div></div>";
         } else {
             radioButtons += "<div><input id='r" + i.toString() + "' type='radio' name='stat' value='" + value +
                 "'><label for='r" + i.toString() + "'><span><span></span></span>" + description + "</label></div>";
@@ -418,7 +410,10 @@ function gotData(json) {
         colourRamp.setNumberRange(minInt, maxInt);
 
         //update the legend with the new min and max
-        legend.update();
+        // legend.update();
+
+        // create the radio buttons
+        setRadioButtons();
 
         // console.log(currMapMin);
         // console.log(currMapMax);
@@ -462,7 +457,7 @@ function getColor(val, pop) {
 
     // show dark red/gray if low population (these can dominate the map)
     if (pop <= currentBoundaryMin){
-        colour =  "#422";
+        colour =  lowPopColour;
     } else {
         //convert value to int to get the right colour
         var valInt = parseInt(val.toFixed(1).toString().replace(".",""));
@@ -476,14 +471,12 @@ function onEachFeature(feature, layer) {
     layer.on({
         mouseover : highlightFeature,
         mouseout : resetHighlight
-//        onclick : zoomToFeature
+        // click : zoomToFeature
     });
 }
 
 function highlightFeature(e) {
     var layer = e.target;
-
-    // console.log(layer);
 
     layer.setStyle({
         weight : 2.5,
@@ -495,7 +488,7 @@ function highlightFeature(e) {
     layer.bringToFront();
 //    }
 
-    info.update(layer.feature.properties);
+    info.update(layer.feature.properties, layer.options.fillColor);
 }
 
 function resetHighlight(e) {
@@ -503,6 +496,6 @@ function resetHighlight(e) {
     info.update();
 }
 
-//function zoomToFeature(e) {
+// function zoomToFeature(e) {
 //    map.fitBounds(e.target.getBounds());
-//}
+// }
