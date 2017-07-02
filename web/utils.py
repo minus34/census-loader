@@ -133,6 +133,11 @@ def get_settings(args):
         settings['bdy_name_part'] = 3  # position in the data file name that equals it's census boundary name
         settings['region_id_field'] = "aus_code_2016"
 
+        settings['population_stat'] = "g3"
+        settings['population_table'] = "g01"
+        settings['indigenous_population_stat'] = "i3"
+        settings['indigenous_population_table'] = "i01a"
+
         settings['bdy_table_dicts'] = \
             [{"boundary": "add", "id_field": "add_code16", "name_field": "add_name16", "area_field": "areasqkm16"},
              {"boundary": "ced", "id_field": "ced_code16", "name_field": "ced_name16", "area_field": "areasqkm16"},
@@ -170,6 +175,11 @@ def get_settings(args):
         settings['table_name_part'] = 1  # position in the data file name that equals it's destination table name
         settings['bdy_name_part'] = 3  # position in the data file name that equals it's census boundary name
         settings['region_id_field'] = "region_id"
+
+        settings['population_stat'] = "b3"
+        settings['population_table'] = "b01"
+        settings['indigenous_population_stat'] = "i3"
+        settings['indigenous_population_table'] = "i01a"
 
         settings['bdy_table_dicts'] = \
             [{"boundary": "ced", "id_field": "ced_code", "name_field": "ced_name", "area_field": "area_sqkm"},

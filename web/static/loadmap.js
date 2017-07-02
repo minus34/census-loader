@@ -164,23 +164,25 @@ function init() {
 
             // if no pop, nothing to display
             if (props.population === 0) {
-                infoStr += "<span class='highlight' style='background:" + colour + "'>no population</span>";
+                infoStr += "<span class='highlight' style='background:" + lowPopColour + "'>no population</span>";
             } else {
-                var valStr = props[currentStatId].toLocaleString(["en-AU"]);
-                var popStr = props.population.toLocaleString(["en-AU"]) + " persons";
+                var type = currentStat.type;
+                var valStr = stringNumber(props[currentStatId], "values", type);
+                var popStr = stringNumber(props.population, "values", "dummy") + " persons";
 
-                infoStr += "<span class='highlight' style='background:" + colour + "'>"
 
                 if (currentStat.maptype === "values") {
-                    infoStr += currentStat.type + ": " + valStr + "</span><br/>" + popStr;
-
+                    var colour = getColor(props[currentStatId], 99999999); //dummy second value get's the right colour
+                    infoStr += "<span class='highlight' style='background:" + colour + "'>" + type + ": " + valStr + "</span><br/>" + popStr;
                 } else { // "percent"
-                    infoStr += currentStat.description + ": " + props.percent.toFixed(1).toLocaleString(["en-AU"]) + "%</span><br/>" + valStr + " of " + popStr;
+                    var colour = getColor(props.percent, 99999999); //dummy second value get's the right colour
+                    var percentStr = stringNumber(props.percent, "percent", type);
+                    infoStr += "<span class='highlight' style='background:" + colour + "'>" + currentStat.description + ": " + percentStr + "</span><br/>" + valStr + " of " + popStr;
                 }
 
-                // add note for low populations
+                // highlight low population bdys
                 if (props.population <= currentBoundaryMin) {
-                    infoStr += " (low pop. area)"
+                    infoStr += "<br/><span class='highlight' style='background:" + lowPopColour + "'>low population</span>";
                 }
             }
         } else {
@@ -264,11 +266,13 @@ function setRadioButtons() {
     for (var i = 0; i < currentStats.length; i++){
         var value = currentStats[i].id;
         var description = currentStats[i].description;
+        var type = currentStats[i].type;
 
         if (value === currentStatId) {
             //format values
-            var minStr = stringNumber(currMapMin);
-            var maxStr = stringNumber(currMapMax);
+            var mapType = currentStats[i].maptype;
+            var minStr = stringNumber(currMapMin, mapType, type);
+            var maxStr = stringNumber(currMapMax, mapType, type);
 
             radioButtons += "<div><input id='r" + i.toString() + "' type='radio' name='stat' value='" + value +
                 "' checked='checked'><label for='r" + i.toString() + "'><span><span></span></span><b>" + description + "</b></label>" +
@@ -277,7 +281,7 @@ function setRadioButtons() {
             radioButtons += "<div><input id='r" + i.toString() + "' type='radio' name='stat' value='" + value +
                 "'><label for='r" + i.toString() + "'><span><span></span></span>" + description + "</label></div>";
         }
-     }
+    }
 
     themer.update(radioButtons);
 }
@@ -291,20 +295,14 @@ function getCurrentStatMetadata() {
     }
 }
 
-function stringNumber(val) {
+function stringNumber(val, mapType, type) {
     var numString = "";
 
-    if (currentStat.maptype === "values") {
-        // format number to nearest 100"s or 1000"s
-        var len = val.toString().length - 2;
-        var valStr = val.toString();
-
-        // only nultiply if an integer
-        if (len > 0 && valStr.substr(valStr.length - 2) === ".0") {
-            var factor = Math.pow(10, len);
-            numString = (Math.round(val / factor) * factor).toString();
+    if (mapType === "values") {
+        //add dollar sign
+        if (type.indexOf("$/") !== -1) {
+            numString = "$" + val.toLocaleString(["en-AU"]);
         } else {
-            console.log(val);
             numString = val.toLocaleString(["en-AU"]);
         }
     } else { // i.e. "percent"
@@ -488,7 +486,7 @@ function highlightFeature(e) {
     layer.bringToFront();
 //    }
 
-    info.update(layer.feature.properties, layer.options.fillColor);
+    info.update(layer.feature.properties);
 }
 
 function resetHighlight(e) {
