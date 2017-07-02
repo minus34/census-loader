@@ -391,14 +391,11 @@ def create_display_boundaries(pg_cur, settings):
 
             # get population field and table
             if boundary_name[:1] == "i":
-                pop_stat = "i3"
-                pop_table = "i01a"
-            elif settings["census_year"] == "2011":
-                pop_stat = "b3"
-                pop_table = "b01"
+                pop_stat = settings['indigenous_population_stat']
+                pop_table = settings['indigenous_population_table']
             else:
-                pop_stat = "g3"
-                pop_table = "g01"
+                pop_stat = settings['population_stat']
+                pop_table = settings['population_table']
 
             # build insert statement
             insert_into_list = list()

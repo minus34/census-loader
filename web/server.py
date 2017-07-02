@@ -136,14 +136,14 @@ def get_metadata():
           "lower(table_number) AS \"table\", " \
           "replace(long_id, '_', ' ') AS description, " \
           "column_heading_description AS type, " \
-          "CASE WHEN lower(sequential_id) = 'b3' " \
+          "CASE WHEN lower(sequential_id) = '{0}' " \
           "OR lower(long_id) LIKE '%%median%%' " \
           "OR lower(long_id) LIKE '%%average%%' " \
           "THEN 'values' " \
           "ELSE 'percent' END AS maptype " \
-          "FROM {0}.metadata_stats " \
+          "FROM {1}.metadata_stats " \
           "WHERE lower(sequential_id) IN %s " \
-          "ORDER BY sequential_id".format(settings["data_schema"], )
+          "ORDER BY sequential_id".format(settings['population_stat'], settings["data_schema"])
 
     with get_db_cursor() as pg_cur:
         try:
@@ -234,20 +234,17 @@ def get_data():
         # print("Connected to database in {0}".format(datetime.now() - start_time))
         # start_time = datetime.now()
 
-        # envelope_sql = "ST_MakeEnvelope({0}, {1}, {2}, {3}, 4283)".format(map_left, map_bottom, map_right, map_top)
-        # geom_sql = "geojson_{0}".format(display_zoom)
-
         # build SQL with SQL injection protection
-        # yes, this is ridiculous - if someone can find a shorthand way of doing this then great!
-        sql_template = "SELECT bdy.id, bdy.name, bdy.population, tab.%s / bdy.area AS density, " \
+        # yes, this is ridiculous - if someone can find a shorthand way of doing this then fire in the pull requests!
+        sql_template = "SELECT bdy.id, bdy.name, bdy.population, bdy.area, " \
               "CASE WHEN bdy.population > 0 THEN tab.%s / bdy.population * 100.0 ELSE 0 END AS percent, " \
               "tab.%s, geojson_%s AS geometry " \
               "FROM {0}.%s AS bdy " \
               "INNER JOIN {1}.%s_%s AS tab ON bdy.id = tab.{2} " \
               "WHERE bdy.geom && ST_MakeEnvelope(%s, %s, %s, %s, 4283)" \
-            .format(settings['web_schema'], settings['data_schema'], settings['region_id_field'])
+              .format(settings['web_schema'], settings['data_schema'], settings['region_id_field'])
 
-        sql = pg_cur.mogrify(sql_template, (AsIs(stat_id), AsIs(stat_id), AsIs(stat_id), AsIs(display_zoom),
+        sql = pg_cur.mogrify(sql_template, (AsIs(stat_id), AsIs(stat_id), AsIs(display_zoom),
                                             AsIs(boundary_name), AsIs(boundary_name), AsIs(table_id), AsIs(map_left),
                                             AsIs(map_bottom), AsIs(map_right), AsIs(map_top)))
 
