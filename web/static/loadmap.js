@@ -166,6 +166,17 @@ function init() {
             if (props.population === 0) {
                 infoStr += "<span class='highlight' style='background:" + lowPopColour + "'>no population</span>";
             } else {
+                // // special case if value is total pop - convert to pop density
+                // var stat = 0;
+                // var type = "";
+                // if (currentStat.description === "Total Persons Persons") {
+                //     stat = props.density;
+                //     type = "Persons / km<sup>2</sup>"
+                // } else {
+                //     stat = props[currentStatId]
+                //     type = currentStat.type;
+                // }
+
                 var type = currentStat.type;
                 var valStr = stringNumber(props[currentStatId], "values", type);
                 var popStr = stringNumber(props.population, "values", "dummy") + " persons";

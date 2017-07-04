@@ -235,8 +235,8 @@ def get_data():
         # start_time = datetime.now()
 
         # build SQL with SQL injection protection
-        # yes, this is ridiculous - if someone can find a shorthand way of doing this then fire in the pull requests!
-        sql_template = "SELECT bdy.id, bdy.name, bdy.population, bdy.area, " \
+        # yes, this is ridiculous - if someone can find a shorthand way of doing this then fire up the pull requests!
+        sql_template = "SELECT bdy.id, bdy.name, bdy.population, tab.%s / bdy.area AS density, " \
               "CASE WHEN bdy.population > 0 THEN tab.%s / bdy.population * 100.0 ELSE 0 END AS percent, " \
               "tab.%s, geojson_%s AS geometry " \
               "FROM {0}.%s AS bdy " \
@@ -244,7 +244,7 @@ def get_data():
               "WHERE bdy.geom && ST_MakeEnvelope(%s, %s, %s, %s, 4283)" \
               .format(settings['web_schema'], settings['data_schema'], settings['region_id_field'])
 
-        sql = pg_cur.mogrify(sql_template, (AsIs(stat_id), AsIs(stat_id), AsIs(display_zoom),
+        sql = pg_cur.mogrify(sql_template, (AsIs(stat_id), AsIs(stat_id), AsIs(stat_id), AsIs(display_zoom),
                                             AsIs(boundary_name), AsIs(boundary_name), AsIs(table_id), AsIs(map_left),
                                             AsIs(map_bottom), AsIs(map_right), AsIs(map_top)))
 
