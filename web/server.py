@@ -1,15 +1,10 @@
 
 import ast
 import json
-# import math
-# import os
 import psycopg2
-
-# import sys
 import utils
 
 from datetime import datetime
-
 from contextlib import contextmanager
 
 from flask import Flask
@@ -77,12 +72,12 @@ def homepage():
 @app.route("/get-bdy-names")
 def get_boundary_name():
     # Get parameters from querystring
-    min = int(request.args.get('min'))
-    max = int(request.args.get('max'))
+    min_val = int(request.args.get('min'))
+    max_val = int(request.args.get('max'))
 
     boundary_zoom_dict = dict()
 
-    for zoom_level in range(min, max + 1):
+    for zoom_level in range(min_val, max_val + 1):
         boundary_dict = dict()
         boundary_dict["name"], boundary_dict["min"] = utils.get_boundary(zoom_level)
         boundary_zoom_dict["{0}".format(zoom_level)] = boundary_dict
@@ -141,12 +136,14 @@ def get_metadata():
           "lower(table_number) AS \"table\", " \
           "replace(long_id, '_', ' ') AS description, " \
           "column_heading_description AS type, " \
-          "CASE WHEN lower(sequential_id) = 'b3' OR lower(long_id) LIKE '%%median%%' OR lower(long_id) " \
-          "LIKE '%%average%%' THEN 'values' " \
+          "CASE WHEN lower(sequential_id) = '{0}' " \
+          "OR lower(long_id) LIKE '%%median%%' " \
+          "OR lower(long_id) LIKE '%%average%%' " \
+          "THEN 'values' " \
           "ELSE 'percent' END AS maptype " \
-          "FROM {0}.metadata_stats " \
+          "FROM {1}.metadata_stats " \
           "WHERE lower(sequential_id) IN %s " \
-          "ORDER BY sequential_id".format(settings["data_schema"], )
+          "ORDER BY sequential_id".format(settings['population_stat'], settings["data_schema"])
 
     with get_db_cursor() as pg_cur:
         try:
@@ -162,15 +159,6 @@ def get_metadata():
     response_dict["type"] = "StatsCollection"
     response_dict["classes"] = num_classes
 
-    # output_array = list()
-
-    # # get metadata for all boundaries (done in one go for frontend performance)
-    # for boundary_name in boundary_names:
-    #     output_dict = dict()
-    #     output_dict["boundary"] = boundary_name
-    #
-    #     boundary_table = "{0}.{1}".format(settings["web_schema"], boundary_name)
-
     feature_array = list()
 
     # For each row returned assemble a dictionary
@@ -179,24 +167,27 @@ def get_metadata():
         feature_dict["id"] = feature_dict["id"].lower()
         feature_dict["table"] = feature_dict["table"].lower()
 
-        for boundary in boundary_names:
-            boundary_table = "{0}.{1}".format(settings["web_schema"], boundary["name"])
-
-            data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary["name"], feature_dict["table"])
-
-            # get the values for the map classes
-            with get_db_cursor() as pg_cur:
-                if feature_dict["maptype"] == "values":
-                    stat_field = "tab.{0}" \
-                        .format(feature_dict["id"], )
-                else:  # feature_dict["maptype"] == "percent"
-                    stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END" \
-                        .format(feature_dict["id"], )
-
-                # feature_dict[boundary_name] = utils.get_equal_interval_bins(
-                feature_dict[boundary["name"]] = utils.get_kmeans_bins(
-                    data_table, boundary_table, stat_field, num_classes, boundary["min"], feature_dict["maptype"],
-                    pg_cur, settings)
+        # # get ranges of stat values per boundary type
+        # for boundary in boundary_names:
+        #     boundary_table = "{0}.{1}".format(settings["web_schema"], boundary["name"])
+        #
+        #     data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary["name"], feature_dict["table"])
+        #
+        #     # get the values for the map classes
+        #     with get_db_cursor() as pg_cur:
+        #         if feature_dict["maptype"] == "values":
+        #             stat_field = "tab.{0}" \
+        #                 .format(feature_dict["id"], )
+        #         else:  # feature_dict["maptype"] == "percent"
+        #             stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END" \
+        #                 .format(feature_dict["id"], )
+        #
+        #         # get range of stat values
+        #         # feature_dict[boundary_name] = utils.get_equal_interval_bins(
+        #         # feature_dict[boundary["name"]] = utils.get_kmeans_bins(
+        #         feature_dict[boundary["name"]] = utils.get_min_max(
+        #             data_table, boundary_table, stat_field, num_classes, boundary["min"], feature_dict["maptype"],
+        #             pg_cur, settings)
 
         # add dict to output array of metadata
         feature_array.append(feature_dict)
@@ -217,7 +208,7 @@ def get_metadata():
 @app.route("/get-data")
 def get_data():
     full_start_time = datetime.now()
-    start_time = datetime.now()
+    # start_time = datetime.now()
 
     # Get parameters from querystring
 
@@ -240,27 +231,24 @@ def get_data():
     display_zoom = str(zoom_level).zfill(2)
 
     with get_db_cursor() as pg_cur:
-        print("Connected to database in {0}".format(datetime.now() - start_time))
-        start_time = datetime.now()
-
-        # envelope_sql = "ST_MakeEnvelope({0}, {1}, {2}, {3}, 4283)".format(map_left, map_bottom, map_right, map_top)
-        # geom_sql = "geojson_{0}".format(display_zoom)
+        # print("Connected to database in {0}".format(datetime.now() - start_time))
+        # start_time = datetime.now()
 
         # build SQL with SQL injection protection
+        # yes, this is ridiculous - if someone can find a shorthand way of doing this then fire up the pull requests!
         sql_template = "SELECT bdy.id, bdy.name, bdy.population, tab.%s / bdy.area AS density, " \
               "CASE WHEN bdy.population > 0 THEN tab.%s / bdy.population * 100.0 ELSE 0 END AS percent, " \
               "tab.%s, geojson_%s AS geometry " \
               "FROM {0}.%s AS bdy " \
               "INNER JOIN {1}.%s_%s AS tab ON bdy.id = tab.{2} " \
               "WHERE bdy.geom && ST_MakeEnvelope(%s, %s, %s, %s, 4283)" \
-            .format(settings['web_schema'], settings['data_schema'], settings['region_id_field'])
+              .format(settings['web_schema'], settings['data_schema'], settings['region_id_field'])
 
         sql = pg_cur.mogrify(sql_template, (AsIs(stat_id), AsIs(stat_id), AsIs(stat_id), AsIs(display_zoom),
                                             AsIs(boundary_name), AsIs(boundary_name), AsIs(table_id), AsIs(map_left),
                                             AsIs(map_bottom), AsIs(map_right), AsIs(map_top)))
 
         try:
-            # yes, this is ridiculous - if someone can find a shorthand way of doing this then great!
             pg_cur.execute(sql)
         except psycopg2.Error:
             return "I can't SELECT:<br/><br/>" + str(sql)
@@ -271,8 +259,8 @@ def get_data():
         # Get the column names returned
         col_names = [desc[0] for desc in pg_cur.description]
 
-    print("Got records from Postgres in {0}".format(datetime.now() - start_time))
-    start_time = datetime.now()
+    # print("Got records from Postgres in {0}".format(datetime.now() - start_time))
+    # start_time = datetime.now()
 
     # output is the main content, row_output is the content from each record returned
     output_dict = dict()
@@ -307,8 +295,8 @@ def get_data():
     # Assemble the GeoJSON
     output_dict["features"] = feature_array
 
-    print("Parsed records into JSON in {1}".format(i, datetime.now() - start_time))
-    print("Returned {0} records  {1}".format(i, datetime.now() - full_start_time))
+    # print("Parsed records into JSON in {1}".format(i, datetime.now() - start_time))
+    print("get-data: returned {0} records  {1}".format(i, datetime.now() - full_start_time))
 
     return Response(json.dumps(output_dict), mimetype='application/json')
 

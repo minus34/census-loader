@@ -6,7 +6,7 @@ var dataUrl = "../get-data";
 
 var map;
 var info;
-var legend;
+// var legend;
 var themer;
 var geojsonLayer;
 
@@ -17,6 +17,8 @@ var currentZoomLevel = 0;
 
 var statsArray = [];
 var currentStat;
+var currMapMin = 0;
+var currMapMax = 0;
 var boundaryZooms;
 var currentStats;
 var boundaryOverride = "";
@@ -26,6 +28,7 @@ var currentBoundaryMin = 7;
 var currentStatId = "";
 
 var highlightColour = "#ffff00";
+var lowPopColour = "#422";
 var colourRamp;
 var colourRange = ["#1f1f1f", "#e45427"]; // dark grey > orange/red
 //var colourRange = ["#1a1a1a", "#DD4132"]; // dark grey > red
@@ -40,11 +43,10 @@ var querystring = location.search.replace("?", "").split("&");
 var queryObj = {};
 
 // loop through each name-value pair and populate object
-for (var i = 0; i < querystring.length; i++) {
+var i;
+for (i = 0; i < querystring.length; i+=1) {
     // get name and value
-    var name = querystring[i].split("=")[0];
-    // populate object
-    queryObj[name] = querystring[i].split("=")[1];
+    queryObj[querystring[i].split("=")[0]] = querystring[i].split("=")[1];
 }
 
 //// get/set values from querystring
@@ -58,15 +60,15 @@ for (var i = 0; i < querystring.length; i++) {
 // get/set values from querystring
 
 // auto-boundary override (for screenshots only! will create performance issues. e.g showing SA1"s nationally!)
-if (queryObj["b"] !== undefined) {
-    boundaryOverride = queryObj["b"].toLowerCase();
+if (queryObj.b !== undefined) {
+    boundaryOverride = queryObj.b.toLowerCase();
 }
 
 // start zoom level
-if (!queryObj["z"]) {
+if (!queryObj.z) {
     currentZoomLevel = 11;
 } else {
-    currentZoomLevel = queryObj["z"];
+    currentZoomLevel = queryObj.z;
 }
 
 //// number of classes to theme the map - TODO: ADD SUPPORT FOR CUSTOM NUMBER OF MAP CLASSES
@@ -77,11 +79,11 @@ if (!queryObj["z"]) {
 //}
 
 // get the stat(s) - can include basic equations using + - * / and ()  e.g. B23 * (B45 + B678)
-if (!queryObj["stats"]) {
+if (!queryObj.stats) {
     statsArray = ["b3", "b1", "b2"]; // total_persons
 
 } else {
-    statsArray = encodeURIComponent(queryObj["stats"].toLowerCase()).split("%2C");
+    statsArray = encodeURIComponent(queryObj.stats.toLowerCase()).split("%2C");
     // TODO: handle maths operators as well as plain stats
 }
 
@@ -91,12 +93,10 @@ function init() {
 
     // create colour ramp
     colourRamp = new Rainbow();
-    colourRamp.setNumberRange(1, numClasses);
     colourRamp.setSpectrum(colourRange[0], colourRange[1]);
 
-    //Initialize the map on the "map" div - only use canvas if supported
+    //Initialize the map on the "map" div - only use canvas if supported (can be slow on Safari)
     var elem = document.createElement("canvas");
-
     if (elem.getContext && elem.getContext("2d")) {
         map = new L.Map("map", { preferCanvas: true });
     } else {
@@ -152,7 +152,7 @@ function init() {
         this.update();
         return this._div;
     };
-    info.update = function (props) {
+    info.update = function (props, colour) {
         var infoStr;
 
         if (props) {
@@ -160,44 +160,47 @@ function init() {
             var re = new RegExp(" - ", "g");
             var name = props.name.replace(re, "<br/>");
 
+            infoStr = "<span style='font-weight: bold; font-size:1.5em'>" + name + "</span><br/>";
+
             // if no pop, nothing to display
             if (props.population === 0) {
-                infoStr = "<h3>" + name + "</h3><span style='font-size: 1.1em; font-weight: bold'>no population";
+                infoStr += "<span class='highlight' style='background:" + lowPopColour + "'>no population</span>";
             } else {
-                if (currentStat.maptype === "values") {
-                    infoStr = "<h3>" + name + "</h3>" +
-                        "<span style='font-weight: bold'>" + currentStat.type + ": " + props[currentStatId].toLocaleString(["en-AU"]) + "</span><br/>" +
-                        "Persons: " + props.population.toLocaleString(["en-AU"]);
+                // // special case if value is total pop - convert to pop density
+                // var stat = 0;
+                // var type = "";
+                // if (currentStat.description === "Total Persons Persons") {
+                //     stat = props.density;
+                //     type = "Persons / km<sup>2</sup>"
+                // } else {
+                //     stat = props[currentStatId]
+                //     type = currentStat.type;
+                // }
 
+                var type = currentStat.type;
+                var valStr = stringNumber(props[currentStatId], "values", type);
+                var popStr = stringNumber(props.population, "values", "dummy") + " persons";
+
+
+                if (currentStat.maptype === "values") {
+                    var colour = getColor(props[currentStatId], 99999999); //dummy second value get's the right colour
+                    infoStr += "<span class='highlight' style='background:" + colour + "'>" + type + ": " + valStr + "</span><br/>" + popStr;
                 } else { // "percent"
-                    infoStr = "<h3>" + name + "</h3>" +
-                        "<span style='font-weight: bold'>" + currentStat.description + ": " + props.percent.toFixed(1).toLocaleString(["en-AU"]) + "%</span><br/>" +
-                        props[currentStatId].toLocaleString(["en-AU"]) + " of " + props.population.toLocaleString(["en-AU"]) + " persons ";
+                    var colour = getColor(props.percent, 99999999); //dummy second value get's the right colour
+                    var percentStr = stringNumber(props.percent, "percent", type);
+                    infoStr += "<span class='highlight' style='background:" + colour + "'>" + currentStat.description + ": " + percentStr + "</span><br/>" + valStr + " of " + popStr;
+                }
+
+                // highlight low population bdys
+                if (props.population <= currentBoundaryMin) {
+                    infoStr += "<br/><span class='highlight' style='background:" + lowPopColour + "'>low population</span>";
                 }
             }
         } else {
-            infoStr ="pick a boundary"
+            infoStr ="pick a boundary";
         }
 
         this._div.innerHTML = infoStr;
-    };
-
-    //Create a legend control
-    legend = L.control({ position: "topright" });
-    legend.onAdd = function () {
-        this._div = L.DomUtil.create("div", "legend");
-        L.DomEvent.disableScrollPropagation(this._div);
-        L.DomEvent.disableClickPropagation(this._div);
-        // setLegendColours();
-        // this.update();
-        return this._div;
-    };
-    legend.update = function () {
-        var len = currentStat[currentBoundary].length,
-            min = stringNumber(currentStat[currentBoundary][0]),
-            max = stringNumber(currentStat[currentBoundary][len - 1]);
-
-        this._div.innerHTML = "<div><table><tr><td>" + min + "</td><td class='colours' style='width: 15.0em'></td><td>" + max + "</td></tr></table></div>";
     };
 
     // add radio buttons to choose stat to theme the map
@@ -245,11 +248,12 @@ function init() {
         } else {
             // create array of zoom levels with the override boundary id
             boundaryZooms = {};
-            for (var j = minZoom; j <= maxZoom; j++) {
-                var boundary = {};
-                boundary["name"] = boundaryOverride;
-                boundary["min"] = currentBoundaryMin;
-                boundaryZooms[j] = boundary;
+            var j;
+            for (j = minZoom; j <= maxZoom; j+=1) {
+                boundaryZooms[j] = {
+                    name: boundaryOverride,
+                    min: currentBoundaryMin
+                };
             }
         }
 
@@ -258,46 +262,37 @@ function init() {
         getCurrentStatMetadata();
 
         // show legend and info controls
-        legend.addTo(map);
+        // legend.addTo(map);
         info.addTo(map);
 
         // get the first lot of data
         getData();
-
-        // create the radio buttons
-        setRadioButtons();
     });
 }
 
-// function setLegendColours(){
-//     var styles = {
-//         opacity: 0.8,
-//         background: "-webkit-linear-gradient('left', '" + colourRange[0] + "', '" + colourRange[1] + "')", /* For Safari 5.1 to 6.0 */
-//         background: "-o-linear-gradient('right', '" + colourRange[0] + "', '" + colourRange[1] + "')", /* For Opera 11.1 to 12.0 */
-//         background: "-moz-linear-gradient('right', '" + colourRange[0] + "', '" + colourRange[1] + "')", /* For Firefox 3.6 to 15 */
-//         background: "linear-gradient('to right', '" + colourRange[0] + "', '" + colourRange[1] + "')" /* Standard syntax */
-//     };
-//
-//     $("#colours").css(styles);
-// }
-
-
 function setRadioButtons() {
-    var radioButtons = "<h4>Active stat</h4>";
+    // var radioButtons = "<h4>Active stat</h4>";
+    var radioButtons = "";
 
     for (var i = 0; i < currentStats.length; i++){
         var value = currentStats[i].id;
         var description = currentStats[i].description;
+        var type = currentStats[i].type;
 
         if (value === currentStatId) {
+            //format values
+            var mapType = currentStats[i].maptype;
+            var minStr = stringNumber(currMapMin, mapType, type);
+            var maxStr = stringNumber(currMapMax, mapType, type);
+
             radioButtons += "<div><input id='r" + i.toString() + "' type='radio' name='stat' value='" + value +
-                "' checked='checked'><label for='r" + i.toString() + "'><span><span></span></span>" + description +
-                "</label></div>";
+                "' checked='checked'><label for='r" + i.toString() + "'><span><span></span></span><b>" + description + "</b></label>" +
+                "<div style='padding: 0.2em 0em 0.6em 1.8em'><table class='colours' ><tr><td>" + minStr + "</td><td style='width: 10em'></td><td>" + maxStr + "</td></tr></table></div></div>";
         } else {
             radioButtons += "<div><input id='r" + i.toString() + "' type='radio' name='stat' value='" + value +
                 "'><label for='r" + i.toString() + "'><span><span></span></span>" + description + "</label></div>";
         }
-     }
+    }
 
     themer.update(radioButtons);
 }
@@ -311,22 +306,19 @@ function getCurrentStatMetadata() {
     }
 }
 
-function stringNumber(val) {
+function stringNumber(val, mapType, type) {
     var numString = "";
 
-    if (currentStat.maptype === "values") {
-        // format number to nearest 100"s or 1000"s
-        var len = val.toString().length - 2;
-
-        if (len > 0) {
-            var factor = Math.pow(10, len);
-            numString = (Math.round(val / factor) * factor).toString();
+    if (mapType === "values") {
+        //add dollar sign
+        if (type.indexOf("$/") !== -1) {
+            numString = "$" + val.toLocaleString(["en-AU"]);
         } else {
-            numString = val.toString();
+            numString = val.toLocaleString(["en-AU"]);
         }
     } else { // i.e. "percent"
         //round percentages
-        numString = Math.round(val).toString() + "%";
+        numString = val.toFixed(1).toLocaleString(["en-AU"]) + "%";
     }
 
     return numString;
@@ -340,9 +332,6 @@ function getData() {
     currentZoomLevel = map.getZoom();
     currentBoundary = boundaryZooms[currentZoomLevel.toString()].name;
     currentBoundaryMin = boundaryZooms[currentZoomLevel.toString()].min;
-
-    //update the legend with the new stat min and max
-    legend.update();
 
     //restrict to the zoom levels that have data
     if (currentZoomLevel < minZoom) {
@@ -396,6 +385,49 @@ function gotData(json) {
             geojsonLayer.clearLayers();
         }
 
+        // get min and max values
+        currMapMin = 999999999;
+        currMapMax = -999999999;
+
+        var features = json.features;
+
+        for (var i = 0; i < features.length; i++){
+            var props = features[i].properties;
+
+            // only include if pop is significant
+            if (props.population > currentBoundaryMin){
+                var val = 0;
+
+                if (currentStat.maptype === "values") {
+                    val = props[currentStatId];
+                } else { // "percent"
+                    val = props.percent;
+                }
+
+                if (val < currMapMin) { currMapMin = val }
+                if (val > currMapMax) { currMapMax = val }
+            }
+        }
+
+        // correct max percents over 100% (where pop is less than stat, for whatever reason)
+        if (currentStat.maptype === "percent" && currMapMax > 100.0) { currMapMax = 100.0 }
+
+        // set the number range for the colour gradient (allow for decimals, convert to ints)
+        var minInt = parseInt(currMapMin.toFixed(1).toString().replace(".",""));
+        var maxInt = parseInt(currMapMax.toFixed(1).toString().replace(".",""));
+
+        colourRamp.setNumberRange(minInt, maxInt);
+
+        //update the legend with the new min and max
+        // legend.update();
+
+        // create the radio buttons
+        setRadioButtons();
+
+        // console.log(currMapMin);
+        // console.log(currMapMax);
+
+        // add data to map layer
         geojsonLayer = L.geoJson(json, {
             style : style,
             onEachFeature : onEachFeature
@@ -412,9 +444,9 @@ function style(feature) {
     var props = feature.properties;
 
     if (currentStat.maptype === "values") {
-        renderVal = parseInt(props[currentStatId]);
+        renderVal = props[currentStatId];
     } else {
-        renderVal = parseInt(props.percent);
+        renderVal = props.percent;
     }
 
     var col = getColor(renderVal, props.population);
@@ -429,43 +461,31 @@ function style(feature) {
 }
 
 // get color depending on ratio of count versus max value
-function getColor(d, pop) {
-    var classes = currentStat[currentBoundary];
+function getColor(val, pop) {
+    var colour = "";
 
-    // show generic gray if no population
-    if (pop === 0){
-        return "#422";
+    // show dark red/gray if low population (these can dominate the map)
+    if (pop <= currentBoundaryMin){
+        colour =  lowPopColour;
     } else {
-        var colourNum = d > classes[6] ? 7 :
-                        d > classes[5] ? 6 :
-                        d > classes[4] ? 5 :
-                        d > classes[3] ? 4 :
-                        d > classes[2] ? 3 :
-                        d > classes[1] ? 2 :
-                                        1 ;
-
-        // override if population is low and colour class is near to top (i.e. a small pop is distorting the map)
-    //    if (pop <= currentBoundaryMin && colourNum > numClasses - 4) {
-        if (pop <= currentBoundaryMin && colourNum > 3) {
-            colourNum = colourNum - 3;
-        }
-
-        return "#" + colourRamp.colourAt(colourNum);
+        //convert value to int to get the right colour
+        var valInt = parseInt(val.toFixed(1).toString().replace(".",""));
+        colour = "#" + colourRamp.colourAt(valInt);
     }
+
+    return colour;
 }
 
 function onEachFeature(feature, layer) {
     layer.on({
         mouseover : highlightFeature,
         mouseout : resetHighlight
-//        onclick : zoomToFeature
+        // click : zoomToFeature
     });
 }
 
 function highlightFeature(e) {
     var layer = e.target;
-
-    // console.log(layer);
 
     layer.setStyle({
         weight : 2.5,
@@ -485,6 +505,6 @@ function resetHighlight(e) {
     info.update();
 }
 
-//function zoomToFeature(e) {
+// function zoomToFeature(e) {
 //    map.fitBounds(e.target.getBounds());
-//}
+// }

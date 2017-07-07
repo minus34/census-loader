@@ -9,7 +9,7 @@ A quick way to get started with Australian Bureau of Statistics (ABS) Census 201
 
 ### There are 3 options for loading the data
 1. [Run](https://github.com/minus34/census-loader#option-1---run-loadgnafpy) the load-census Python script and build the database schemas in a single step
-2. [Build](https://github.com/minus34/census-loader#option-2---build-the-database-in-a-docker-environment) the database in a docker environment. __UNTESTED__
+2. [Build](https://github.com/minus34/census-loader#option-2---build-the-database-in-a-docker-environment) the database in a docker environment.
 3. [Download](https://github.com/minus34/census-loader#option-3---load-pg_dump-files) the Postgres dump files and restore them in your database. __Note: Census 2016 data and ASGS boundaries only__
 
 ## Option 1 - Run load-census.py

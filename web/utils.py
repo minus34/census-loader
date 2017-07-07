@@ -133,6 +133,11 @@ def get_settings(args):
         settings['bdy_name_part'] = 3  # position in the data file name that equals it's census boundary name
         settings['region_id_field'] = "aus_code_2016"
 
+        settings['population_stat'] = "g3"
+        settings['population_table'] = "g01"
+        settings['indigenous_population_stat'] = "i3"
+        settings['indigenous_population_table'] = "i01a"
+
         settings['bdy_table_dicts'] = \
             [{"boundary": "add", "id_field": "add_code16", "name_field": "add_name16", "area_field": "areasqkm16"},
              {"boundary": "ced", "id_field": "ced_code16", "name_field": "ced_name16", "area_field": "areasqkm16"},
@@ -171,6 +176,11 @@ def get_settings(args):
         settings['bdy_name_part'] = 3  # position in the data file name that equals it's census boundary name
         settings['region_id_field'] = "region_id"
 
+        settings['population_stat'] = "b3"
+        settings['population_table'] = "b01"
+        settings['indigenous_population_stat'] = "i3"
+        settings['indigenous_population_table'] = "i01a"
+
         settings['bdy_table_dicts'] = \
             [{"boundary": "ced", "id_field": "ced_code", "name_field": "ced_name", "area_field": "area_sqkm"},
              {"boundary": "gccsa", "id_field": "gccsa_code", "name_field": "gccsa_name", "area_field": "area_sqkm"},
@@ -204,22 +214,22 @@ def get_boundary(zoom_level):
 
     if zoom_level < 7:
         boundary_name = "ste"
-        min_display_value = 80
+        min_display_value = 400
     elif zoom_level < 9:
         boundary_name = "sa4"
-        min_display_value = 40
+        min_display_value = 200
     elif zoom_level < 11:
         boundary_name = "sa3"
-        min_display_value = 20
+        min_display_value = 100
     elif zoom_level < 14:
         boundary_name = "sa2"
-        min_display_value = 15
+        min_display_value = 50
     elif zoom_level < 17:
         boundary_name = "sa1"
-        min_display_value = 10
+        min_display_value = 25
     else:
         boundary_name = "mb"
-        min_display_value = 3
+        min_display_value = 5
 
     return boundary_name, min_display_value
 
@@ -267,6 +277,35 @@ def get_decimal_places(zoom_level):
             trigger = "don't do anything else"  # used to cleanly exit the loop
 
     return places
+
+
+def get_min_max(data_table, boundary_table, stat_field, num_classes, min_val, map_type, pg_cur, settings):
+
+    # query to get min and max values (filter small populations that overly influence the map visualisation)
+    try:
+        # if map_type == "values":
+        sql = "SELECT MIN(%s) AS min, MAX(%s) AS max FROM %s AS tab " \
+              "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
+              "WHERE %s > 0 " \
+              "AND bdy.population > {1}" \
+            .format(settings['region_id_field'], float(min_val))
+
+        sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
+                                          AsIs(boundary_table), AsIs(stat_field)))
+
+        pg_cur.execute(sql_string)
+        row = pg_cur.fetchone()
+
+    except Exception as ex:
+        print("{0} - {1} Failed: {2}".format(data_table, stat_field, ex))
+        return list()
+
+    output_dict = {
+        "min": row["min"],
+        "max": row["max"]
+    }
+
+    return output_dict
 
 
 def get_kmeans_bins(data_table, boundary_table, stat_field, num_classes, min_val, map_type, pg_cur, settings):
@@ -325,7 +364,7 @@ def get_kmeans_bins(data_table, boundary_table, stat_field, num_classes, min_val
     return output_list
 
 
-def get_equal_interval_bins(data_table, boundary_table, stat_field, num_classes, map_type, pg_cur, settings):
+def get_equal_interval_bins(data_table, boundary_table, stat_field, num_classes, min_val, map_type, pg_cur, settings):
 
     # query to get min and max values (filter small populations that overly influence the map visualisation)
     try:
@@ -333,8 +372,8 @@ def get_equal_interval_bins(data_table, boundary_table, stat_field, num_classes,
             sql = "SELECT MIN(%s) AS min, MAX(%s) AS max FROM %s AS tab " \
                   "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
                   "WHERE %s > 0 " \
-                  "AND bdy.population > 5" \
-                .format(settings['region_id_field'])
+                  "AND bdy.population > {1}" \
+                .format(settings['region_id_field'], float(min_val))
 
             sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
                                               AsIs(boundary_table), AsIs(stat_field)))
@@ -343,8 +382,8 @@ def get_equal_interval_bins(data_table, boundary_table, stat_field, num_classes,
             sql = "SELECT MIN(%s) AS min, MAX(%s) AS max FROM %s AS tab " \
                   "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
                   "WHERE %s > 0 AND %s < 100.0 " \
-                  "AND bdy.population > 5" \
-                .format(settings['region_id_field'])
+                  "AND bdy.population > {1}" \
+                .format(settings['region_id_field'], float(min_val))
 
             sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
                                               AsIs(boundary_table), AsIs(stat_field), AsIs(stat_field)))
@@ -372,7 +411,7 @@ def get_equal_interval_bins(data_table, boundary_table, stat_field, num_classes,
     return output_list
 
 
-def get_equal_count_bins(data_table, boundary_table, stat_field, num_classes, map_type, pg_cur, settings):
+def get_equal_count_bins(data_table, boundary_table, stat_field, num_classes, min_val, map_type, pg_cur, settings):
 
     # query to get min and max values (filter small populations that overly influence the map visualisation)
     try:
@@ -382,10 +421,10 @@ def get_equal_count_bins(data_table, boundary_table, stat_field, num_classes, ma
                   "FROM %s AS tab " \
                   "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
                   "WHERE %s > 0.0 " \
-                  "AND bdy.population > 5.0" \
+                  "AND bdy.population > {1}" \
                   ") " \
                   "SELECT MAX(val) AS val, class_id FROM classes GROUP BY class_id ORDER BY class_id" \
-                .format(settings['region_id_field'])
+                .format(settings['region_id_field'], float(min_val))
 
             sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(num_classes), AsIs(stat_field), AsIs(data_table),
                                               AsIs(boundary_table), AsIs(stat_field)))
@@ -396,15 +435,15 @@ def get_equal_count_bins(data_table, boundary_table, stat_field, num_classes, ma
                   "FROM %s AS tab " \
                   "INNER JOIN %s AS bdy ON tab.{0} = bdy.id " \
                   "WHERE %s > 0.0 AND %s < 100.0 " \
-                  "AND bdy.population > 5.0" \
+                  "AND bdy.population > {1}" \
                   ") " \
                   "SELECT MAX(val) AS val, class_id FROM classes GROUP BY class_id ORDER BY class_id" \
-                .format(settings['region_id_field'])
+                .format(settings['region_id_field'], float(min_val))
 
             sql_string = pg_cur.mogrify(sql, (AsIs(stat_field), AsIs(stat_field), AsIs(data_table),
                                               AsIs(boundary_table), AsIs(stat_field), AsIs(stat_field)))
 
-        print(sql_string)
+        # print(sql_string)
 
         pg_cur.execute(sql_string)
         rows = pg_cur.fetchall()
@@ -742,8 +781,9 @@ def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_
     except:
         return "Importing {0} - Couldn't convert Shapefile to SQL".format(file_path)
 
-    print("SQL object is this long: {}".format(len(sql_obj)))
-    print("Error is: {}".format(err))
+    # print("SQL object is this long: {}".format(len(sql_obj)))
+    # print("Error is: {}".format(err))
+
     # prep Shapefile SQL
     sql = sql_obj.decode("utf-8")  # this is required for Python 3
     sql = sql.replace("Shapefile type: ", "-- Shapefile type: ")
