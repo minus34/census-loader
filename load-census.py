@@ -66,12 +66,14 @@ def main():
         logger.fatal("Unable to add PostGIS extension\nACTION: Check your Postgres user privileges or PostGIS install")
         return False
 
-    # test if ST_ClusterKMeans exists (only in PostGIS 2.3+). It's used to create classes to display the data in the map
+    # log PostGIS version
     utils.check_postgis_version(pg_cur, settings, logger)
 
-    if not settings.get('st_clusterkmeans_supported'):
-        logger.warning("YOU NEED TO INSTALL POSTGIS 2.3 OR HIGHER FOR THE MAP SERVER TO WORK\n"
-                       "it utilises the ST_ClusterKMeans() function in v2.3+")
+    # # test if ST_ClusterKMeans exists (only in PostGIS 2.3+).
+    # # It's used to create classes to display the data in the map
+    # if not settings.get('st_clusterkmeans_supported'):
+    #     logger.warning("YOU NEED TO INSTALL POSTGIS 2.3 OR HIGHER FOR THE MAP SERVER TO WORK\n"
+    #                    "it utilises the ST_ClusterKMeans() function in v2.3+")
 
     # START LOADING DATA
 
