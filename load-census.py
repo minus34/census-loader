@@ -66,23 +66,30 @@ def main():
         logger.fatal("Unable to add PostGIS extension\nACTION: Check your Postgres user privileges or PostGIS install")
         return False
 
-    # test if ST_ClusterKMeans exists (only in PostGIS 2.3+). It's used to create classes to display the data in the map
+    # log PostGIS version
     utils.check_postgis_version(pg_cur, settings, logger)
 
-    if not settings.get('st_clusterkmeans_supported'):
-        logger.warning("YOU NEED TO INSTALL POSTGIS 2.3 OR HIGHER FOR THE MAP SERVER TO WORK\n"
-                       "it utilises the ST_ClusterKMeans() function in v2.3+")
+    # # test if ST_ClusterKMeans exists (only in PostGIS 2.3+).
+    # # It's used to create classes to display the data in the map
+    # if not settings.get('st_clusterkmeans_supported'):
+    #     logger.warning("YOU NEED TO INSTALL POSTGIS 2.3 OR HIGHER FOR THE MAP SERVER TO WORK\n"
+    #                    "it utilises the ST_ClusterKMeans() function in v2.3+")
 
     # START LOADING DATA
 
-    # test runtime parameters:
+    # test runtime parameters - 2011
     # --pghost=192.168.0.7
     # --census-year=2011
     # --data-schema=census_2011_data
     # --boundary-schema=census_2011_bdys
     # --web-schema=census_2011_web
     # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2011_data
-    # --census-bdys-path=/Users/hugh.saalmans/minus34/data/abs_2011
+    # --census-bdys-path=/Users/hugh.saalmans/tmp/abs_census_2016_bdys
+
+    # test runtime parameters - 2016
+    # --pghost=192.168.0.7
+    # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2016_data
+    # --census-bdys-path=/Users/hugh.saalmans/tmp/abs_census_2016_bdys
 
     # PART 1 - load census data from CSV files
     logger.info("")

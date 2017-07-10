@@ -122,12 +122,12 @@ def get_settings(args):
 
     # set file name and field name defaults based on census year
     if settings['census_year'] == '2016':
-        settings['metadata_file_prefix'] = "Sample_Metadata_"
+        settings['metadata_file_prefix'] = "Metadata_"
         settings['metadata_file_type'] = ".xls"
         settings["census_metadata_dicts"] = [{"table": "metadata_tables", "first_row": "table number"},
                                              {"table": "metadata_stats", "first_row": "sequential"}]
 
-        settings['data_file_prefix'] = "2016_Sample_"
+        settings['data_file_prefix'] = "2016_"
         settings['data_file_type'] = ".csv"
         settings['table_name_part'] = 2  # position in the data file name that equals it's destination table name
         settings['bdy_name_part'] = 3  # position in the data file name that equals it's census boundary name

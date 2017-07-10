@@ -25,10 +25,10 @@ fi
 
 # Load the data.
 python3 load-census.py \
+    --census-year 2016 \
 	--census-data-path /app/data/ \
 	--census-bdys-path /app/data/ \
 	--pghost localhost --pgdb census \
 	--pguser ${POSTGRES_USER} \
-	--pgpassword ${POSTGRES_PASSWORD}
-
-
+	--pgpassword ${POSTGRES_PASSWORD} \
+	--max-processes 2
