@@ -35,12 +35,12 @@ To get a good load time you'll need to configure your Postgres server for perfor
 1. Download [ABS Census 2016 CSV Files](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/2079.02016) or [ABS Census 2011 CSV Files](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login)
 2. Download [ABS 2016 ASGS boundaries](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.001) or [ABS 2011 ASGS boundaries](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login) **IMPORTANT - download the ESRI Shapefile versions**
 3. (optional) Download the 2016 [Indigenous](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.002) and [Non-ABS](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.003) boundaries as well
-Unzip the Census CSV files to a directory on your Postgres server
-4. Alter security on the directory to grant Postgres read access
-5. Unzip the ASGS boundaries to a local directory
-6. Create the target database (if required)
-7. Check the optional and required arguments by running load-census.py with the `-h` argument (see command line examples below)
-8. Run the script, come back in 10-15 minutes and enjoy!
+4. Unzip the Census CSV files to a directory on your Postgres server
+5. Alter security on the directory to grant Postgres read access
+6. Unzip the ASGS boundaries to a local directory
+7. Create the target database (if required)
+8. Check the optional and required arguments by running load-census.py with the `-h` argument (see command line examples below)
+9. Run the script, come back in 10-15 minutes and enjoy!
 
 ### Command Line Options
 The behaviour of census-loader can be controlled by specifying various command line options to the script. Supported arguments are:

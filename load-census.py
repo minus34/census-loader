@@ -77,14 +77,19 @@ def main():
 
     # START LOADING DATA
 
-    # test runtime parameters:
+    # test runtime parameters - 2011
     # --pghost=192.168.0.7
     # --census-year=2011
     # --data-schema=census_2011_data
     # --boundary-schema=census_2011_bdys
     # --web-schema=census_2011_web
     # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2011_data
-    # --census-bdys-path=/Users/hugh.saalmans/minus34/data/abs_2011
+    # --census-bdys-path=/Users/hugh.saalmans/tmp/abs_census_2016_bdys
+
+    # test runtime parameters - 2016
+    # --pghost=192.168.0.7
+    # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2016_data
+    # --census-bdys-path=/Users/hugh.saalmans/tmp/abs_census_2016_bdys
 
     # PART 1 - load census data from CSV files
     logger.info("")
