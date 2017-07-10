@@ -1,3 +1,7 @@
+## IMPORTANT
+- Census-Loader has yet to be tested against the Census 2016 data (to be) released on July 12.
+- The settings (in utils.py) for the 2016 data may be incorrect when the data is released.
+
 # census-loader
 A quick way to get started with Australian Bureau of Statistics (ABS) Census 2011 or 2016 data.
 
@@ -29,8 +33,9 @@ To get a good load time you'll need to configure your Postgres server for perfor
 
 ### Process
 1. Download [ABS Census 2016 CSV Files](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/2079.02016) or [ABS Census 2011 CSV Files](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login)
-2. Download [ABS 2016 ASGS boundaries](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/1270.0.55.001July%202016) or [ABS 2011 ASGS boundaries](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login) **IMPORTANT - download the ESRI Shapefile versions**
-3. Unzip the Census CSV files to a directory on your Postgres server
+2. Download [ABS 2016 ASGS boundaries](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.001) or [ABS 2011 ASGS boundaries](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login) **IMPORTANT - download the ESRI Shapefile versions**
+3. (optional) Download the 2016 [Indigenous](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.002) and [Non-ABS](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.003) boundaries as well
+Unzip the Census CSV files to a directory on your Postgres server
 4. Alter security on the directory to grant Postgres read access
 5. Unzip the ASGS boundaries to a local directory
 6. Create the target database (if required)
