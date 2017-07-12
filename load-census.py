@@ -459,7 +459,7 @@ def create_display_boundaries(pg_cur, settings):
 
             vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(settings['web_schema'], pg_table))
 
-    print("\n".join(insert_sql_list))
+    # print("\n".join(insert_sql_list))
 
     utils.multiprocess_list("sql", create_sql_list, settings, logger)
     utils.multiprocess_list("sql", insert_sql_list, settings, logger)
