@@ -92,8 +92,8 @@ def get_metadata():
 
     # Get parameters from querystring
 
-    # census year
-    census_year = request.args.get('c')
+    # # census year
+    # census_year = request.args.get('c')
 
     # comma separated list of stat ids (i.e. sequential_ids) AND/OR equations contains stat ids
     raw_stats = request.args.get('stats')
@@ -213,8 +213,8 @@ def get_data():
     full_start_time = datetime.now()
     # start_time = datetime.now()
 
-    # Get parameters from querystring
-    census_year = request.args.get('c')
+    # # Get parameters from querystring
+    # census_year = request.args.get('c')
 
     map_left = request.args.get('ml')
     map_bottom = request.args.get('mb')

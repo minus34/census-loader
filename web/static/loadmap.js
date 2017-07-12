@@ -369,8 +369,8 @@ function getData() {
     ua.push(currentBoundary);
     ua.push("&m=");
     ua.push(currentStat.maptype);
-    ua.push("&z=");
-    ua.push(censusYear);
+//    ua.push("&c=");
+//    ua.push(censusYear);
     ua.push("&z=");
     ua.push((currentZoomLevel).toString());
 

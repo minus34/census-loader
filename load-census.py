@@ -33,6 +33,8 @@ import psycopg2  # module needs to be installed
 import psycopg2.extensions
 import web.utils as utils
 
+import shutil
+
 from datetime import datetime
 
 
@@ -196,6 +198,11 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
                         tsv_file = io.StringIO()
                         df_clean.to_csv(tsv_file, sep="\t", index=False, header=False)
                         tsv_file.seek(0)  # move position back to beginning of file before reading
+
+                        # # output dataframe to test tsv file
+                        # with open(file_dict["name"] + '.tsv', 'w') as fd:
+                        #     shutil.copyfileobj(tsv_file, fd)
+                        # tsv_file.seek(0)
 
                         # import into Postgres
                         sql = "COPY {0}.{1} FROM stdin WITH CSV DELIMITER as '\t' NULL as ''" \
