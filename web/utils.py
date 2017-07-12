@@ -131,7 +131,7 @@ def get_settings(args):
         settings['data_file_type'] = ".csv"
         settings['table_name_part'] = 1  # position in the data file name that equals it's destination table name
         settings['bdy_name_part'] = 3  # position in the data file name that equals it's census boundary name
-        settings['region_id_field'] = "aus_code_2016"
+        settings['region_id_field'] = "region_id"
 
         settings['population_stat'] = "g3"
         settings['population_table'] = "g01"

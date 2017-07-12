@@ -33,8 +33,6 @@ import psycopg2  # module needs to be installed
 import psycopg2.extensions
 import web.utils as utils
 
-import shutil
-
 from datetime import datetime
 
 
@@ -105,6 +103,11 @@ def main():
     start_time = datetime.now()
     logger.info("Part 2 of 2 : Start census boundary load : {0}".format(start_time))
     load_boundaries(pg_cur, settings)
+    # add bdy type prefix to bdy id to enabled joins with stat data (Census 2016 data issue only)
+    if settings["census_year"] == "2016":
+        fix_boundary_ids(settings)
+    else:
+        logger.info("\t- Step 2 of 3 : boundary id prefixes not required : {0}".format(datetime.now() - start_time))
     create_display_boundaries(pg_cur, settings)
     logger.info("Part 2 of 2 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
@@ -356,11 +359,43 @@ def load_boundaries(pg_cur, settings):
             utils.import_shapefile_to_postgres(pg_cur, shp['file_path'], shp['pg_table'], shp['pg_schema'],
                                                shp['delete_table'], True)
 
-        logger.info("\t- Step 1 of 2 : boundaries loaded : {0}".format(datetime.now() - start_time))
+        logger.info("\t- Step 1 of 3 : boundaries loaded : {0}".format(datetime.now() - start_time))
+
+
+def fix_boundary_ids(settings):
+    # Step 2 of 3 : add bdy type prefix to bdy id to enabled joins with stat data (Census 2016 data issue only)
+    start_time = datetime.now()
+
+    alter_sql_list = list()
+    update_sql_list = list()
+    vacuum_sql_list = list()
+
+    for boundary_dict in settings['bdy_table_dicts']:
+        boundary_name = boundary_dict["boundary"]
+        input_pg_table = "{0}_{1}_aust".format(boundary_name, settings["census_year"])
+
+        if boundary_name in ["ced", "iare", "iloc", "ireg", "lga", "poa", "sed", "ssc"]:
+            id_field = boundary_dict["id_field"]
+
+            sql = "ALTER TABLE {0}.{1} ALTER COLUMN {2} TYPE text"\
+                .format(settings['boundary_schema'], input_pg_table, id_field)
+            alter_sql_list.append(sql)
+
+            sql = "UPDATE {0}.{1} SET {2} = upper('{3}') || {2}"\
+                .format(settings['boundary_schema'], input_pg_table, id_field, boundary_name)
+            update_sql_list.append(sql)
+
+            vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(settings['boundary_schema'], input_pg_table))
+
+    utils.multiprocess_list("sql", alter_sql_list, settings, logger)
+    utils.multiprocess_list("sql", update_sql_list, settings, logger)
+    utils.multiprocess_list("sql", vacuum_sql_list, settings, logger)
+
+    logger.info("\t- Step 2 of 3 : boundary ids prefixed : {0}".format(datetime.now() - start_time))
 
 
 def create_display_boundaries(pg_cur, settings):
-    # Step 2 of 2 : create web optimised versions of the census boundaries
+    # Step 3 of 3 : create web optimised versions of the census boundaries
     start_time = datetime.now()
 
     # create schema
@@ -465,7 +500,7 @@ def create_display_boundaries(pg_cur, settings):
     utils.multiprocess_list("sql", insert_sql_list, settings, logger)
     utils.multiprocess_list("sql", vacuum_sql_list, settings, logger)
 
-    logger.info("\t- Step 2 of 2 : web optimised boundaries created : {0}".format(datetime.now() - start_time))
+    logger.info("\t- Step 3 of 3 : web optimised boundaries created : {0}".format(datetime.now() - start_time))
 
 
 if __name__ == '__main__':
