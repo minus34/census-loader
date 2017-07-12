@@ -1,6 +1,3 @@
-# IMPORTANT
-Code isn't working due to last minute changes in the 2016 Datapacks - working on it!
-
 # census-loader
 A quick way to get started with Australian Bureau of Statistics (ABS) Census 2011 or 2016 data.
 
@@ -16,11 +13,11 @@ A quick way to get started with Australian Bureau of Statistics (ABS) Census 201
 3. [Download](https://github.com/minus34/census-loader#option-3---load-pg_dump-files) the Postgres dump files and restore them in your database. __Note: Census 2016 data and ASGS boundaries only__
 
 ## Option 1 - Run load-census.py
-Running the Python script takes 10-15 minutes on a Postgres server configured for performance.
+Running the Python script takes 15-30 minutes on a Postgres server configured for performance.
 
 Benchmarks are:
-- 3 year old, 32 core Windows server with SSDs = 10 mins
-- MacBook Pro = 15 mins
+- 3 year old, 32 core Windows server with SSDs = 15 mins
+- MacBook Pro = 25 mins
 
 ### Performance
 To get a good load time you'll need to configure your Postgres server for performance. There's a good guide [here](http://revenant.ca/www/postgis/workshop/tuning.html), noting it's a few years old and some of the memory parameters can be beefed up if you have the RAM.
