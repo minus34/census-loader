@@ -78,18 +78,16 @@ def main():
     # START LOADING DATA
 
     # test runtime parameters - 2011
-    # --pghost=192.168.0.7
     # --census-year=2011
     # --data-schema=census_2011_data
     # --boundary-schema=census_2011_bdys
     # --web-schema=census_2011_web
-    # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2011_data
-    # --census-bdys-path=/Users/hugh.saalmans/tmp/abs_census_2016_bdys
+    # --census-data-path=/Users/hugh/tmp/abs_census_2011_data
+    # --census-bdys-path=/Users/hugh/tmp/abs_census_2016_bdys
 
     # test runtime parameters - 2016
-    # --pghost=192.168.0.7
-    # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2016_data
-    # --census-bdys-path=/Users/hugh.saalmans/tmp/abs_census_2016_bdys
+    # --census-data-path=/Users/hugh/tmp/abs_census_2016_data
+    # --census-bdys-path=/Users/hugh/tmp/abs_census_2016_bdys
 
     # PART 1 - load census data from CSV files
     logger.info("")
@@ -241,14 +239,23 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, setting
                 if file_name.lower().endswith(suffix.lower()):
 
                     file_path = os.path.join(root, file_name)
-                    file_name_components = file_name.lower().split("_")
+                    file_name_components = file_name.lower().split(".")[0].split("_")
+
+                    print(','.join(file_name_components))
 
                     table = file_name_components[table_name_part]
-                    boundary = file_name_components[bdy_name_part]
 
                     # manual fix for the Australia wide data - has a different file name structure
-                    if "." in boundary:
-                        boundary = "aust"
+                    if settings['census_year'] == '2016':
+                        if "_aus." in file_name.lower():
+                            boundary = "aust"
+                        else:
+                            boundary = file_name_components[bdy_name_part]
+                    else:
+                        boundary = file_name_components[bdy_name_part]
+
+                        if "." in boundary:
+                            boundary = "aust"
 
                     file_dict = {
                         "path": file_path,

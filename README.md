@@ -87,9 +87,10 @@ Create a Docker container with Census data and ASGS boundaries ready to go, so t
 ### Process
 1. Download [ABS Census 2016 CSV Files](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/2079.02016) or [ABS Census 2011 CSV Files](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login)
 2. Download [ABS 2016 ASGS boundaries](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/1270.0.55.001July%202016) or [ABS 2011 ASGS boundaries](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login) **IMPORTANT - download the ESRI Shapefile versions**
-3. Unzip Census data and ASGS boundaries in the data/ directory of this repository
-4. Run docker-compose: `docker-compose up`. The database will be built.
-5. Use the constructed database as you wish.
+3. (optional) Download the 2016 [Indigenous](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.002) and [Non-ABS](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.003) boundaries as well
+4. Unzip Census data and ASGS boundaries in the data/ directory of this repository
+5. Run docker-compose: `docker-compose up`. The database will be built.
+6. Use the constructed database as you wish.
 
 ## Option 3 - Load PG_DUMP Files
 Download Postgres dump files and restore them in your database.
@@ -101,9 +102,10 @@ Should take 15 minutes.
 - A knowledge of [Postgres pg_restore parameters](http://www.postgresql.org/docs/9.6/static/app-pgrestore.html)
 
 ### Process
-1. Download [census-data-2016.dmp](http://minus34.com/opendata/census-2016/census-data-2016.dmp) (~1.6Gb)
-2. Download [census-boundaries-2016.dmp](http://minus34.com/opendata/census-2016/census-boundaries-2016.dmp) (~2.0Gb)
-3. Edit the restore-gnaf-admin-bdys.bat or .sh script in the supporting-files folder for your database parameters and for the location of pg_restore
+1. Download [census-2016-data.dmp](http://minus34.com/opendata/census-2016/census-2016-data.dmp) (~1.6Gb)
+2. Download [census-2016-boundaries.dmp](http://minus34.com/opendata/census-2016/census-2016-boundaries.dmp) (~2.0Gb)
+3. Download [census-2016-web.dmp](http://minus34.com/opendata/census-2016/census-2016-web.dmp) (~2.0Gb)
+4. Edit the restore-gnaf-admin-bdys.bat or .sh script in the supporting-files folder for your database parameters and for the location of pg_restore
 5. Run the script, come back in 15-60 minutes and enjoy!
 
 ### Data Licenses
