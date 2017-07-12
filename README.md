@@ -31,7 +31,7 @@ To get a good load time you'll need to configure your Postgres server for perfor
 - Python 3.x with Psycopg2, xlrd & Pandas packages installed
 
 ### Process
-1. Download [ABS Census 2016 CSV Files](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/2079.02016) or [ABS Census 2011 CSV Files](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login)
+1. Download [ABS Census DataPacks](https://datapacks.censusdata.abs.gov.au/datapacks/)
 2. Download [ABS 2016 ASGS boundaries](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.001) or [ABS 2011 ASGS boundaries](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login) **IMPORTANT - download the ESRI Shapefile versions**
 3. (optional) Download the 2016 [Indigenous](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.002) and [Non-ABS](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.003) boundaries as well
 4. Unzip the Census CSV files to a directory on your Postgres server
@@ -85,7 +85,7 @@ When using the resulting data from this process - you will need to adhere to the
 Create a Docker container with Census data and ASGS boundaries ready to go, so they can be deployed anywhere.
 
 ### Process
-1. Download [ABS Census 2016 CSV Files](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/2079.02016) or [ABS Census 2011 CSV Files](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login)
+1. Download [ABS Census DataPacks](https://datapacks.censusdata.abs.gov.au/datapacks/)
 2. Download [ABS 2016 ASGS boundaries](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/1270.0.55.001July%202016) or [ABS 2011 ASGS boundaries](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login) **IMPORTANT - download the ESRI Shapefile versions**
 3. (optional) Download the 2016 [Indigenous](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.002) and [Non-ABS](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.003) boundaries as well
 4. Unzip Census data and ASGS boundaries in the data/ directory of this repository
