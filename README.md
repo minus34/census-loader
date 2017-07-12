@@ -1,13 +1,9 @@
-## IMPORTANT
-- Census-Loader has yet to be tested against the Census 2016 data (to be) released on July 12.
-- The settings (in utils.py) for the 2016 data may be incorrect when the data is released.
-
 # census-loader
 A quick way to get started with Australian Bureau of Statistics (ABS) Census 2011 or 2016 data.
 
 **census-loader is 2 things:**
 1. A quick way to load the entire census into Postgres
-2. A map server for quickly visualising census data and trends
+2. A [map server](https://github.com/minus34/census-loader/tree/master/web) for quickly visualising census data and trends
 
 ![sydney_b2793.png](https://github.com/minus34/census-loader/blob/master/sample-images/sydney_b2793.png)
 
@@ -60,6 +56,7 @@ The behaviour of census-loader can be controlled by specifying various command l
 * `--census-year` Year of the ABS Census data to load. Valid values are `2011` and `2016` Defaults to `2016`.
 * `--data-schema` schema name to store Census data tables in. Defaults to `census_2016_data`. **You will need to change this argument if you set `--census-year=2011`**
 * `--boundary-schema` schema name to store Census boundary tables in. Defaults to `census_2016_bdys`. **You will need to change this argument if you set `--census-year=2011`**
+* `--web-schema` schema name to store Census boundary tables in. Defaults to `census_2016_web`. **You will need to change this argument if you set `--census-year=2011`**
 * `--max-processes` specifies the maximum number of parallel processes to use for the data load. Set this to the number of cores on the Postgres server minus 2, but limit to 12 if 16+ cores - there is minimal benefit beyond 12. Defaults to 3.
 
 ### Example Command Line Arguments

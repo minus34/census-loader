@@ -89,20 +89,20 @@ def main():
     # --census-data-path=/Users/hugh/tmp/abs_census_2016_data
     # --census-bdys-path=/Users/hugh/tmp/abs_census_2016_bdys
 
-    # PART 1 - load census data from CSV files
-    logger.info("")
-    start_time = datetime.now()
-    logger.info("Part 1 of 2 : Start census data load : {0}".format(start_time))
-    create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
-    populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
-                         settings['table_name_part'], settings['bdy_name_part'], settings)
-    logger.info("Part 1 of 2 : Census data loaded! : {0}".format(datetime.now() - start_time))
-
-    # PART 2 - load census boundaries from Shapefiles and optimise them for web visualisation
-    logger.info("")
-    start_time = datetime.now()
-    logger.info("Part 2 of 2 : Start census boundary load : {0}".format(start_time))
-    load_boundaries(pg_cur, settings)
+    # # PART 1 - load census data from CSV files
+    # logger.info("")
+    # start_time = datetime.now()
+    # logger.info("Part 1 of 2 : Start census data load : {0}".format(start_time))
+    # create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
+    # populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
+    #                      settings['table_name_part'], settings['bdy_name_part'], settings)
+    # logger.info("Part 1 of 2 : Census data loaded! : {0}".format(datetime.now() - start_time))
+    #
+    # # PART 2 - load census boundaries from Shapefiles and optimise them for web visualisation
+    # logger.info("")
+    # start_time = datetime.now()
+    # logger.info("Part 2 of 2 : Start census boundary load : {0}".format(start_time))
+    # load_boundaries(pg_cur, settings)
     create_display_boundaries(pg_cur, settings)
     logger.info("Part 2 of 2 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
@@ -240,8 +240,6 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, setting
 
                     file_path = os.path.join(root, file_name)
                     file_name_components = file_name.lower().split(".")[0].split("_")
-
-                    print(','.join(file_name_components))
 
                     table = file_name_components[table_name_part]
 
@@ -410,6 +408,9 @@ def create_display_boundaries(pg_cur, settings):
             else:
                 pop_stat = settings['population_stat']
                 pop_table = settings['population_table']
+
+            # print(boundary_name)
+            # print(pop_stat + " - " + pop_table)
 
             # build insert statement
             insert_into_list = list()
