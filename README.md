@@ -1,3 +1,6 @@
+# IMPORTANT
+Code isn't working due to last minute changes in the 2016 Datapacks - working on it!
+
 # census-loader
 A quick way to get started with Australian Bureau of Statistics (ABS) Census 2011 or 2016 data.
 

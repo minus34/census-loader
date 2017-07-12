@@ -89,20 +89,20 @@ def main():
     # --census-data-path=/Users/hugh/tmp/abs_census_2016_data
     # --census-bdys-path=/Users/hugh/tmp/abs_census_2016_bdys
 
-    # # PART 1 - load census data from CSV files
-    # logger.info("")
-    # start_time = datetime.now()
-    # logger.info("Part 1 of 2 : Start census data load : {0}".format(start_time))
-    # create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
-    # populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
-    #                      settings['table_name_part'], settings['bdy_name_part'], settings)
-    # logger.info("Part 1 of 2 : Census data loaded! : {0}".format(datetime.now() - start_time))
-    #
-    # # PART 2 - load census boundaries from Shapefiles and optimise them for web visualisation
-    # logger.info("")
-    # start_time = datetime.now()
-    # logger.info("Part 2 of 2 : Start census boundary load : {0}".format(start_time))
-    # load_boundaries(pg_cur, settings)
+    # PART 1 - load census data from CSV files
+    logger.info("")
+    start_time = datetime.now()
+    logger.info("Part 1 of 2 : Start census data load : {0}".format(start_time))
+    create_metadata_tables(pg_cur, settings['metadata_file_prefix'], settings['metadata_file_type'], settings)
+    populate_data_tables(settings['data_file_prefix'], settings['data_file_type'],
+                         settings['table_name_part'], settings['bdy_name_part'], settings)
+    logger.info("Part 1 of 2 : Census data loaded! : {0}".format(datetime.now() - start_time))
+
+    # PART 2 - load census boundaries from Shapefiles and optimise them for web visualisation
+    logger.info("")
+    start_time = datetime.now()
+    logger.info("Part 2 of 2 : Start census boundary load : {0}".format(start_time))
+    load_boundaries(pg_cur, settings)
     create_display_boundaries(pg_cur, settings)
     logger.info("Part 2 of 2 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
@@ -188,6 +188,9 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
                                 df_clean.drop(df.columns[[6, 7, 8]], axis=1, inplace=True)
                             except:
                                 pass
+
+                        # # order what's left by sequential_id field
+                        # df_clean.sort_values(by="Sequential", inplace=True)
 
                         # export to in-memory tab delimited text file
                         tsv_file = io.StringIO()
@@ -448,6 +451,8 @@ def create_display_boundaries(pg_cur, settings):
             insert_sql_list.append(sql)
 
             vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(settings['web_schema'], pg_table))
+
+    print("\n".join(insert_sql_list))
 
     utils.multiprocess_list("sql", create_sql_list, settings, logger)
     utils.multiprocess_list("sql", insert_sql_list, settings, logger)
