@@ -47,7 +47,7 @@ Runs the map for 2011 Census data.
 ### Usage
 
 1. Get the map server running
-2. Lookup the stats you want from the Metadata Excel files in the Census Datapacks ()
+2. Lookup the stats you want from the Metadata Excel files in the Census Datapacks. They're in the \<your data path>\<Datapack name>\Metadata folders
 3. Add them to the URL for the map. e.g. http://127.0.0.1:8081/?stats=T01,T02,T03
 
 Note: an intuitive, keyword based stat search tool would be good to integrate with the map, but I'd like to get some rest now... (pull requests gratefully accepted)
@@ -58,7 +58,7 @@ Note: an intuitive, keyword based stat search tool would be good to integrate wi
 * Religion: [http://127.0.0.1:8081/?stats=G5456,G5363,G5423,G5426,G5429,G5432](http://127.0.0.1:8081/?stats=G5456,G5363,G5423,G5426,G5429,G5432)
 * Median age, income, rent, mortgages: [http://127.0.0.1:8081/?stats=G109,G110,G111,G112,G113,G114,G115,G116](http://127.0.0.1:8081/?stats=G109,G110,G111,G112,G113,G114,G115,G116)
 
-Note: I don't have a live version running yet - you'll need to standup the map server yuorself for now...
+Note: I don't have a live version running yet - you'll need to stand up the map server yourself for now...
 
 ### Data License
 
