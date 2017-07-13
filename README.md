@@ -75,7 +75,7 @@ When using the resulting data from this process - you will need to adhere to the
 - The scripts will DROP ALL TABLES and recreate them using CASCADE; meaning you'll LOSE YOUR VIEWS if you have created any! If you want to keep the existing data - you'll need to change the schema names in the script or use a different database
 
 ### IMPORTANT:
-- Whilst you can choose which 2 schemas to load the data into, I haven't QA'd the permutations. Stick with the defaults if you have limited Postgres experience 
+- Whilst you can choose which 3 schemas to load the data into, I haven't QA'd the permutations. Stick with the defaults if you have limited Postgres experience 
 
 ## Option 2 - Build the database in a docker environment
 
@@ -92,7 +92,7 @@ Create a Docker container with Census data and ASGS boundaries ready to go, so t
 ## Option 3 - Load PG_DUMP Files
 Download Postgres dump files and restore them in your database.
 
-Should take 15 minutes.
+Should take 15-30 minutes.
 
 ### Pre-requisites
 - Postgres 9.6+ with PostGIS 2.2+
@@ -105,10 +105,10 @@ Should take 15 minutes.
 4. Edit the restore-census-schemas.bat or .sh script in the supporting-files folder for your database parameters and for the location of pg_restore
 5. Run the script, come back in 15-30 minutes and enjoy!
 
-### Data Licenses
+### Data License
 
 Source: [Australian Bureau of Statistics](http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material)
 
 ## DATA CUSTOMISATION
 
-- Display optimised tables are created by this process, They allow for web mapping from the state level down the SA1 and meshblock levels. These are created in the census boundary display schema
+- Display optimised tables are created by this process, They allow for web mapping from the state level down the SA1 level. These are created in the census web schema.

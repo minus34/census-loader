@@ -43,16 +43,16 @@ def get_boundary(zoom_level):
 
     if zoom_level < 7:
         boundary_name = "ste"
-        min_display_value = 400
+        min_display_value = 2025
     elif zoom_level < 9:
         boundary_name = "sa4"
-        min_display_value = 200
+        min_display_value = 675
     elif zoom_level < 11:
         boundary_name = "sa3"
-        min_display_value = 100
+        min_display_value = 225
     elif zoom_level < 14:
         boundary_name = "sa2"
-        min_display_value = 50
+        min_display_value = 75
     elif zoom_level < 17:
         boundary_name = "sa1"
         min_display_value = 25

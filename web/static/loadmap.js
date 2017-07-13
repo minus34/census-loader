@@ -67,7 +67,7 @@ if (queryObj.b !== undefined) {
 
 // start zoom level
 if (!queryObj.z) {
-    currentZoomLevel = 11;
+    currentZoomLevel = 12;
 } else {
     currentZoomLevel = queryObj.z;
 }
