@@ -1,5 +1,8 @@
 # census-map
-A universal map visualiser for all census data.
+A universal map visualiser for all census data:
+- Displays any combination of stats
+- Stats are shown as percentages against total population, except for averages and medians (i.e they're normalised)
+- Map shading shows the range of values on the map - highlights the min/max areas
 
 ### Pre-requisites
 - Run census-loader to import the Census data and boundaries into Postgres

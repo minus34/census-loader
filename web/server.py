@@ -1,8 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
+import arguments
 import ast
 import json
 import psycopg2
-import utils
+# import utils
 
 from datetime import datetime
 from contextlib import contextmanager
@@ -21,10 +24,10 @@ app = Flask(__name__, static_url_path='')
 Compress(app)
 
 # set command line arguments
-args = utils.set_arguments()
+args = arguments.set_arguments()
 
 # get settings from arguments
-settings = utils.get_settings(args)
+settings = arguments.get_settings(args)
 
 # create database connection pool
 pool = ThreadedConnectionPool(10, 30,
@@ -33,6 +36,31 @@ pool = ThreadedConnectionPool(10, 30,
                               password=settings["pg_password"],
                               host=settings["pg_host"],
                               port=settings["pg_port"])
+
+
+# get the boundary name that suits each (tiled map) zoom level and its minimum value to colour in
+def get_boundary(zoom_level):
+
+    if zoom_level < 7:
+        boundary_name = "ste"
+        min_display_value = 400
+    elif zoom_level < 9:
+        boundary_name = "sa4"
+        min_display_value = 200
+    elif zoom_level < 11:
+        boundary_name = "sa3"
+        min_display_value = 100
+    elif zoom_level < 14:
+        boundary_name = "sa2"
+        min_display_value = 50
+    elif zoom_level < 17:
+        boundary_name = "sa1"
+        min_display_value = 25
+    else:
+        boundary_name = "mb"
+        min_display_value = 5
+
+    return boundary_name, min_display_value
 
 
 @contextmanager
@@ -79,7 +107,7 @@ def get_boundary_name():
 
     for zoom_level in range(min_val, max_val + 1):
         boundary_dict = dict()
-        boundary_dict["name"], boundary_dict["min"] = utils.get_boundary(zoom_level)
+        boundary_dict["name"], boundary_dict["min"] = get_boundary(zoom_level)
         boundary_zoom_dict["{0}".format(zoom_level)] = boundary_dict
 
     return Response(json.dumps(boundary_zoom_dict), mimetype='application/json')
@@ -123,7 +151,7 @@ def get_metadata():
     test_names = list()
 
     for zoom_level in range(0, 16):
-        bdy_name, min_val = utils.get_boundary(zoom_level)
+        bdy_name, min_val = get_boundary(zoom_level)
 
         # only add if bdy not in list
         if bdy_name not in test_names:
@@ -230,7 +258,7 @@ def get_data():
 
     # get the boundary table name from zoom level
     if boundary_name is None:
-        boundary_name, min_val = utils.get_boundary(zoom_level)
+        boundary_name, min_val = get_boundary(zoom_level)
 
     display_zoom = str(zoom_level).zfill(2)
 

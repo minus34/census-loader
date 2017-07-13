@@ -21,17 +21,19 @@
 #   2. load all census data CSV files
 #   3. load census boundary Shapefiles
 #   4. create web display optimised census boundaries using Visvalingam-Whyatt simplification
-#   5. fire up the map server and party on!
+#   5. got to the web folder and fire up the map server
+#   6. party on!
 #
 # *********************************************************************************************************************
 
+import arguments
 import io
 import logging.config
 import os
 import pandas  # module needs to be installed (IMPORTANT: need to install 'xlrd' module for Pandas to read .xlsx files)
 import psycopg2  # module needs to be installed
 import psycopg2.extensions
-import web.utils as utils
+import utils
 
 from datetime import datetime
 
@@ -40,10 +42,10 @@ def main():
     full_start_time = datetime.now()
 
     # set command line arguments
-    args = utils.set_arguments()
+    args = arguments.set_arguments()
 
     # get settings from arguments
-    settings = utils.get_settings(args)
+    settings = arguments.get_settings(args)
 
     if settings is None:
         logger.fatal("Invalid Census Year\nACTION: Set value to 2011 or 2016")
@@ -305,7 +307,7 @@ def load_boundaries(pg_cur, settings):
     append_list = list()
 
     # get a dictionary of Shapefile paths
-    for root, dirs, files in os.walk(settings['boundaries_local_directory']):
+    for root, dirs, files in os.walk(settings['boundaries_directory']):
         for original_file_name in files:
             file_name = original_file_name.lower()
 
