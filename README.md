@@ -102,8 +102,8 @@ Should take 15 minutes.
 1. Download [census_2016_data.dmp](http://minus34.com/opendata/census-2016/census_2016_data.dmp) (~1.6Gb)
 2. Download [census_2016_boundaries.dmp](http://minus34.com/opendata/census-2016/census_2016_boundaries.dmp) (~2.0Gb)
 3. Download [census_2016_web.dmp](http://minus34.com/opendata/census-2016/census_2016_web.dmp) (~2.0Gb)
-4. Edit the restore-gnaf-admin-bdys.bat or .sh script in the supporting-files folder for your database parameters and for the location of pg_restore
-5. Run the script, come back in 15-60 minutes and enjoy!
+4. Edit the restore-census-schemas.bat or .sh script in the supporting-files folder for your database parameters and for the location of pg_restore
+5. Run the script, come back in 15-30 minutes and enjoy!
 
 ### Data Licenses
 
