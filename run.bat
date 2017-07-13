@@ -1,3 +1,5 @@
+REM Sample command line arguments
+
 C:
 cd C:\git\minus34\census-loader
 
