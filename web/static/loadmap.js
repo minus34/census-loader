@@ -54,7 +54,7 @@ for (i = 0; i < querystring.length; i+=1) {
 if (!queryObj.census) {
    censusYear = "2016";
 } else {
-   censusYear = queryObj.census;
+   censusYear = queryObj.census.toString();
    // TODO: CHECK CENSUS YEAR VALUE IS VALID (2011 OR 2016 ONLY)
 }
 
