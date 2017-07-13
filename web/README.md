@@ -2,8 +2,9 @@
 A universal map visualiser for all census data:
 - Displays any combination of stats
 - Stats are shown as percentages against total population, except for averages and medians (i.e they're normalised)
-- Map shading shows range of values on the map (not the National range) - highlights min/max areas
+- Map shading shows range of values on the map (not the National range) - highlights min/max areas in view
 - Bookmarks for all capital cities
+- Note: not necessarily mobile friendly!
 
 ### Pre-requisites
 - Run census-loader to import the Census data and boundaries into Postgres
