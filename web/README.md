@@ -58,6 +58,8 @@ Note: an intuitive, keyword based stat search tool would be good to integrate wi
 * Religion: [http://127.0.0.1:8081/?stats=G5456,G5363,G5423,G5426,G5429,G5432](http://127.0.0.1:8081/?stats=G5456,G5363,G5423,G5426,G5429,G5432)
 * Median age, income, rent, mortgages: [http://127.0.0.1:8081/?stats=G109,G110,G111,G112,G113,G114,G115,G116](http://127.0.0.1:8081/?stats=G109,G110,G111,G112,G113,G114,G115,G116)
 
+Note: I don't have a live version running yet - you'll need to standup the map server yuorself for now...
+
 ### Data License
 
 Source: [Australian Bureau of Statistics](http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material)
