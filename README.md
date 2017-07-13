@@ -8,7 +8,7 @@ A quick way to get started with Australian Bureau of Statistics (ABS) Census 201
 ![sydney_b2793.png](https://github.com/minus34/census-loader/blob/master/sample-images/sydney_b2793.png)
 
 ### There are 3 options for loading the data
-1. [Run](https://github.com/minus34/census-loader#option-1---run-loadgnafpy) the load-census Python script and build the database schemas in a single step
+1. [Run](https://github.com/minus34/census-loader#option-1---run-loadcensuspy) the load-census Python script and build the database schemas in a single step
 2. [Build](https://github.com/minus34/census-loader#option-2---build-the-database-in-a-docker-environment) the database in a docker environment.
 3. [Download](https://github.com/minus34/census-loader#option-3---load-pg_dump-files) the Postgres dump files and restore them in your database. __Note: Census 2016 data and ASGS boundaries only__
 
@@ -99,9 +99,9 @@ Should take 15 minutes.
 - A knowledge of [Postgres pg_restore parameters](http://www.postgresql.org/docs/9.6/static/app-pgrestore.html)
 
 ### Process
-1. Download [census-2016-data.dmp](http://minus34.com/opendata/census-2016/census-2016-data.dmp) (~1.6Gb)
-2. Download [census-2016-boundaries.dmp](http://minus34.com/opendata/census-2016/census-2016-boundaries.dmp) (~2.0Gb)
-3. Download [census-2016-web.dmp](http://minus34.com/opendata/census-2016/census-2016-web.dmp) (~2.0Gb)
+1. Download [census_2016_data.dmp](http://minus34.com/opendata/census-2016/census_2016_data.dmp) (~1.6Gb)
+2. Download [census_2016_boundaries.dmp](http://minus34.com/opendata/census-2016/census_2016_boundaries.dmp) (~2.0Gb)
+3. Download [census_2016_web.dmp](http://minus34.com/opendata/census-2016/census_2016_web.dmp) (~2.0Gb)
 4. Edit the restore-gnaf-admin-bdys.bat or .sh script in the supporting-files folder for your database parameters and for the location of pg_restore
 5. Run the script, come back in 15-60 minutes and enjoy!
 
