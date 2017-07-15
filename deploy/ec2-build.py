@@ -1,9 +1,14 @@
 
+# AWS Crednetials file needs to exist in "/Users/hugh.saalmans/.aws/credentials"
+
+
 import boto3
 import logging
 import os
 import paramiko
 import time
+
+from datetime import datetime
 
 logging.getLogger("paramiko").setLevel(logging.INFO)
 
@@ -16,6 +21,7 @@ AVAILABILITY_ZONE = "ap-southeast-2a"  # Sydney, AU
 PEM_FILE = AWS_FOLDER + "/LightsailDefaultPrivateKey-ap-southeast-2.pem"
 
 INSTANCE_NAME = "census_loader_instance"
+
 
 def main():
 
@@ -31,10 +37,7 @@ def main():
         if bits[0].lower() == "aws_secret_access_key":
             aws_secret_access_key = bits[1]
 
-    # load bash script
-    bash_file = os.path.abspath(__file__).replace(".py", ".sh")
-    bash_script = open(bash_file, 'r').read().format(aws_access_key_id, aws_secret_access_key)
-
+    # create lightsail client
     lightsail_client = boto3.client('lightsail')
 
     # blueprints = lightsail_client.get_blueprints()
@@ -51,8 +54,7 @@ def main():
         instanceNames=[INSTANCE_NAME],
         availabilityZone=AVAILABILITY_ZONE,
         blueprintId=BLUEPRINT,
-        bundleId=BUILDID,
-        userData=bash_script
+        bundleId=BUILDID
     )
     logger.info(response_dict)
 
@@ -60,14 +62,15 @@ def main():
     instance_dict = get_lightsail_instance(lightsail_client, INSTANCE_NAME)
 
     while instance_dict["state"]["name"] != 'running':
-        logger.info('Waiting 10 seconds ... instance is %s' % instance_dict["state"]["name"])
+        logger.info('Waiting 10 seconds... instance is %s' % instance_dict["state"]["name"])
         time.sleep(10)
         instance_dict = get_lightsail_instance(lightsail_client, INSTANCE_NAME)
 
-    logger.info('Waiting 1 minute... instance is booting')
-    time.sleep(120)
+    logger.info('Waiting 30 seconds... instance is booting')
+    time.sleep(30)
 
     instance_ip = instance_dict["publicIpAddress"]
+    logger.info("Public IP address: {0}".format(instance_ip))
 
     key = paramiko.RSAKey.from_private_key_file(PEM_FILE)
     ssh_client = paramiko.SSHClient()
@@ -75,6 +78,7 @@ def main():
 
     # Here 'ubuntu' is user name and 'instance_ip' is public IP of EC2
     ssh_client.connect(hostname=instance_ip, username="ubuntu", pkey=key)
+    logger.info('Connected via SSH')
 
     # set AWS keys for SSH
     cmd = "export AWS_ACCESS_KEY_ID={0}".format(aws_access_key_id)
@@ -83,11 +87,14 @@ def main():
     cmd = "export AWS_SECRET_ACCESS_KEY={0}".format(aws_secret_access_key)
     run_ssh_command(ssh_client, cmd)
 
-    # update and upgrade instance
-    if not run_ssh_command(ssh_client, "sudo apt-get -y upgrade"):
-        return False
-    if not run_ssh_command(ssh_client, "sudo apt-get -y update"):
-        return False
+    # run each bash command
+    bash_file = os.path.abspath(__file__).replace(".py", ".sh")
+    bash_commands = open(bash_file, 'r').read().split("\n")
+
+    for cmd in bash_commands:
+        if cmd[:1] != "#" and cmd[:1].strip(" ") != "":  # ignore comments and blank lines
+            if not run_ssh_command(ssh_client, cmd):
+                return False
 
     return True
 
@@ -99,7 +106,8 @@ def get_lightsail_instance(lightsail_client, name):
 
 
 def run_ssh_command(ssh_client, cmd):
-    logger.info(cmd)
+    start_time = datetime.now()
+    logger.info("{0} : {1}".format(start_time, cmd))
 
     stdin, stdout, stderr = ssh_client.exec_command(cmd)
 
@@ -108,16 +116,14 @@ def run_ssh_command(ssh_client, cmd):
     stdin.close()
 
     for line in stdout.read().splitlines():
-        logger.info(str(line))
+        if line:
+            logger.fatal(" {0} : OUTPUT : {1}".format(datetime.now() - start_time, line))
     stdout.close()
 
     for line in stderr.read().splitlines():
         if line:
-            logger.fatal(str(line))
-            stderr.close()
-            return False
-        else:
-            stderr.close()
+            logger.warning(" {0} : ERROR : {1}".format(datetime.now() - start_time, line))
+    stderr.close()
 
     return True
 

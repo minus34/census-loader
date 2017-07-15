@@ -6,7 +6,7 @@
 
 # update Ubuntu
 sudo apt-get -y update
-sudo apt-get -y upgrade
+#sudo apt-get -y upgrade
 
 #install AWS CLI tools
 sudo apt-get -y install awscli
@@ -37,7 +37,7 @@ sudo git clone https://github.com/minus34/census-loader.git ~/git/census-loader/
 # ----------------------------------------------
 
 # copy files
-AWS_ACCESS_KEY_ID={0} AWS_SECRET_ACCESS_KEY={1} sudo aws s3 cp s3://minus34.com/opendata/census-2016 ~/git/census-loader/data --recursive
+sudo aws s3 cp s3://minus34.com/opendata/census-2016 ~/git/census-loader/data --recursive
 
 ## create user and database
 #sudo -u postgres createuser -P censususer
