@@ -41,17 +41,35 @@ sudo apt -y install gunicorn
 sudo git clone https://github.com/minus34/census-loader.git ~/git/census-loader/
 
 
-# -------------------------------
+# ----------------------------------------------
 # STEP 2 - copy data and restore into Postgres
-# -------------------------------
+# ----------------------------------------------
 
 # copy files
 sudo aws s3 cp s3://minus34.com/opendata/census-2016 ~/git/census-loader/data --recursive
 
+# need to set postgres settings, including autovacuum off
+sudo vim
+
 # import into database
 sudo pg_restore -Fc -d geo -p 5432 -U hugh -h localhost ~/git/census-loader/data/census_2016_data.dmp
 #sudo pg_restore -Fc -d geo -p 5432 -U hugh ~/git/census-loader/data/census_2016_bdys.dmp  # don't need this one
-sudo pg_restore -Fc -d geo -p 5432 -U hugh ~/git/census-loader/data/census_2016_web.dmp
+sudo pg_restore -Fc -d geo -p 5432 -U hugh -h localhost ~/git/census-loader/data/census_2016_web.dmp
+
+# test data loaded ok
+sudo -u postgres psql -c "SELECT Count(*) FROM census_2016_data.ste_t28b; " geo
+sudo -u postgres psql -c "SELECT Count(*) FROM census_2016_web.ste; " geo
+
+# set autovacuum off (need to change this to use sed to automate it)
+sudo vim /etc/postgresql/9.6/main/postgresql.conf
+
+## restart postgres - if needed
+#sudo service postgresql restart
+
+## look at log files - if needed
+#vim /var/log/postgresql/postgresql-9.6-main.log
+
+sudo -u postgres psql -c "SELECT Count(*) FROM census_2016_data.ste_t28b; " geo
 
 
 # -------------------------------

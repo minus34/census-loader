@@ -11,11 +11,12 @@ AVAILABILITY_ZONE = "ap-southeast-2a"  # Sydney, AU
 # AWS_ACCESS_KEY = 'yourAccessKey'
 # AWS_SECRET_ACCESS_KEY = 'yourSecretKey'
 
+
 def main():
 
-    # load bash script
-    bash_file = os.path.abspath(__file__).replace(".py", ".sh")
-    bash_script = open(bash_file, 'r').read()
+    # # load bash script
+    # bash_file = os.path.abspath(__file__).replace(".py", ".sh")
+    # bash_script = open(bash_file, 'r').read()
 
     lightsail_client = boto3.client('lightsail')
 
