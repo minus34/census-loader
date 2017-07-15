@@ -50,11 +50,17 @@ def main():
     #     for k, v in bundle.items():
     #         print('{} : {}'.format(k, v))
 
+    initial_script = "export DEBIAN_FRONTEND=noninteractive\n" \
+                     "export AWS_ACCESS_KEY_ID={0}\n" \
+                     "export AWS_SECRET_ACCESS_KEY={1}"\
+        .format(aws_access_key_id, aws_secret_access_key)
+
     response_dict = lightsail_client.create_instances(
         instanceNames=[INSTANCE_NAME],
         availabilityZone=AVAILABILITY_ZONE,
         blueprintId=BLUEPRINT,
-        bundleId=BUILDID
+        bundleId=BUILDID,
+        userData=initial_script
     )
     logger.info(response_dict)
 
@@ -92,9 +98,7 @@ def main():
     cmd = "sudo apt-get -y install awscli"
     run_ssh_command(ssh_client, cmd)
 
-    cmd = "AWS_ACCESS_KEY_ID={0} AWS_SECRET_ACCESS_KEY={1} " \
-          "sudo aws s3 cp s3://minus34.com/opendata/census-2016 ~/git/census-loader/data --recursive"\
-        .format(aws_access_key_id, aws_secret_access_key)
+    cmd = "sudo aws s3 cp s3://minus34.com/opendata/census-2016 ~/git/census-loader/data --recursive"
     run_ssh_command(ssh_client, cmd)
 
     # # set AWS keys for SSH
