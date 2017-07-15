@@ -3,20 +3,26 @@ import boto3
 import logging
 import os
 import paramiko
+import time
 
+logging.getLogger("paramiko").setLevel(logging.INFO)
 
+AWS_FOLDER = "/Users/hugh.saalmans/.aws"
 BLUEPRINT = "ubuntu_16_04_1"
 BUILDID = "nano_1_2"
 # KEY_PAIR_NAME = "Default"
 AVAILABILITY_ZONE = "ap-southeast-2a"  # Sydney, AU
 
+PEM_FILE = AWS_FOLDER + "/LightsailDefaultPrivateKey-ap-southeast-2.pem"
+
+INSTANCE_NAME = "census_loader_instance"
 
 def main():
 
     # get AWS credentials (required to copy pg_dump files from S3)
     aws_access_key_id = ""
     aws_secret_access_key = ""
-    cred_array = open("/Users/hugh.saalmans/.aws/credentials", 'r').read().split("\n")
+    cred_array = open(AWS_FOLDER + "/credentials", 'r').read().split("\n")
 
     for line in cred_array:
         bits = line.split("=")
@@ -41,33 +47,77 @@ def main():
     #     for k, v in bundle.items():
     #         print('{} : {}'.format(k, v))
 
-    # response_dict = lightsail_client.create_instances(
-    #     instanceNames=['census_loader_instance'],
-    #     availabilityZone=AVAILABILITY_ZONE,
-    #     blueprintId=BLUEPRINT,
-    #     bundleId=BUILDID,
-    #     userData=bash_script
-    # )
-    #
-    # logger.info(response_dict)
-
-    # response_dict = {'operations': [{'id': '622da4d9-1290-4361-9d1a-d3304dc55859', 'resourceName': 'census_loader_instance', 'resourceType': 'Instance', 'createdAt': datetime.datetime(2017, 7, 15, 18, 4, 43, 707000, tzinfo=tzlocal()), 'location': {'availabilityZone': 'ap-southeast-2a', 'regionName': 'ap-southeast-2'}, 'isTerminal': False, 'operationType': 'CreateInstance', 'status': 'Started', 'statusChangedAt': datetime.datetime(2017, 7, 15, 18, 4, 45, 2000, tzinfo=tzlocal())}], 'ResponseMetadata': {'RequestId': '425e6d9b-6934-11e7-af07-77b36cad75a0', 'HTTPStatusCode': 200, 'HTTPHeaders': {'server': 'Server', 'date': 'Sat, 15 Jul 2017 08:04:45 GMT', 'content-type': 'application/x-amz-json-1.1', 'content-length': '343', 'connection': 'keep-alive', 'x-amzn-requestid': '425e6d9b-6934-11e7-af07-77b36cad75a0'}, 'RetryAttempts': 0}}
-
-    response = lightsail_client.get_instance(
-        instanceName='census_loader_instance'
+    response_dict = lightsail_client.create_instances(
+        instanceNames=[INSTANCE_NAME],
+        availabilityZone=AVAILABILITY_ZONE,
+        blueprintId=BLUEPRINT,
+        bundleId=BUILDID,
+        userData=bash_script
     )
+    logger.info(response_dict)
 
-    instance_dict = response["instance"]
-    ip_address = instance_dict["publicIpAddress"]
+    # wait until instance is running
+    instance_dict = get_lightsail_instance(lightsail_client, INSTANCE_NAME)
+
+    while instance_dict["state"]["name"] != 'running':
+        logger.info('Waiting 10 seconds ... instance is %s' % instance_dict["state"]["name"])
+        time.sleep(10)
+        instance_dict = get_lightsail_instance(lightsail_client, INSTANCE_NAME)
+
+    logger.info('Waiting 1 minute... instance is booting')
+    time.sleep(120)
+
+    instance_ip = instance_dict["publicIpAddress"]
+
+    key = paramiko.RSAKey.from_private_key_file(PEM_FILE)
+    ssh_client = paramiko.SSHClient()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+    # Here 'ubuntu' is user name and 'instance_ip' is public IP of EC2
+    ssh_client.connect(hostname=instance_ip, username="ubuntu", pkey=key)
+
+    # set AWS keys for SSH
+    cmd = "export AWS_ACCESS_KEY_ID={0}".format(aws_access_key_id)
+    run_ssh_command(ssh_client, cmd)
+
+    cmd = "export AWS_SECRET_ACCESS_KEY={0}".format(aws_secret_access_key)
+    run_ssh_command(ssh_client, cmd)
+
+    # update and upgrade instance
+    if not run_ssh_command(ssh_client, "sudo apt-get -y upgrade"):
+        return False
+    if not run_ssh_command(ssh_client, "sudo apt-get -y update"):
+        return False
+
+    return True
 
 
-    # key = paramiko.RSAKey.from_private_key_file(path / to / mykey.pem)
-    # client = paramiko.SSHClient()
-    # client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+def get_lightsail_instance(lightsail_client, name):
+    response = lightsail_client.get_instance(instanceName=name)
+
+    return response["instance"]
 
 
+def run_ssh_command(ssh_client, cmd):
+    logger.info(cmd)
 
+    stdin, stdout, stderr = ssh_client.exec_command(cmd)
 
+    # for line in stdin.read().splitlines():
+    #     logger.info(line)
+    stdin.close()
+
+    for line in stdout.read().splitlines():
+        logger.info(str(line))
+    stdout.close()
+
+    for line in stderr.read().splitlines():
+        if line:
+            logger.fatal(str(line))
+            stderr.close()
+            return False
+        else:
+            stderr.close()
 
     return True
 
