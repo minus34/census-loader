@@ -5,11 +5,11 @@
 # -------------------------------
 
 # update Ubuntu
-sudo apt-get -y update
+#sudo apt-get -y update
 #sudo apt-get -y upgrade
 
 #install AWS CLI tools
-sudo apt-get -y install awscli
+#sudo apt-get -y install awscli
 
 # install Postgres
 sudo add-apt-repository -y "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main"
@@ -37,7 +37,7 @@ sudo git clone https://github.com/minus34/census-loader.git ~/git/census-loader/
 # ----------------------------------------------
 
 # copy files
-sudo aws s3 cp s3://minus34.com/opendata/census-2016 ~/git/census-loader/data --recursive
+#sudo aws s3 cp s3://minus34.com/opendata/census-2016 ~/git/census-loader/data --recursive
 
 ## create user and database
 #sudo -u postgres createuser -P censususer

@@ -80,12 +80,29 @@ def main():
     ssh_client.connect(hostname=instance_ip, username="ubuntu", pkey=key)
     logger.info('Connected via SSH')
 
-    # set AWS keys for SSH
-    cmd = "export AWS_ACCESS_KEY_ID={0}".format(aws_access_key_id)
+    # try to silence annoying Debian message about not having a UI
+    cmd = "export DEBIAN_FRONTEND=noninteractive"
     run_ssh_command(ssh_client, cmd)
 
-    cmd = "export AWS_SECRET_ACCESS_KEY={0}".format(aws_secret_access_key)
+    # update
+    cmd = "sudo apt-get -y update"
     run_ssh_command(ssh_client, cmd)
+
+    # install AWS commands line tools and copy files from S3
+    cmd = "sudo apt-get -y install awscli"
+    run_ssh_command(ssh_client, cmd)
+
+    cmd = "AWS_ACCESS_KEY_ID={0} AWS_SECRET_ACCESS_KEY={1} " \
+          "sudo aws s3 cp s3://minus34.com/opendata/census-2016 ~/git/census-loader/data --recursive"\
+        .format(aws_access_key_id, aws_secret_access_key)
+    run_ssh_command(ssh_client, cmd)
+
+    # # set AWS keys for SSH
+    # cmd = "export AWS_ACCESS_KEY_ID={0}".format(aws_access_key_id)
+    # run_ssh_command(ssh_client, cmd)
+    #
+    # cmd = "export AWS_SECRET_ACCESS_KEY={0}".format(aws_secret_access_key)
+    # run_ssh_command(ssh_client, cmd)
 
     # run each bash command
     bash_file = os.path.abspath(__file__).replace(".py", ".sh")
@@ -107,7 +124,7 @@ def get_lightsail_instance(lightsail_client, name):
 
 def run_ssh_command(ssh_client, cmd):
     start_time = datetime.now()
-    logger.info("{0} : {1}".format(start_time, cmd))
+    logger.info("START : {0} : {1}".format(start_time, cmd))
 
     stdin, stdout, stderr = ssh_client.exec_command(cmd)
 
@@ -115,9 +132,10 @@ def run_ssh_command(ssh_client, cmd):
     #     logger.info(line)
     stdin.close()
 
-    for line in stdout.read().splitlines():
-        if line:
-            logger.fatal(" {0} : OUTPUT : {1}".format(datetime.now() - start_time, line))
+    # too verbose - don't log
+    # for line in stdout.read().splitlines():
+    #     if line:
+    #         logger.info(" {0} : OUTPUT : {1}".format(datetime.now() - start_time, line))
     stdout.close()
 
     for line in stderr.read().splitlines():
@@ -125,7 +143,7 @@ def run_ssh_command(ssh_client, cmd):
             logger.warning(" {0} : ERROR : {1}".format(datetime.now() - start_time, line))
     stderr.close()
 
-    return True
+    # return True
 
 
 if __name__ == '__main__':
