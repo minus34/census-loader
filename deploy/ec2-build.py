@@ -8,15 +8,24 @@ BUILDID = "nano_1_2"
 # KEY_PAIR_NAME = "Default"
 AVAILABILITY_ZONE = "ap-southeast-2a"  # Sydney, AU
 
-# AWS_ACCESS_KEY = 'yourAccessKey'
-# AWS_SECRET_ACCESS_KEY = 'yourSecretKey'
-
 
 def main():
 
-    # # load bash script
-    # bash_file = os.path.abspath(__file__).replace(".py", ".sh")
-    # bash_script = open(bash_file, 'r').read()
+    # get AWS credentials (required to copy pg_dump files from S3)
+    aws_access_key_id = ""
+    aws_secret_access_key = ""
+    cred_array = open("/Users/hugh.saalmans/.aws/credentials", 'r').read().split("\n")
+
+    for line in cred_array:
+        bits = line.split("=")
+        if bits[0].lower() == "aws_access_key_id":
+            aws_access_key_id = bits[1]
+        if bits[0].lower() == "aws_secret_access_key":
+            aws_secret_access_key = bits[1]
+
+    # load bash script
+    bash_file = os.path.abspath(__file__).replace(".py", ".sh")
+    bash_script = open(bash_file, 'r').read().format(aws_access_key_id, aws_secret_access_key)
 
     lightsail_client = boto3.client('lightsail')
 
@@ -30,13 +39,15 @@ def main():
     #     for k, v in bundle.items():
     #         print('{} : {}'.format(k, v))
 
-    lightsail_client.create_instances(
-        instanceNames=['python_generated_census_loader_instance'],
+    response_dict = lightsail_client.create_instances(
+        instanceNames=['census_loader_instance'],
         availabilityZone=AVAILABILITY_ZONE,
         blueprintId=BLUEPRINT,
-        bundleId=BUILDID
-        # userData=bash_script
+        bundleId=BUILDID,
+        userData=bash_script
     )
+
+    logger.info(response_dict)
 
     return True
 
