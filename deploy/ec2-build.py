@@ -5,8 +5,8 @@ import os
 
 BLUEPRINT = "ubuntu_16_04_1"
 BUILDID = "nano_1_2"
-KEY_PAIR_NAME = "Default"
-AVAILABILITY_ZONE = "ap-southeast-2"  # Sydney, AU
+# KEY_PAIR_NAME = "Default"
+AVAILABILITY_ZONE = "ap-southeast-2a"  # Sydney, AU
 
 # AWS_ACCESS_KEY = 'yourAccessKey'
 # AWS_SECRET_ACCESS_KEY = 'yourSecretKey'
@@ -31,11 +31,10 @@ def main():
 
     lightsail_client.create_instances(
         instanceNames=['python_generated_census_loader_instance'],
-        availabilityZone='us-east-1a',
+        availabilityZone=AVAILABILITY_ZONE,
         blueprintId=BLUEPRINT,
-        bundleId=BUILDID,
-        userData=bash_script,
-        keyPairName=KEY_PAIR_NAME
+        bundleId=BUILDID
+        # userData=bash_script
     )
 
     return True
