@@ -2,6 +2,8 @@
 import boto3
 import logging
 import os
+import paramiko
+
 
 BLUEPRINT = "ubuntu_16_04_1"
 BUILDID = "nano_1_2"
@@ -39,15 +41,33 @@ def main():
     #     for k, v in bundle.items():
     #         print('{} : {}'.format(k, v))
 
-    response_dict = lightsail_client.create_instances(
-        instanceNames=['census_loader_instance'],
-        availabilityZone=AVAILABILITY_ZONE,
-        blueprintId=BLUEPRINT,
-        bundleId=BUILDID,
-        userData=bash_script
+    # response_dict = lightsail_client.create_instances(
+    #     instanceNames=['census_loader_instance'],
+    #     availabilityZone=AVAILABILITY_ZONE,
+    #     blueprintId=BLUEPRINT,
+    #     bundleId=BUILDID,
+    #     userData=bash_script
+    # )
+    #
+    # logger.info(response_dict)
+
+    # response_dict = {'operations': [{'id': '622da4d9-1290-4361-9d1a-d3304dc55859', 'resourceName': 'census_loader_instance', 'resourceType': 'Instance', 'createdAt': datetime.datetime(2017, 7, 15, 18, 4, 43, 707000, tzinfo=tzlocal()), 'location': {'availabilityZone': 'ap-southeast-2a', 'regionName': 'ap-southeast-2'}, 'isTerminal': False, 'operationType': 'CreateInstance', 'status': 'Started', 'statusChangedAt': datetime.datetime(2017, 7, 15, 18, 4, 45, 2000, tzinfo=tzlocal())}], 'ResponseMetadata': {'RequestId': '425e6d9b-6934-11e7-af07-77b36cad75a0', 'HTTPStatusCode': 200, 'HTTPHeaders': {'server': 'Server', 'date': 'Sat, 15 Jul 2017 08:04:45 GMT', 'content-type': 'application/x-amz-json-1.1', 'content-length': '343', 'connection': 'keep-alive', 'x-amzn-requestid': '425e6d9b-6934-11e7-af07-77b36cad75a0'}, 'RetryAttempts': 0}}
+
+    response = lightsail_client.get_instance(
+        instanceName='census_loader_instance'
     )
 
-    logger.info(response_dict)
+    instance_dict = response["instance"]
+    ip_address = instance_dict["publicIpAddress"]
+
+
+    # key = paramiko.RSAKey.from_private_key_file(path / to / mykey.pem)
+    # client = paramiko.SSHClient()
+    # client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+
+
+
 
     return True
 
