@@ -56,7 +56,7 @@ sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-load
 
 
 # run the app -- moving this here as the command below hangs
-#sudo python3 ~/git/census-loader/web/single_server.py
+#sudo python3 ~/git/census-loader/web/single_server.py &
 
 #cd ~/git/census-loader/web
 #sudo gunicorn -w 4 -b 0.0.0.0:80 single_server:app
