@@ -15,9 +15,9 @@ sudo apt-get update -y
 sudo git clone https://github.com/minus34/census-loader.git ~/git/census-loader/
 
 # copy Postgres dump files to server
-#cd ~/git/census-loader/data
-sudo wget --quiet http://minus34.com/opendata/census-2016/census_2016_data.dmp > ~/git/census-loader/data/data.dmp
-sudo wget --quiet http://minus34.com/opendata/census-2016/census_2016_web.dmp > ~/git/census-loader/data/web.dmp
+#cd ~/git/census-loader/data/
+sudo wget -q http://minus34.com/opendata/census-2016/census_2016_data.dmp -O ~/git/census-loader/data/data.dmp
+sudo wget -q http://minus34.com/opendata/census-2016/census_2016_web.dmp -O ~/git/census-loader/data/web.dmp
 
 # install Postgres
 sudo add-apt-repository -y "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main"
