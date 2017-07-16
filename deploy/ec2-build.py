@@ -74,7 +74,7 @@ def main():
 
     ssh_client.close()
 
-    logger.info("FINISHED! : public IP address: {0}".format(instance_ip))
+    logger.info("{0} : FINISHED! : public IP address: {1}".format(datetime.now(), instance_ip))
 
     return True
 
