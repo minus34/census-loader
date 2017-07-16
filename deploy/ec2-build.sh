@@ -50,33 +50,19 @@ sudo -u postgres createdb geo
 sudo -u postgres psql -c "CREATE EXTENSION adminpack;CREATE EXTENSION postgis;" geo
 
 # import into database
+sudo pg_restore -Fc -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/web.dmp
 sudo pg_restore -Fc -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/data.dmp
 #sudo pg_restore -Fc -d geo -p 5432 -U postgres ~/git/census-loader/data/census_2016_bdys.dmp  # don't need this one
-sudo pg_restore -Fc -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/web.dmp
 
 # test data loaded ok
-sudo -u postgres psql -c "SELECT Count(*) FROM census_2016_data.ste_t28b; " geo
 sudo -u postgres psql -c "SELECT Count(*) FROM census_2016_web.ste; " geo
-
-
-
-
-## set autovacuum off (need to change this to use sed to automate it)
-#sudo vim /etc/postgresql/9.6/main/postgresql.conf
-
-
+sudo -u postgres psql -c "SELECT Count(*) FROM census_2016_data.ste_t28b; " geo
 
 ## restart postgres - if needed
 #sudo service postgresql restart
 
 ## look at log files - if needed
-#vim /var/log/postgresql/postgresql-9.6-main.log
-
-## it screwed up - turf the schema and try again
-#sudo -u postgres psql -c "DROP SCHEMA census_2016_web CASCADE;" geo
-#sudo -u postgres psql -c "SELECT PostGIS_full_version();" geo
-
-
+#tail -c 4096 /var/log/postgresql/postgresql-9.6-main.log
 
 
 # -------------------------------

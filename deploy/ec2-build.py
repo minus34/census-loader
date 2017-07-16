@@ -10,12 +10,11 @@ from datetime import datetime
 logging.getLogger("paramiko").setLevel(logging.INFO)
 
 BLUEPRINT = "ubuntu_16_04_1"
-BUILDID = "nano_1_2"
+# BUILDID = "nano_1_2"
+BUILDID = "medium_1_2"
 # KEY_PAIR_NAME = "Default"
 AVAILABILITY_ZONE = "ap-southeast-2a"  # Sydney, AU
-
 PEM_FILE = "/Users/hugh.saalmans/.aws/LightsailDefaultPrivateKey-ap-southeast-2.pem"
-
 INSTANCE_NAME = "census_loader_instance"
 
 
@@ -23,6 +22,16 @@ def main():
 
     # create lightsail client
     lightsail_client = boto3.client('lightsail')
+
+    # blueprints = lightsail_client.get_blueprints()
+    # for bp in blueprints['blueprints']:
+    #     if bp['isActive']:
+    #         print('{} : {}'.format(bp['blueprintId'], bp['description']))
+
+    # bundles = lightsail_client.get_bundles(includeInactive=False)
+    # for bundle in bundles['bundles']:
+    #     for k, v in bundle.items():
+    #         print('{} : {}'.format(k, v))
 
     response_dict = lightsail_client.create_instances(
         instanceNames=[INSTANCE_NAME],
@@ -79,6 +88,11 @@ def run_ssh_command(ssh_client, cmd):
     logger.info("START : {0} : {1}".format(start_time, cmd))
 
     stdin, stdout, stderr = ssh_client.exec_command(cmd)
+
+    # send Postgres user password when running pg_restore
+    if "pg_restore" in cmd:
+        stdin.write('password\n')
+        stdin.flush()
 
     # for line in stdin.read().splitlines():
     #     logger.info(line)
