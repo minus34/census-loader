@@ -4,40 +4,54 @@
 # STEP 1 - install stuff
 # -------------------------------
 
+# try to silence annoying message about not having a UI
+export DEBIAN_FRONTEND=noninteractive
+
 # update Ubuntu
-#sudo apt-get -y update
-#sudo apt-get -y upgrade
+sudo apt-get update -y
+#sudo apt-get upgrade -y
 
 #install AWS CLI tools
-#sudo apt-get -y install awscli
+#sudo apt-get install -y awscli
+
+# get code
+sudo git clone https://github.com/minus34/census-loader.git ~/git/census-loader/
+
+# copy Postgres dump files to server
+wget --quiet --directory-prefix=~/git/census-loader/data http://minus34.com/opendata/census-2016/census_2016_data.dmp
+wget --quiet --directory-prefix=~/git/census-loader/data http://minus34.com/opendata/census-2016/census_2016_web.dmp
+
+#export DEBIAN_FRONTEND=noninteractive
+#export AWS_ACCESS_KEY_ID=AKIAJHXOADBYEZV776GA
+#export AWS_SECRET_ACCESS_KEY=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
 
 # install Postgres
 sudo add-apt-repository -y "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main"
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-sudo apt-get -y update
-sudo apt-get -y install postgresql-9.6
-sudo apt-get -y install postgresql-9.6-postgis-2.3 postgresql-contrib-9.6
-sudo apt-get -y install postgis
+sudo apt-get update -y
+sudo apt-get install -y postgresql-9.6
+sudo apt-get install -y postgresql-9.6-postgis-2.3 postgresql-contrib-9.6
+sudo apt-get install -y postgis
 
 #install python modules
-sudo apt-get -y install python3-setuptools
+sudo apt-get install -y python3-setuptools
 sudo easy_install3 pip
 sudo pip3.5 install flask
 sudo pip3.5 install flask-compress
 sudo pip3.5 install psycopg2
 
 # install gunicorn
-sudo apt-get -y install gunicorn
+sudo apt-get install -y gunicorn
 
-# get code
-sudo git clone https://github.com/minus34/census-loader.git ~/git/census-loader/
+
 
 # ----------------------------------------------
 # STEP 2 - copy data and restore into Postgres
 # ----------------------------------------------
 
-# copy files
-#sudo aws s3 cp s3://minus34.com/opendata/census-2016 ~/git/census-loader/data --recursive
+## copy files
+#sudo aws s3 cp s3://minus34.com/opendata/census-2016/census_2016_data.dmp ~/git/census-loader/data/
+#sudo aws s3 cp s3://minus34.com/opendata/census-2016/census_2016_web.dmp ~/git/census-loader/data/
 
 ## create user and database
 #sudo -u postgres createuser -P censususer
