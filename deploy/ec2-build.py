@@ -1,7 +1,4 @@
 
-# AWS Crednetials file needs to exist in "/Users/hugh.saalmans/.aws/credentials"
-
-
 import boto3
 import logging
 import os
@@ -12,48 +9,20 @@ from datetime import datetime
 
 logging.getLogger("paramiko").setLevel(logging.INFO)
 
-AWS_FOLDER = "/Users/hugh.saalmans/.aws"
 BLUEPRINT = "ubuntu_16_04_1"
 BUILDID = "nano_1_2"
 # KEY_PAIR_NAME = "Default"
 AVAILABILITY_ZONE = "ap-southeast-2a"  # Sydney, AU
 
-PEM_FILE = AWS_FOLDER + "/LightsailDefaultPrivateKey-ap-southeast-2.pem"
+PEM_FILE = "/Users/hugh.saalmans/.aws/LightsailDefaultPrivateKey-ap-southeast-2.pem"
 
 INSTANCE_NAME = "census_loader_instance"
 
 
 def main():
 
-    # # get AWS credentials (required to copy pg_dump files from S3)
-    # aws_access_key_id = ""
-    # aws_secret_access_key = ""
-    # cred_array = open(AWS_FOLDER + "/credentials", 'r').read().split("\n")
-    #
-    # for line in cred_array:
-    #     bits = line.split("=")
-    #     if bits[0].lower() == "aws_access_key_id":
-    #         aws_access_key_id = bits[1]
-    #     if bits[0].lower() == "aws_secret_access_key":
-    #         aws_secret_access_key = bits[1]
-
     # create lightsail client
     lightsail_client = boto3.client('lightsail')
-
-    # blueprints = lightsail_client.get_blueprints()
-    # for bp in blueprints['blueprints']:
-    #     if bp['isActive']:
-    #         print('{} : {}'.format(bp['blueprintId'], bp['description']))
-
-    # bundles = lightsail_client.get_bundles(includeInactive=False)
-    # for bundle in bundles['bundles']:
-    #     for k, v in bundle.items():
-    #         print('{} : {}'.format(k, v))
-
-    # initial_script = "sudo export DEBIAN_FRONTEND=noninteractive\n" \
-    #                  "sudo export AWS_ACCESS_KEY_ID={0}\n" \
-    #                  "sudo export AWS_SECRET_ACCESS_KEY={1}"\
-    #     .format(aws_access_key_id, aws_secret_access_key)
 
     response_dict = lightsail_client.create_instances(
         instanceNames=[INSTANCE_NAME],
@@ -85,50 +54,6 @@ def main():
     # Here 'ubuntu' is user name and 'instance_ip' is public IP of EC2
     ssh_client.connect(hostname=instance_ip, username="ubuntu", pkey=key)
     logger.info('Connected via SSH')
-
-    # # try to silence annoying Debian message about not having a UI
-    # cmd = "export DEBIAN_FRONTEND=noninteractive"
-    # run_ssh_command(ssh_client, cmd)
-
-    # cmd = "export DEBIAN_FRONTEND=noninteractive\n" \
-    #       "export AWS_ACCESS_KEY_ID={0}\n" \
-    #       "export AWS_SECRET_ACCESS_KEY={1}"\
-    #     .format(aws_access_key_id, aws_secret_access_key)
-    # run_ssh_command(ssh_client, cmd)
-
-    # # add AWS credentials and config files
-    # cmd = "mkdir ~/.aws"
-    # run_ssh_command(ssh_client, cmd)
-    #
-    # aws_credentials = open(AWS_FOLDER + "/credentials", 'r').read()
-    # cmd = "echo {0} > ~/.aws/credentials".format(aws_credentials)
-    # run_ssh_command(ssh_client, cmd)
-    #
-    # aws_config = open(AWS_FOLDER + "/config", 'r').read()
-    # cmd = "echo {0} > ~/.aws/config".format(aws_config)
-    # run_ssh_command(ssh_client, cmd)
-
-    # # update
-    # cmd = "sudo apt-get update -y"
-    # run_ssh_command(ssh_client, cmd)
-
-    # # install AWS commands line tools and copy files from S3
-    # cmd = "sudo pip3.5 install awscli"
-    # run_ssh_command(ssh_client, cmd)
-
-    # cmd = "sudo aws s3 cp s3://minus34.com/opendata/census-2016 ~/git/census-loader/data --recursive"
-    # run_ssh_command(ssh_client, cmd)
-
-    # # update
-    # cmd = "sudo apt-get update -y"
-    # run_ssh_command(ssh_client, cmd)
-
-    # # set AWS keys for SSH
-    # cmd = "export AWS_ACCESS_KEY_ID={0}".format(aws_access_key_id)
-    # run_ssh_command(ssh_client, cmd)
-    #
-    # cmd = "export AWS_SECRET_ACCESS_KEY={0}".format(aws_secret_access_key)
-    # run_ssh_command(ssh_client, cmd)
 
     # run each bash command
     bash_file = os.path.abspath(__file__).replace(".py", ".sh")

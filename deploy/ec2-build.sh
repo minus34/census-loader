@@ -9,21 +9,15 @@ export DEBIAN_FRONTEND=noninteractive
 
 # update Ubuntu
 sudo apt-get update -y
-#sudo apt-get upgrade -y
-
-#install AWS CLI tools
-#sudo apt-get install -y awscli
+# sudo apt-get upgrade -y
 
 # get code
 sudo git clone https://github.com/minus34/census-loader.git ~/git/census-loader/
 
 # copy Postgres dump files to server
-wget --quiet --directory-prefix=~/git/census-loader/data http://minus34.com/opendata/census-2016/census_2016_data.dmp
-wget --quiet --directory-prefix=~/git/census-loader/data http://minus34.com/opendata/census-2016/census_2016_web.dmp
-
-#export DEBIAN_FRONTEND=noninteractive
-#export AWS_ACCESS_KEY_ID=AKIAJHXOADBYEZV776GA
-#export AWS_SECRET_ACCESS_KEY=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
+#cd ~/git/census-loader/data
+sudo wget --quiet http://minus34.com/opendata/census-2016/census_2016_data.dmp > ~/git/census-loader/data/data.dmp
+sudo wget --quiet http://minus34.com/opendata/census-2016/census_2016_web.dmp > ~/git/census-loader/data/web.dmp
 
 # install Postgres
 sudo add-apt-repository -y "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main"
@@ -33,7 +27,7 @@ sudo apt-get install -y postgresql-9.6
 sudo apt-get install -y postgresql-9.6-postgis-2.3 postgresql-contrib-9.6
 sudo apt-get install -y postgis
 
-#install python modules
+# install python modules
 sudo apt-get install -y python3-setuptools
 sudo easy_install3 pip
 sudo pip3.5 install flask
@@ -44,29 +38,25 @@ sudo pip3.5 install psycopg2
 sudo apt-get install -y gunicorn
 
 
-
 # ----------------------------------------------
-# STEP 2 - copy data and restore into Postgres
+# STEP 2 - restore data to Postgres
 # ----------------------------------------------
 
-## copy files
-#sudo aws s3 cp s3://minus34.com/opendata/census-2016/census_2016_data.dmp ~/git/census-loader/data/
-#sudo aws s3 cp s3://minus34.com/opendata/census-2016/census_2016_web.dmp ~/git/census-loader/data/
-
-## create user and database
+# create user and database
+sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'password';"
 #sudo -u postgres createuser -P censususer
-#sudo -u postgres createdb -O censususer geo
+sudo -u postgres createdb geo
 #sudo -u postgres psql -c "GRANT postgres TO censususer; " geo
-#sudo -u postgres psql -c "CREATE EXTENSION adminpack;CREATE EXTENSION postgis;" geo
-#
-## import into database
-#sudo pg_restore -Fc -d geo -p 5432 -U censususer -h localhost ~/git/census-loader/data/census_2016_data.dmp
-##sudo pg_restore -Fc -d geo -p 5432 -U censususer ~/git/census-loader/data/census_2016_bdys.dmp  # don't need this one
-#sudo pg_restore -Fc -d geo -p 5432 -U censususer -h localhost ~/git/census-loader/data/census_2016_web.dmp
+sudo -u postgres psql -c "CREATE EXTENSION adminpack;CREATE EXTENSION postgis;" geo
 
-## test data loaded ok
-#sudo -u postgres psql -c "SELECT Count(*) FROM census_2016_data.ste_t28b; " geo
-#sudo -u postgres psql -c "SELECT Count(*) FROM census_2016_web.ste; " geo
+# import into database
+sudo pg_restore -Fc -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/data.dmp
+#sudo pg_restore -Fc -d geo -p 5432 -U postgres ~/git/census-loader/data/census_2016_bdys.dmp  # don't need this one
+sudo pg_restore -Fc -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/web.dmp
+
+# test data loaded ok
+sudo -u postgres psql -c "SELECT Count(*) FROM census_2016_data.ste_t28b; " geo
+sudo -u postgres psql -c "SELECT Count(*) FROM census_2016_web.ste; " geo
 
 
 
