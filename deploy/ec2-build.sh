@@ -50,15 +50,16 @@ sudo -u postgres createdb geo
 sudo -u postgres psql -c "CREATE EXTENSION adminpack;CREATE EXTENSION postgis;" geo
 
 # import into database
-sudo pg_restore -Fc -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/web.dmp
+sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/web.dmp
 # this hangs - don't know why
-sudo pg_restore -Fc -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/data.dmp
+sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/data.dmp
 
 
 # run the app -- moving this here as the command below hangs
 #sudo python3 ~/git/census-loader/web/single_server.py
-cd ~/git/census-loader/web
-sudo gunicorn -w 4 -b 0.0.0.0:80 single_server:app
+
+#cd ~/git/census-loader/web
+#sudo gunicorn -w 4 -b 0.0.0.0:80 single_server:app
 
 
 ## test data loaded ok

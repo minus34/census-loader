@@ -74,6 +74,8 @@ def main():
 
     ssh_client.close()
 
+    logger.info("FINISHED! : public IP address: {0}".format(instance_ip))
+
     return True
 
 
@@ -97,19 +99,19 @@ def run_ssh_command(ssh_client, cmd):
 
     # log everything
 
-    for line in stdin.read().splitlines():
-        if line:
-            logger.info(line)
+    # for line in stdin.read().splitlines():
+    #     if line:
+    #         logger.info(line)
     stdin.close()
 
     for line in stdout.read().splitlines():
         if line:
-            logger.info(line)
+            logger.info("\t{0}".format(line))
     stdout.close()
 
     for line in stderr.read().splitlines():
         if line:
-            logger.info(line)
+            logger.info("\t{0}".format(line))
     stderr.close()
 
     # return True
