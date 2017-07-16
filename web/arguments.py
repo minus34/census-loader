@@ -20,7 +20,7 @@ def set_arguments():
     parser.add_argument(
         '--pgdb',
         help='Database name for Postgres server. Defaults to PGDATABASE environment variable if set, '
-             'otherwise utils.')
+             'otherwise geo.')
     parser.add_argument(
         '--pguser',
         help='Username for Postgres server. Defaults to PGUSER environment variable if set, otherwise postgres.')

@@ -87,6 +87,7 @@ def run_ssh_command(ssh_client, cmd):
     start_time = datetime.now()
     logger.info("START : {0} : {1}".format(start_time, cmd))
 
+    # run command
     stdin, stdout, stderr = ssh_client.exec_command(cmd)
 
     # send Postgres user password when running pg_restore
@@ -94,19 +95,21 @@ def run_ssh_command(ssh_client, cmd):
         stdin.write('password\n')
         stdin.flush()
 
-    # for line in stdin.read().splitlines():
-    #     logger.info(line)
+    # log everything
+
+    for line in stdin.read().splitlines():
+        if line:
+            logger.info(line)
     stdin.close()
 
-    # too verbose - don't log
-    # for line in stdout.read().splitlines():
-    #     if line:
-    #         logger.info(" {0} : OUTPUT : {1}".format(datetime.now() - start_time, line))
+    for line in stdout.read().splitlines():
+        if line:
+            logger.info(line)
     stdout.close()
 
     for line in stderr.read().splitlines():
         if line:
-            logger.warning(" {0} : ERROR : {1}".format(datetime.now() - start_time, line))
+            logger.info(line)
     stderr.close()
 
     # return True

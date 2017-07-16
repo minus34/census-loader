@@ -5,6 +5,7 @@ import arguments
 import ast
 import json
 import psycopg2
+import psycopg2.extras
 
 # from datetime import datetime
 
@@ -28,7 +29,7 @@ settings = arguments.get_settings(args)
 # connect to Postgres
 pg_conn = psycopg2.connect(settings['pg_connect_string'])
 pg_conn.autocommit = True
-pg_cur = pg_conn.cursor()
+pg_cur = pg_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
 
 # get the boundary name that suits each (tiled map) zoom level and its minimum value to colour in
@@ -293,4 +294,4 @@ def get_data():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80, debug=False)
+    app.run(host='0.0.0.0', port=8081, debug=True)

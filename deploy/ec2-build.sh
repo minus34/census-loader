@@ -30,17 +30,17 @@ sudo apt-get install -y postgis
 # install python modules
 sudo apt-get install -y python3-setuptools
 sudo easy_install3 pip
-sudo pip3.5 install flask
-sudo pip3.5 install flask-compress
-sudo pip3.5 install psycopg2
+sudo pip3 install flask
+sudo pip3 install flask-compress
+sudo pip3 install psycopg2
 
 # install gunicorn
-sudo apt-get install -y gunicorn
+sudo pip3 install gunicorn
 
 
-# ----------------------------------------------
-# STEP 2 - restore data to Postgres
-# ----------------------------------------------
+# ---------------------------------------------------
+# STEP 2 - restore data to Postgres and run server
+# ---------------------------------------------------
 
 # create user and database
 sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'password';"
@@ -51,24 +51,22 @@ sudo -u postgres psql -c "CREATE EXTENSION adminpack;CREATE EXTENSION postgis;" 
 
 # import into database
 sudo pg_restore -Fc -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/web.dmp
+# this hangs - don't know why
 sudo pg_restore -Fc -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/data.dmp
-#sudo pg_restore -Fc -d geo -p 5432 -U postgres ~/git/census-loader/data/census_2016_bdys.dmp  # don't need this one
 
-# test data loaded ok
-sudo -u postgres psql -c "SELECT Count(*) FROM census_2016_web.ste; " geo
-sudo -u postgres psql -c "SELECT Count(*) FROM census_2016_data.ste_t28b; " geo
+
+# run the app -- moving this here as the command below hangs
+#sudo python3 ~/git/census-loader/web/single_server.py
+cd ~/git/census-loader/web
+sudo gunicorn -w 4 -b 0.0.0.0:80 single_server:app
+
+
+## test data loaded ok
+#sudo -u postgres psql -c "SELECT Count(*) FROM census_2016_web.ste; " geo
+#sudo -u postgres psql -c "SELECT Count(*) FROM census_2016_data.ste_t28b; " geo
 
 ## restart postgres - if needed
 #sudo service postgresql restart
 
 ## look at log files - if needed
 #tail -c 4096 /var/log/postgresql/postgresql-9.6-main.log
-
-
-# -------------------------------
-# STEP 3 - run this thing
-# -------------------------------
-
-## run the app
-#sudo python3 ~/git/census-loader/deploy/web/server.py
-#sudo gunicorn -w 4 -b 0.0.0.0:80 server:app
