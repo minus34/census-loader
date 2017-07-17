@@ -21,8 +21,6 @@ INSTANCE_NAME = "census_loader_instance"
 def main():
     full_start_time = datetime.now()
 
-    logger.info("Start server build : {0}".format(full_start_time))
-
     # create lightsail client
     lightsail_client = boto3.client('lightsail')
 
@@ -43,7 +41,7 @@ def main():
         bundleId=BUILDID
         # userData=initial_script
     )
-    logger.info(response_dict)
+    logger.info("\t\t{0}".format(response_dict))
 
     # wait until instance is running
     instance_dict = get_lightsail_instance(lightsail_client, INSTANCE_NAME)
@@ -57,7 +55,7 @@ def main():
     time.sleep(30)
 
     instance_ip = instance_dict["publicIpAddress"]
-    logger.info("Public IP address: {0}".format(instance_ip))
+    logger.info("\t\tPublic IP address: {0}".format(instance_ip))
 
     key = paramiko.RSAKey.from_private_key_file(PEM_FILE)
     ssh_client = paramiko.SSHClient()
@@ -65,13 +63,14 @@ def main():
 
     # Here 'ubuntu' is user name and 'instance_ip' is public IP of EC2
     ssh_client.connect(hostname=instance_ip, username="ubuntu", pkey=key)
-    logger.info('\t\tConnected via SSH')
+    # logger.info('\t\tConnected via SSH')
 
     # run each bash command
     bash_file = os.path.abspath(__file__).replace(".py", ".sh")
     bash_commands = open(bash_file, 'r').read().split("\n")
 
     logger.info("Connected to new server via SSH : {0}".format(datetime.now() - full_start_time))
+    logger.info("")
 
     for cmd in bash_commands:
         if cmd[:1] != "#" and cmd[:1].strip(" ") != "":  # ignore comments and blank lines

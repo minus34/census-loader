@@ -57,24 +57,9 @@ sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-load
 # STEP 3 - run the app
 # ----------------------
 
-## run 4 Python workers in the background
-cd ~/git/census-loader/web
-sudo gunicorn -w 4 -b 0.0.0.0:80 single_server:app &
-#sudo gunicorn -w 4 -b 0.0.0.0:80 'single_server:app(pghost="localhost", pgport=5432, pgdb="geo", pguser="postgres", pgpassword="password", census-year="2016", data-schema="census_2016_data", web-schema="census_2016_web")' &
+# run 4 Python map servers in the background - these next 2 commands need to be run in the console
+
+#cd ~/git/census-loader/web
+#sudo gunicorn -w 4 -b 0.0.0.0:80 single_server:app &
 
 # TODO: Put NGINX in front of gunicorn as a reverse proxy
-
-
-## test data loaded ok
-#sudo -u postgres psql -c "SELECT Count(*) FROM census_2016_web.ste; " geo
-#sudo -u postgres psql -c "SELECT Count(*) FROM census_2016_data.ste_t28b; " geo
-
-## restart postgres - if needed
-#sudo service postgresql restart
-
-## look at log files - if needed
-#tail -c 4096 /var/log/postgresql/postgresql-9.6-main.log
-
-
-# run the app
-#sudo python3 ~/git/census-loader/web/single_server.py
