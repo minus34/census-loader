@@ -21,6 +21,8 @@ INSTANCE_NAME = "census_loader_instance"
 def main():
     full_start_time = datetime.now()
 
+    logger.info("Start server build : {0}".format(full_start_time))
+
     # create lightsail client
     lightsail_client = boto3.client('lightsail')
 
@@ -47,11 +49,11 @@ def main():
     instance_dict = get_lightsail_instance(lightsail_client, INSTANCE_NAME)
 
     while instance_dict["state"]["name"] != 'running':
-        logger.info('Waiting 10 seconds... instance is %s' % instance_dict["state"]["name"])
+        logger.info('\t\tWaiting 10 seconds... instance is %s' % instance_dict["state"]["name"])
         time.sleep(10)
         instance_dict = get_lightsail_instance(lightsail_client, INSTANCE_NAME)
 
-    logger.info('Waiting 30 seconds... instance is booting')
+    logger.info('\t\tWaiting 30 seconds... instance is booting')
     time.sleep(30)
 
     instance_ip = instance_dict["publicIpAddress"]
@@ -63,7 +65,7 @@ def main():
 
     # Here 'ubuntu' is user name and 'instance_ip' is public IP of EC2
     ssh_client.connect(hostname=instance_ip, username="ubuntu", pkey=key)
-    logger.info('Connected via SSH')
+    logger.info('\t\tConnected via SSH')
 
     # run each bash command
     bash_file = os.path.abspath(__file__).replace(".py", ".sh")
