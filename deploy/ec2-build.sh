@@ -37,7 +37,6 @@ sudo pip3 install psycopg2
 # install gunicorn
 sudo pip3 install gunicorn
 
-
 # ---------------------------------------------------
 # STEP 2 - restore data to Postgres and run server
 # ---------------------------------------------------
@@ -54,12 +53,15 @@ sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-load
 # this hangs - don't know why
 sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/data.dmp
 
+# ----------------------
+# STEP 3 - run the app
+# ----------------------
 
-# run the app -- moving this here as the command below hangs
-#sudo python3 ~/git/census-loader/web/single_server.py &
+# run 4 Python workers in the background
+chdir ~/git/census-loader/web
+sudo gunicorn -w 4 -b 0.0.0.0:80 single_server:app &
 
-#cd ~/git/census-loader/web
-#sudo gunicorn -w 4 -b 0.0.0.0:80 single_server:app
+# TODO: Put NGINX in front of gunicorn as a reverse proxy
 
 
 ## test data loaded ok
@@ -71,3 +73,7 @@ sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-load
 
 ## look at log files - if needed
 #tail -c 4096 /var/log/postgresql/postgresql-9.6-main.log
+
+
+# run the app
+#sudo python3 ~/git/census-loader/web/single_server.py

@@ -12,20 +12,20 @@ def set_arguments():
 
     # PG Options
     parser.add_argument(
-        '--pghost',
+        '--pghost', default='localhost',
         help='Host name for Postgres server. Defaults to PGHOST environment variable if set, otherwise localhost.')
     parser.add_argument(
-        '--pgport', type=int,
+        '--pgport', type=int, default=5432,
         help='Port number for Postgres server. Defaults to PGPORT environment variable if set, otherwise 5432.')
     parser.add_argument(
-        '--pgdb',
+        '--pgdb', default='geo',
         help='Database name for Postgres server. Defaults to PGDATABASE environment variable if set, '
              'otherwise geo.')
     parser.add_argument(
-        '--pguser',
+        '--pguser', default='postgres',
         help='Username for Postgres server. Defaults to PGUSER environment variable if set, otherwise postgres.')
     parser.add_argument(
-        '--pgpassword',
+        '--pgpassword', default='password',
         help='Password for Postgres server. Defaults to PGPASSWORD environment variable if set, '
              'otherwise \'password\'.')
 
