@@ -57,9 +57,9 @@ sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-load
 # STEP 3 - run the app
 # ----------------------
 
-# run 4 Python workers in the background
-chdir ~/git/census-loader/web
-sudo gunicorn -w 4 -b 0.0.0.0:80 single_server:app &
+## run 4 Python workers in the background
+#cd ~/git/census-loader/web
+#sudo gunicorn -w 4 -b 0.0.0.0:80 single_server:app(pghost="locahost", pgport=5432, pgdb="geo", pguser="postgres", pgpassword="password", census-year="2016", data-schema="census_2016_data", web-schema="census_2016_web") &
 
 # TODO: Put NGINX in front of gunicorn as a reverse proxy
 

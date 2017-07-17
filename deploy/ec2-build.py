@@ -19,6 +19,7 @@ INSTANCE_NAME = "census_loader_instance"
 
 
 def main():
+    full_start_time = datetime.now()
 
     # create lightsail client
     lightsail_client = boto3.client('lightsail')
@@ -68,6 +69,8 @@ def main():
     bash_file = os.path.abspath(__file__).replace(".py", ".sh")
     bash_commands = open(bash_file, 'r').read().split("\n")
 
+    logger.info("Connected to new server via SSH : {0}".format(datetime.now() - full_start_time))
+
     for cmd in bash_commands:
         if cmd[:1] != "#" and cmd[:1].strip(" ") != "":  # ignore comments and blank lines
             run_ssh_command(ssh_client, cmd)
@@ -75,6 +78,9 @@ def main():
     ssh_client.close()
 
     logger.info("{0} : FINISHED! : public IP address: {1}".format(datetime.now(), instance_ip))
+
+    logger.info("")
+    logger.info("Total time : : {0}".format(datetime.now() - full_start_time))
 
     return True
 
@@ -87,7 +93,7 @@ def get_lightsail_instance(lightsail_client, name):
 
 def run_ssh_command(ssh_client, cmd):
     start_time = datetime.now()
-    logger.info("START : {0} : {1}".format(start_time, cmd))
+    logger.info("START : {0}".format(cmd))
 
     # run command
     stdin, stdout, stderr = ssh_client.exec_command(cmd)
@@ -106,15 +112,15 @@ def run_ssh_command(ssh_client, cmd):
 
     for line in stdout.read().splitlines():
         if line:
-            logger.info("\t{0}".format(line))
+            logger.info("\t\t{0}".format(line))
     stdout.close()
 
     for line in stderr.read().splitlines():
         if line:
-            logger.info("\t{0}".format(line))
+            logger.info("\t\t{0}".format(line))
     stderr.close()
 
-    # return True
+    logger.info("END : {0} : {1}".format(cmd, datetime.now() - start_time))
 
 
 if __name__ == '__main__':
