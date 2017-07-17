@@ -5,9 +5,13 @@ A quick way to get started with Australian Bureau of Statistics (ABS) Census 201
 1. A quick way to load the entire census into Postgres
 2. A [map server](https://github.com/minus34/census-loader/tree/master/web) for quickly visualising census data and trends
 
-**DEMO**
+**DEMOS**
 
-[http://census.minus34.com?stats=G109,G110,G111,G112,G113,G114,G115,G116](http://census.minus34.com/?stats=G109,G110,G111,G112,G113,G114,G115,G116)
+* Age: [http://census.minus34.com?stats=G247,G248,G249,G250,G251,G252,G253,G254,G255](http://census.minus34.com?stats=G247,G248,G249,G250,G251,G252,G253,G254,G255)
+* Religion: [http://census.minus34.com?stats=G5456,G5363,G5423,G5426,G5429,G5432](http://census.minus34.com?stats=G5456,G5363,G5423,G5426,G5429,G5432)
+* Median age, income, rent, mortgages: [http://census.minus34.com?stats=G109,G110,G111,G112,G113,G114,G115,G116](http://census.minus34.com?stats=G109,G110,G111,G112,G113,G114,G115,G116)
+* Country of birth: [http://census.minus34.com?stats=G2320,G2380,G2410,G2450,G2470,G2520,G2620,G2660,G2780](http://census.minus34.com?stats=G2320,G2380,G2410,G2450,G2470,G2520,G2620,G2660,G2780)
+
 
 ![sydney_b2793.png](https://github.com/minus34/census-loader/blob/master/sample-images/sydney_b2793.png)
 
