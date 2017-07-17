@@ -77,8 +77,8 @@ def main():
 
     ssh_client.close()
 
-    logger.info("{0} : FINISHED! : public IP address: {1}".format(datetime.now(), instance_ip))
-
+    logger.info("")
+    logger.info("Public IP address: {0}".format(instance_ip))
     logger.info("")
     logger.info("Total time : : {0}".format(datetime.now() - full_start_time))
 
