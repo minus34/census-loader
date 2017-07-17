@@ -6,7 +6,7 @@ A quick way to get started with Australian Bureau of Statistics (ABS) Census 201
 2. A [map server](https://github.com/minus34/census-loader/tree/master/web) for quickly visualising census data and trends
 
 #Demo 
-http://census.minus34.com/?stats=G109,G110,G111,G112,G113,G114,G115,G116
+[http://census.minus34.com?stats=G109,G110,G111,G112,G113,G114,G115,G116](http://census.minus34.com/?stats=G109,G110,G111,G112,G113,G114,G115,G116)
 
 ![sydney_b2793.png](https://github.com/minus34/census-loader/blob/master/sample-images/sydney_b2793.png)
 

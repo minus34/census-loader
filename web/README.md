@@ -6,6 +6,13 @@ A universal map visualiser for all census data:
 - Bookmarks for all capital cities
 - Note: not necessarily mobile friendly!
 
+## Examples
+
+* Age: [http://census.minus34.com?stats=G247,G248,G249,G250,G251,G252,G253,G254,G255](http://census.minus34.com?stats=G247,G248,G249,G250,G251,G252,G253,G254,G255)
+* Religion: [http://census.minus34.com?stats=G5456,G5363,G5423,G5426,G5429,G5432](http://census.minus34.com?stats=G5456,G5363,G5423,G5426,G5429,G5432)
+* Median age, income, rent, mortgages: [http://census.minus34.com?stats=G109,G110,G111,G112,G113,G114,G115,G116](http://census.minus34.com?stats=G109,G110,G111,G112,G113,G114,G115,G116)
+* Country of birth: [http://census.minus34.com?stats=G2320,G2380,G2410,G2450,G2470,G2520,G2620,G2660,G2780](http://census.minus34.com?stats=G2320,G2380,G2410,G2450,G2470,G2520,G2620,G2660,G2780)
+
 ### Pre-requisites
 - Run census-loader to import the Census data and boundaries into Postgres
 - Python 3.x with Psycopg2, Flask and Flask Compress packages installed
@@ -48,18 +55,9 @@ Runs the map for 2011 Census data.
 
 1. Get the map server running
 2. Lookup the stats you want from the Metadata Excel files in the Census Datapacks. They're in the \<your data path>\<Datapack name>\Metadata folders
-3. Add them to the URL for the map. e.g. http://127.0.0.1:8081/?stats=G01,G02,G03
+3. Add them to the URL for the map. e.g. http://127.0.0.1:8081?stats=G01,G02,G03
 
 Note: an intuitive, keyword based stat search tool would be good to integrate with the map, but I'd like to get some rest now... (pull requests gratefully accepted)
-
-### Examples
-
-* Age: [http://census.minus34.com/?stats=G247,G248,G249,G250,G251,G252,G253,G254,G255](http://census.minus34.com:8081/?stats=G247,G248,G249,G250,G251,G252,G253,G254,G255)
-* Religion: [http://census.minus34.com/?stats=G5456,G5363,G5423,G5426,G5429,G5432](http://census.minus34.com:8081/?stats=G5456,G5363,G5423,G5426,G5429,G5432)
-* Median age, income, rent, mortgages: [http://census.minus34.com/?stats=G109,G110,G111,G112,G113,G114,G115,G116](http://census.minus34.com:8081/?stats=G109,G110,G111,G112,G113,G114,G115,G116)
-* Country of birth: [http://census.minus34.com/?stats=G2320,G2380,G2410,G2450,G2470,G2520,G2620,G2660,G2780](http://census.minus34.com:8081/?stats=G2320,G2380,G2410,G2450,G2470,G2520,G2620,G2660,G2780)
-
-Note: I don't have a live version running yet - you'll need to stand up the map server yourself for now...
 
 ### Data License
 
