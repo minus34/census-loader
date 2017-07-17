@@ -13,7 +13,7 @@ A quick way to get started with Australian Bureau of Statistics (ABS) Census 201
 * Country of birth: [http://census.minus34.com?stats=G2320,G2380,G2410,G2450,G2470,G2520,G2620,G2660,G2780](http://census.minus34.com?stats=G2320,G2380,G2410,G2450,G2470,G2520,G2620,G2660,G2780)
 
 
-![sydney_b2793.png](https://github.com/minus34/census-loader/blob/master/sample-images/sydney_b2793.png)
+![melbourne_rent.png](https://github.com/minus34/census-loader/blob/master/sample-images/melbourne_rent.png)
 
 ### There are 3 options for loading the data
 1. [Run](https://github.com/minus34/census-loader#option-1---run-loadcensuspy) the load-census Python script and build the database schemas in a single step
