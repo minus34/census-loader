@@ -4,7 +4,7 @@ A universal map visualiser for all census data:
 - Stats are shown as percentages against total population, except for averages and medians (i.e they're normalised)
 - Map shading shows range of values on the map (not the National range) - highlights min/max areas in view
 - Bookmarks for all capital cities
-- Note: not necessarily mobile friendly!
+- Notes: 1) not necessarily mobile friendly; 2) time series data is available but not normalised correctly (yet)
 
 ## Examples
 
