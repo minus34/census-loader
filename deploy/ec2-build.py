@@ -77,11 +77,10 @@ def main():
 
     ssh_client.close()
 
-    logger.info("")
     logger.info("Public IP address: {0}".format(instance_ip))
     logger.info("")
     logger.info("Total time : : {0}".format(datetime.now() - full_start_time))
-
+    logger.info("")
     return True
 
 
@@ -121,7 +120,7 @@ def run_ssh_command(ssh_client, cmd):
     stderr.close()
 
     logger.info("END : {0} : {1}".format(cmd, datetime.now() - start_time))
-
+    logger.info("")
 
 if __name__ == '__main__':
     logger = logging.getLogger()
