@@ -1,5 +1,9 @@
 # census-map-deploy
-Deploys the CensusMap to AWS with single Python script
+Deploys the CensusMap to AWS with single Python script.
+
+Architecture is a single AWS Lightsail (e.g simple EC2) server with:
+* Postgres 9.6 with PostGIS 2.3
+* A Python/Flask app using gunicorn 
 
 ### Pre-requisites
 - Python 3.x with Boto3 and Paramiko packages installed
