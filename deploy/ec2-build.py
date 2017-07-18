@@ -15,7 +15,7 @@ BUILDID = "medium_1_2"
 # KEY_PAIR_NAME = "Default"
 AVAILABILITY_ZONE = "ap-southeast-2a"  # Sydney, AU
 PEM_FILE = "/Users/hugh.saalmans/.aws/LightsailDefaultPrivateKey-ap-southeast-2.pem"
-INSTANCE_NAME = "census_loader_instance"
+INSTANCE_NAME = "census_loader_instance_v2"
 
 
 def main():
@@ -96,6 +96,7 @@ def run_ssh_command(ssh_client, cmd):
     logger.info("START : {0}".format(cmd))
 
     # run command
+    # try:
     stdin, stdout, stderr = ssh_client.exec_command(cmd)
 
     # send Postgres user password when running pg_restore
@@ -121,7 +122,12 @@ def run_ssh_command(ssh_client, cmd):
     stderr.close()
 
     logger.info("END : {0} : {1}".format(cmd, datetime.now() - start_time))
+
+    # except:
+    #     logger.warning("FAILED! : {0} : {1}".format(cmd, datetime.now() - start_time))
+
     logger.info("")
+
 
 if __name__ == '__main__':
     logger = logging.getLogger()

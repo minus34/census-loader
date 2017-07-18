@@ -53,13 +53,17 @@ sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-load
 # this hangs - don't know why
 sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/data.dmp
 
+# delete files
+cd ~/git/census-loader/data
+rm *.dmp
+
 # ----------------------
 # STEP 3 - run the app
 # ----------------------
 
 # run 4 Python map servers in the background - these next 2 commands need to be run in the console
 
-#cd ~/git/census-loader/web
-#sudo gunicorn -w 4 -b 0.0.0.0:80 single_server:app &
+cd ~/git/census-loader/web
+sudo gunicorn -D -w 4 -b 0.0.0.0:80 single_server:app
 
 # TODO: Put NGINX in front of gunicorn as a reverse proxy
