@@ -9,6 +9,8 @@ var info;
 // var legend;
 var themer;
 var geojsonLayer;
+var currLayer;
+
 
 var numClasses = 7; // number of classes (i.e colours) in map theme
 var minZoom = 4;
@@ -427,6 +429,9 @@ function gotData(json) {
         //update the legend with the new min and max
         // legend.update();
 
+        // reset info box
+        info.update();
+
         // create the radio buttons
         setRadioButtons();
 
@@ -484,6 +489,7 @@ function getColor(val, pop) {
 
 function onEachFeature(feature, layer) {
     layer.on({
+        click : highlightFeature,
         mouseover : highlightFeature,
         mouseout : resetHighlight
         // click : zoomToFeature
@@ -491,19 +497,26 @@ function onEachFeature(feature, layer) {
 }
 
 function highlightFeature(e) {
-    var layer = e.target;
+    if (currLayer !== undefined) {
+        geojsonLayer.resetStyle(currLayer);
+    }
 
-    layer.setStyle({
-        weight : 2.5,
-        opacity : 0.8,
-        color : highlightColour
-    });
+    currLayer = e.target;
 
-//    if (!L.Browser.ie && !L.Browser.edge && !L.Browser.opera) {
-    layer.bringToFront();
-//    }
+    if (currLayer !== undefined) {
 
-    info.update(layer.feature.properties);
+        currLayer.setStyle({
+            weight: 2.5,
+            opacity: 0.8,
+            color: highlightColour
+        });
+
+        //    if (!L.Browser.ie && !L.Browser.edge && !L.Browser.opera) {
+        currLayer.bringToFront();
+        //    }
+
+        info.update(currLayer.feature.properties);
+    }
 }
 
 function resetHighlight(e) {
