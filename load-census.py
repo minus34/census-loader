@@ -85,7 +85,7 @@ def main():
     # --boundary-schema=census_2011_bdys
     # --web-schema=census_2011_web
     # --census-data-path=/Users/hugh/tmp/abs_census_2011_data
-    # --census-bdys-path=/Users/hugh/tmp/abs_census_2016_bdys
+    # --census-bdys-path=/Users/hugh/tmp/abs_census_2011_bdys
 
     # test runtime parameters - 2016
     # --census-data-path=/Users/hugh/tmp/abs_census_2016_data
