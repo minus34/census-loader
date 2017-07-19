@@ -11,7 +11,7 @@ logging.getLogger("paramiko").setLevel(logging.INFO)
 
 BLUEPRINT = "ubuntu_16_04_1"
 # BUILDID = "nano_1_2"
-BUILDID = "medium_1_2"
+BUILDID = "small_1_2"
 # KEY_PAIR_NAME = "Default"
 AVAILABILITY_ZONE = "ap-southeast-2a"  # Sydney, AU
 PEM_FILE = "/Users/hugh.saalmans/.aws/LightsailDefaultPrivateKey-ap-southeast-2.pem"
