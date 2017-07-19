@@ -57,6 +57,6 @@ sudo find . -name "*.dmp" -type f -delete
 # ----------------------
 
 # run 2 Python/Flask map servers in the background
-sudo gunicorn -w 2 -D --pythonpath ~/git/census-loader/web/  -b 0.0.0.0:80 single_server:app
+sudo gunicorn -w 2 -D --pythonpath ~/git/census-loader/web/ -b 0.0.0.0:80 single_server:app
 
 # TODO: Put NGINX in front of gunicorn as a reverse proxy
