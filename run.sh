@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Sample command line arguments
+
+cd ~/git/minus34/census-loader
+
+#python.exe load-census.py --census-year=2011 --data-schema=census_2011_data --boundary-schema=census_2011_bdys --web-schema=census_2011_web --census-data-path=~/tmp/abs_census_2011_data --census-bdys-path=~/tmp/abs_census_2011_boundaries
+python.exe load-census.py --census-data-path=~/tmp/abs_census_2016_data --census-bdys-path=~/tmp/abs_census_2016_bdys

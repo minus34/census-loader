@@ -3,21 +3,29 @@ A quick way to get started with Australian Bureau of Statistics (ABS) Census 201
 
 **census-loader is 2 things:**
 1. A quick way to load the entire census into Postgres
-2. A map server for quickly visualising census data and trends
+2. A [map server](https://github.com/minus34/census-loader/tree/master/web) for quickly visualising census data and trends
 
-![sydney_b2793.png](https://github.com/minus34/census-loader/blob/master/sample-images/sydney_b2793.png)
+**DEMOS**
+
+* Age: [http://census.minus34.com?stats=G247,G248,G249,G250,G251,G252,G253,G254,G255](http://census.minus34.com?stats=G247,G248,G249,G250,G251,G252,G253,G254,G255)
+* Religion: [http://census.minus34.com?stats=G5456,G5363,G5423,G5426,G5429,G5432](http://census.minus34.com?stats=G5456,G5363,G5423,G5426,G5429,G5432)
+* Median age, income, rent, mortgages: [http://census.minus34.com?stats=G109,G110,G111,G112,G113,G114,G115,G116](http://census.minus34.com?stats=G109,G110,G111,G112,G113,G114,G115,G116)
+* Country of birth: [http://census.minus34.com?stats=G2320,G2380,G2410,G2450,G2470,G2520,G2620,G2660,G2780](http://census.minus34.com?stats=G2320,G2380,G2410,G2450,G2470,G2520,G2620,G2660,G2780)
+
+
+![melbourne_rent.png](https://github.com/minus34/census-loader/blob/master/sample-images/melbourne_rent.png)
 
 ### There are 3 options for loading the data
-1. [Run](https://github.com/minus34/census-loader#option-1---run-loadgnafpy) the load-census Python script and build the database schemas in a single step
+1. [Run](https://github.com/minus34/census-loader#option-1---run-loadcensuspy) the load-census Python script and build the database schemas in a single step
 2. [Build](https://github.com/minus34/census-loader#option-2---build-the-database-in-a-docker-environment) the database in a docker environment.
 3. [Download](https://github.com/minus34/census-loader#option-3---load-pg_dump-files) the Postgres dump files and restore them in your database. __Note: Census 2016 data and ASGS boundaries only__
 
 ## Option 1 - Run load-census.py
-Running the Python script takes 10-15 minutes on a Postgres server configured for performance.
+Running the Python script takes 15-30 minutes on a Postgres server configured for performance.
 
 Benchmarks are:
-- 3 year old, 32 core Windows server with SSDs = 10 mins
-- MacBook Pro = 15 mins
+- 3 year old, 32 core Windows server with SSDs = 15 mins
+- MacBook Pro = 25 mins
 
 ### Performance
 To get a good load time you'll need to configure your Postgres server for performance. There's a good guide [here](http://revenant.ca/www/postgis/workshop/tuning.html), noting it's a few years old and some of the memory parameters can be beefed up if you have the RAM.
@@ -28,14 +36,15 @@ To get a good load time you'll need to configure your Postgres server for perfor
 - Python 3.x with Psycopg2, xlrd & Pandas packages installed
 
 ### Process
-1. Download [ABS Census 2016 CSV Files](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/2079.02016) or [ABS Census 2011 CSV Files](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login)
-2. Download [ABS 2016 ASGS boundaries](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/1270.0.55.001July%202016) or [ABS 2011 ASGS boundaries](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login) **IMPORTANT - download the ESRI Shapefile versions**
-3. Unzip the Census CSV files to a directory on your Postgres server
-4. Alter security on the directory to grant Postgres read access
-5. Unzip the ASGS boundaries to a local directory
-6. Create the target database (if required)
-7. Check the optional and required arguments by running load-census.py with the `-h` argument (see command line examples below)
-8. Run the script, come back in 10-15 minutes and enjoy!
+1. Download [ABS Census DataPacks](https://datapacks.censusdata.abs.gov.au/datapacks/)
+2. Download [ABS 2016 ASGS boundaries](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.001) or [ABS 2011 ASGS boundaries](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login) **IMPORTANT - download the ESRI Shapefile versions**
+3. (optional) Download the 2016 [Indigenous](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.002) and [Non-ABS](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.003) boundaries as well
+4. Unzip the Census CSV files to a directory on your Postgres server
+5. Alter security on the directory to grant Postgres read access
+6. Unzip the ASGS boundaries to a local directory
+7. Create the target database (if required)
+8. Check the optional and required arguments by running load-census.py with the `-h` argument (see command line examples below)
+9. Run the script, come back in 10-15 minutes and enjoy!
 
 ### Command Line Options
 The behaviour of census-loader can be controlled by specifying various command line options to the script. Supported arguments are:
@@ -52,9 +61,10 @@ The behaviour of census-loader can be controlled by specifying various command l
 * `--pgpassword` password for accessing the Postgres server. This defaults to the `PGPASSWORD` environment variable if set, otherwise `password`.
 
 #### Optional Arguments
-* `--census-year` Year of the ABS Census data to load. Valid values are `2011` and `2016` Defaults to `2016`.
+* `--census-year` year of the ABS Census data to load. Valid values are `2011` and `2016` Defaults to `2016`.
 * `--data-schema` schema name to store Census data tables in. Defaults to `census_2016_data`. **You will need to change this argument if you set `--census-year=2011`**
 * `--boundary-schema` schema name to store Census boundary tables in. Defaults to `census_2016_bdys`. **You will need to change this argument if you set `--census-year=2011`**
+* `--web-schema` schema name to store Census boundary tables in. Defaults to `census_2016_web`. **You will need to change this argument if you set `--census-year=2011`**
 * `--max-processes` specifies the maximum number of parallel processes to use for the data load. Set this to the number of cores on the Postgres server minus 2, but limit to 12 if 16+ cores - there is minimal benefit beyond 12. Defaults to 3.
 
 ### Example Command Line Arguments
@@ -73,40 +83,42 @@ When using the resulting data from this process - you will need to adhere to the
 - The scripts will DROP ALL TABLES and recreate them using CASCADE; meaning you'll LOSE YOUR VIEWS if you have created any! If you want to keep the existing data - you'll need to change the schema names in the script or use a different database
 
 ### IMPORTANT:
-- Whilst you can choose which 2 schemas to load the data into, I haven't QA'd the permutations. Stick with the defaults if you have limited Postgres experience 
+- Whilst you can choose which 3 schemas to load the data into, I haven't QA'd the permutations. Stick with the defaults if you have limited Postgres experience 
 
 ## Option 2 - Build the database in a docker environment
 
 Create a Docker container with Census data and ASGS boundaries ready to go, so they can be deployed anywhere.
 
 ### Process
-1. Download [ABS Census 2016 CSV Files](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/2079.02016) or [ABS Census 2011 CSV Files](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login)
+1. Download [ABS Census DataPacks](https://datapacks.censusdata.abs.gov.au/datapacks/)
 2. Download [ABS 2016 ASGS boundaries](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/1270.0.55.001July%202016) or [ABS 2011 ASGS boundaries](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login) **IMPORTANT - download the ESRI Shapefile versions**
-3. Unzip Census data and ASGS boundaries in the data/ directory of this repository
-4. Run docker-compose: `docker-compose up`. The database will be built and the webapp will be run.
-5. Use the constructed database as you wish.
+3. (optional) Download the 2016 [Indigenous](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.002) and [Non-ABS](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.003) boundaries as well
+4. Unzip Census data and ASGS boundaries in the data/ directory of this repository
+5. Run docker-compose: `docker-compose up`. The database will be built.
+6. Use the constructed database as you wish.
 
 If you want only the db running, do `docker-compose up db`. If you want to view the webapp, navigate to `localhost`, or the docker machine IP on (if you're doing Docker the old way!).
 
 ## Option 3 - Load PG_DUMP Files
 Download Postgres dump files and restore them in your database.
 
-Should take 15 minutes.
+Should take 15-30 minutes.
 
 ### Pre-requisites
 - Postgres 9.6+ with PostGIS 2.2+
 - A knowledge of [Postgres pg_restore parameters](http://www.postgresql.org/docs/9.6/static/app-pgrestore.html)
 
 ### Process
-1. Download [census-data-2016.dmp](http://minus34.com/opendata/census-2016/census-data-2016.dmp) (~1.6Gb)
-2. Download [census-boundaries-2016.dmp](http://minus34.com/opendata/census-2016/census-boundaries-2016.dmp) (~2.0Gb)
-3. Edit the restore-gnaf-admin-bdys.bat or .sh script in the supporting-files folder for your database parameters and for the location of pg_restore
-5. Run the script, come back in 15-60 minutes and enjoy!
+1. Download [census_2016_data.dmp](http://minus34.com/opendata/census-2016/census_2016_data.dmp) (~0.6Gb)
+2. Download [census_2016_bdys.dmp](http://minus34.com/opendata/census-2016/census_2016_bdys.dmp) (~1.1Gb)
+3. Download [census_2016_web.dmp](http://minus34.com/opendata/census-2016/census_2016_web.dmp) (~0.8Gb)
+4. Edit the restore-census-schemas.bat or .sh script in the supporting-files folder for your database parameters and for the location of pg_restore
+5. Run the script, come back in 15-30 minutes and enjoy!
 
-### Data Licenses
+### Data License
 
 Source: [Australian Bureau of Statistics](http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material)
 
 ## DATA CUSTOMISATION
 
-- Display optimised tables are created by this process, They allow for web mapping from the state level down the SA1 and meshblock levels. These are created in the census boundary display schema
+- Display optimised tables are created by this process, They allow for web mapping from the state level down the SA1 level. These are created in the census web schema.

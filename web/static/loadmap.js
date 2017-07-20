@@ -9,11 +9,14 @@ var info;
 // var legend;
 var themer;
 var geojsonLayer;
+var currLayer;
+
 
 var numClasses = 7; // number of classes (i.e colours) in map theme
 var minZoom = 4;
 var maxZoom = 16;
 var currentZoomLevel = 0;
+var censusYear = "";
 
 var statsArray = [];
 var currentStat;
@@ -49,13 +52,13 @@ for (i = 0; i < querystring.length; i+=1) {
     queryObj[querystring[i].split("=")[0]] = querystring[i].split("=")[1];
 }
 
-//// get/set values from querystring
-//if (!queryObj["census"]) {
-//    census = "2016";
-//} else {
-//    census = queryObj["stats"];
-//    // TODO: CHECK CENSUS YEAR VALUE IS VALID (2011 OR 2016 ONLY)
-//}
+// get/set values from querystring
+if (!queryObj.census) {
+   censusYear = "2016";
+} else {
+   censusYear = queryObj.census.toString();
+   // TODO: CHECK CENSUS YEAR VALUE IS VALID (2011 OR 2016 ONLY)
+}
 
 // get/set values from querystring
 
@@ -66,7 +69,7 @@ if (queryObj.b !== undefined) {
 
 // start zoom level
 if (!queryObj.z) {
-    currentZoomLevel = 11;
+    currentZoomLevel = 12;
 } else {
     currentZoomLevel = queryObj.z;
 }
@@ -80,8 +83,11 @@ if (!queryObj.z) {
 
 // get the stat(s) - can include basic equations using + - * / and ()  e.g. B23 * (B45 + B678)
 if (!queryObj.stats) {
-    statsArray = ["b3", "b1", "b2"]; // total_persons
-
+    if (censusYear === "2016") {
+        statsArray = ["g3", "g1", "g2"]; // total_persons
+    } else {  // 2011
+        statsArray = ["b3", "b1", "b2"]; // total_persons
+    }
 } else {
     statsArray = encodeURIComponent(queryObj.stats.toLowerCase()).split("%2C");
     // TODO: handle maths operators as well as plain stats
@@ -240,8 +246,8 @@ function init() {
     // get list of boundaries and the zoom levels they display at
     // and get stats metadata, including map theme classes
     $.when(
-        $.getJSON(bdyNamesUrl + "?min=" +  + minZoom.toString() + "&max=" + maxZoom.toString()),
-        $.getJSON(metadataUrl + "?n=" +  + numClasses.toString() + "&stats=" + statsArray.join())
+        $.getJSON(bdyNamesUrl + "?min=" + minZoom.toString() + "&max=" + maxZoom.toString()),
+        $.getJSON(metadataUrl + "?c="  + censusYear + "&n=" + numClasses.toString() + "&stats=" + statsArray.join())
     ).done(function(bdysResponse, metadataResponse) {
         if (!boundaryOverride){
             boundaryZooms = bdysResponse[0];
@@ -365,6 +371,8 @@ function getData() {
     ua.push(currentBoundary);
     ua.push("&m=");
     ua.push(currentStat.maptype);
+//    ua.push("&c=");
+//    ua.push(censusYear);
     ua.push("&z=");
     ua.push((currentZoomLevel).toString());
 
@@ -420,6 +428,9 @@ function gotData(json) {
 
         //update the legend with the new min and max
         // legend.update();
+
+        // reset info box
+        info.update();
 
         // create the radio buttons
         setRadioButtons();
@@ -478,6 +489,7 @@ function getColor(val, pop) {
 
 function onEachFeature(feature, layer) {
     layer.on({
+        click : highlightFeature,
         mouseover : highlightFeature,
         mouseout : resetHighlight
         // click : zoomToFeature
@@ -485,19 +497,26 @@ function onEachFeature(feature, layer) {
 }
 
 function highlightFeature(e) {
-    var layer = e.target;
+    if (currLayer !== undefined) {
+        geojsonLayer.resetStyle(currLayer);
+    }
 
-    layer.setStyle({
-        weight : 2.5,
-        opacity : 0.8,
-        color : highlightColour
-    });
+    currLayer = e.target;
 
-//    if (!L.Browser.ie && !L.Browser.edge && !L.Browser.opera) {
-    layer.bringToFront();
-//    }
+    if (currLayer !== undefined) {
 
-    info.update(layer.feature.properties);
+        currLayer.setStyle({
+            weight: 2.5,
+            opacity: 0.8,
+            color: highlightColour
+        });
+
+        //    if (!L.Browser.ie && !L.Browser.edge && !L.Browser.opera) {
+        currLayer.bringToFront();
+        //    }
+
+        info.update(currLayer.feature.properties);
+    }
 }
 
 function resetHighlight(e) {

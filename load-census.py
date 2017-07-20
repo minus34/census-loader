@@ -21,17 +21,19 @@
 #   2. load all census data CSV files
 #   3. load census boundary Shapefiles
 #   4. create web display optimised census boundaries using Visvalingam-Whyatt simplification
-#   5. fire up the map server and party on!
+#   5. got to the web folder and fire up the map server
+#   6. party on!
 #
 # *********************************************************************************************************************
 
+import arguments
 import io
 import logging.config
 import os
 import pandas  # module needs to be installed (IMPORTANT: need to install 'xlrd' module for Pandas to read .xlsx files)
 import psycopg2  # module needs to be installed
 import psycopg2.extensions
-import web.utils as utils
+import utils
 
 from datetime import datetime
 
@@ -40,10 +42,10 @@ def main():
     full_start_time = datetime.now()
 
     # set command line arguments
-    args = utils.set_arguments()
+    args = arguments.set_arguments()
 
     # get settings from arguments
-    settings = utils.get_settings(args)
+    settings = arguments.get_settings(args)
 
     if settings is None:
         logger.fatal("Invalid Census Year\nACTION: Set value to 2011 or 2016")
@@ -70,23 +72,28 @@ def main():
             )
         )
 
-    # test if ST_ClusterKMeans exists (only in PostGIS 2.3+). It's used to create classes to display the data in the map
+    # log PostGIS version
     utils.check_postgis_version(pg_cur, settings, logger)
 
-    if not settings.get('st_clusterkmeans_supported'):
-        logger.warning("YOU NEED TO INSTALL POSTGIS 2.3 OR HIGHER FOR THE MAP SERVER TO WORK\n"
-                       "it utilises the ST_ClusterKMeans() function in v2.3+")
+    # # test if ST_ClusterKMeans exists (only in PostGIS 2.3+).
+    # # It's used to create classes to display the data in the map
+    # if not settings.get('st_clusterkmeans_supported'):
+    #     logger.warning("YOU NEED TO INSTALL POSTGIS 2.3 OR HIGHER FOR THE MAP SERVER TO WORK\n"
+    #                    "it utilises the ST_ClusterKMeans() function in v2.3+")
 
     # START LOADING DATA
 
-    # test runtime parameters:
-    # --pghost=192.168.0.7
+    # test runtime parameters - 2011
     # --census-year=2011
     # --data-schema=census_2011_data
     # --boundary-schema=census_2011_bdys
     # --web-schema=census_2011_web
-    # --census-data-path=/Users/hugh.saalmans/tmp/abs_census_2011_data
-    # --census-bdys-path=/Users/hugh.saalmans/minus34/data/abs_2011
+    # --census-data-path=/Users/hugh/tmp/abs_census_2011_data
+    # --census-bdys-path=/Users/hugh/tmp/abs_census_2011_bdys
+
+    # test runtime parameters - 2016
+    # --census-data-path=/Users/hugh/tmp/abs_census_2016_data
+    # --census-bdys-path=/Users/hugh/tmp/abs_census_2016_bdys
 
     # PART 1 - load census data from CSV files
     logger.info("")
@@ -102,6 +109,11 @@ def main():
     start_time = datetime.now()
     logger.info("Part 2 of 2 : Start census boundary load : {0}".format(start_time))
     load_boundaries(pg_cur, settings)
+    # add bdy type prefix to bdy id to enabled joins with stat data (Census 2016 data issue only)
+    if settings["census_year"] == "2016":
+        fix_boundary_ids(settings)
+    else:
+        logger.info("\t- Step 2 of 3 : boundary id prefixes not required : {0}".format(datetime.now() - start_time))
     create_display_boundaries(pg_cur, settings)
     logger.info("Part 2 of 2 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
 
@@ -189,10 +201,18 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
                             except:
                                 pass
 
+                        # # order what's left by sequential_id field
+                        # df_clean.sort_values(by="Sequential", inplace=True)
+
                         # export to in-memory tab delimited text file
                         tsv_file = io.StringIO()
                         df_clean.to_csv(tsv_file, sep="\t", index=False, header=False)
                         tsv_file.seek(0)  # move position back to beginning of file before reading
+
+                        # # output dataframe to test tsv file
+                        # with open(file_dict["name"] + '.tsv', 'w') as fd:
+                        #     shutil.copyfileobj(tsv_file, fd)
+                        # tsv_file.seek(0)
 
                         # import into Postgres
                         sql = "COPY {0}.{1} FROM stdin WITH CSV DELIMITER as '\t' NULL as ''" \
@@ -240,14 +260,21 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, setting
                 if file_name.lower().endswith(suffix.lower()):
 
                     file_path = os.path.join(root, file_name)
-                    file_name_components = file_name.lower().split("_")
+                    file_name_components = file_name.lower().split(".")[0].split("_")
 
                     table = file_name_components[table_name_part]
-                    boundary = file_name_components[bdy_name_part]
 
                     # manual fix for the Australia wide data - has a different file name structure
-                    if "." in boundary:
-                        boundary = "aust"
+                    if settings['census_year'] == '2016':
+                        if "_aus." in file_name.lower():
+                            boundary = "aust"
+                        else:
+                            boundary = file_name_components[bdy_name_part]
+                    else:
+                        boundary = file_name_components[bdy_name_part]
+
+                        if "." in boundary:
+                            boundary = "aust"
 
                     file_dict = {
                         "path": file_path,
@@ -286,7 +313,7 @@ def load_boundaries(pg_cur, settings):
     append_list = list()
 
     # get a dictionary of Shapefile paths
-    for root, dirs, files in os.walk(settings['boundaries_local_directory']):
+    for root, dirs, files in os.walk(settings['boundaries_directory']):
         for original_file_name in files:
             file_name = original_file_name.lower()
 
@@ -340,11 +367,43 @@ def load_boundaries(pg_cur, settings):
             utils.import_shapefile_to_postgres(pg_cur, shp['file_path'], shp['pg_table'], shp['pg_schema'],
                                                shp['delete_table'], True)
 
-        logger.info("\t- Step 1 of 2 : boundaries loaded : {0}".format(datetime.now() - start_time))
+        logger.info("\t- Step 1 of 3 : boundaries loaded : {0}".format(datetime.now() - start_time))
+
+
+def fix_boundary_ids(settings):
+    # Step 2 of 3 : add bdy type prefix to bdy id to enabled joins with stat data (Census 2016 data issue only)
+    start_time = datetime.now()
+
+    alter_sql_list = list()
+    update_sql_list = list()
+    vacuum_sql_list = list()
+
+    for boundary_dict in settings['bdy_table_dicts']:
+        boundary_name = boundary_dict["boundary"]
+        input_pg_table = "{0}_{1}_aust".format(boundary_name, settings["census_year"])
+
+        if boundary_name in ["ced", "iare", "iloc", "ireg", "lga", "poa", "sed", "ssc"]:
+            id_field = boundary_dict["id_field"]
+
+            sql = "ALTER TABLE {0}.{1} ALTER COLUMN {2} TYPE text"\
+                .format(settings['boundary_schema'], input_pg_table, id_field)
+            alter_sql_list.append(sql)
+
+            sql = "UPDATE {0}.{1} SET {2} = upper('{3}') || {2}"\
+                .format(settings['boundary_schema'], input_pg_table, id_field, boundary_name)
+            update_sql_list.append(sql)
+
+            vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(settings['boundary_schema'], input_pg_table))
+
+    utils.multiprocess_list("sql", alter_sql_list, settings, logger)
+    utils.multiprocess_list("sql", update_sql_list, settings, logger)
+    utils.multiprocess_list("sql", vacuum_sql_list, settings, logger)
+
+    logger.info("\t- Step 2 of 3 : boundary ids prefixed : {0}".format(datetime.now() - start_time))
 
 
 def create_display_boundaries(pg_cur, settings):
-    # Step 2 of 2 : create web optimised versions of the census boundaries
+    # Step 3 of 3 : create web optimised versions of the census boundaries
     start_time = datetime.now()
 
     # create schema
@@ -403,6 +462,9 @@ def create_display_boundaries(pg_cur, settings):
                 pop_stat = settings['population_stat']
                 pop_table = settings['population_table']
 
+            # print(boundary_name)
+            # print(pop_stat + " - " + pop_table)
+
             # build insert statement
             insert_into_list = list()
             insert_into_list.append("INSERT INTO {0}.{1}".format(settings['web_schema'], pg_table))
@@ -440,11 +502,13 @@ def create_display_boundaries(pg_cur, settings):
 
             vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(settings['web_schema'], pg_table))
 
+    # print("\n".join(insert_sql_list))
+
     utils.multiprocess_list("sql", create_sql_list, settings, logger)
     utils.multiprocess_list("sql", insert_sql_list, settings, logger)
     utils.multiprocess_list("sql", vacuum_sql_list, settings, logger)
 
-    logger.info("\t- Step 2 of 2 : web optimised boundaries created : {0}".format(datetime.now() - start_time))
+    logger.info("\t- Step 3 of 3 : web optimised boundaries created : {0}".format(datetime.now() - start_time))
 
 
 if __name__ == '__main__':
