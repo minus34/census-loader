@@ -4,7 +4,7 @@ echo "Starting import script"
 # Wait for Postgres to set up the PostGIS tables and accept connections.
 CHECK_CMD="psql -h localhost -U ${POSTGRES_USER} -c \dt"
 echo "Starting PostGIS to import data..."
-(docker-entrypoint.sh postgres && sleep 5 &)
+(docker-entrypoint.sh postgres &)
 n=0
 nchecks=10
 until [ $n -ge $nchecks ]
@@ -29,6 +29,5 @@ python3 load-census.py \
 	--census-bdys-path /app/data/ \
 	--pghost localhost --pgdb census \
 	--pguser ${POSTGRES_USER} \
-	--pgpassword ${POSTGRES_PASSWORD}
-
-
+	--pgpassword ${POSTGRES_PASSWORD} \
+    --census-year 2011
