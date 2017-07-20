@@ -12,8 +12,12 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get -q -y -o Dpkg::Options::="--force-co
 sudo git clone https://github.com/minus34/census-loader.git ~/git/census-loader/
 
 # copy Postgres dump files to server
-sudo wget -q http://minus34.com/opendata/census-2016/census_2016_data.dmp -O ~/git/census-loader/data/data.dmp
-sudo wget -q http://minus34.com/opendata/census-2016/census_2016_web.dmp -O ~/git/census-loader/data/web.dmp
+sudo wget -q http://minus34.com/opendata/census-2016/census_2016_data.dmp -O ~/git/census-loader/data/data.zip
+sudo wget -q http://minus34.com/opendata/census-2016/census_2016_web.dmp -O ~/git/census-loader/data/web.zip
+sudo DEBIAN_FRONTEND=noninteractive apt-get -q -y install unzip
+cd ~/git/census-loader/data
+unzip data.zip -d ./data
+unzip data.zip -d ./web
 
 # install Postgres
 sudo add-apt-repository -y "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main"
@@ -44,9 +48,9 @@ sudo -u postgres createdb geo
 #sudo -u postgres psql -c "GRANT postgres TO censususer; " geo
 sudo -u postgres psql -c "CREATE EXTENSION adminpack;CREATE EXTENSION postgis;" geo
 
-# import Postgres dump files into database
-sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/web.dmp
-sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/data.dmp
+## import Postgres dump files into database
+#sudo pg_restore -Fd -j 2 -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/web
+#sudo pg_restore -Fd -j 2 -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/data
 
 ## delete dump files
 cd ~/git/census-loader/data
@@ -57,6 +61,6 @@ sudo find . -name "*.dmp" -type f -delete
 # ----------------------
 
 # run 2 Python/Flask map servers in the background
-sudo gunicorn -w 2 -D --pythonpath ~/git/census-loader/web/ -b 0.0.0.0:80 single_server:app
+sudo gunicorn -w 2 -D --chdir /home/ubuntu/git/census-loader/web/ --pythonpath ~/git/census-loader/web/ -b 0.0.0.0:80 single_server:app
 
 # TODO: Put NGINX in front of gunicorn as a reverse proxy
