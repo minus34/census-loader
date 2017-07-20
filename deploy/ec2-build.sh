@@ -12,12 +12,13 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get -q -y -o Dpkg::Options::="--force-co
 sudo git clone https://github.com/minus34/census-loader.git ~/git/census-loader/
 
 # copy Postgres dump files to server
-sudo wget -q http://minus34.com/opendata/census-2016/census_2016_data.dmp -O ~/git/census-loader/data/data.zip
-sudo wget -q http://minus34.com/opendata/census-2016/census_2016_web.dmp -O ~/git/census-loader/data/web.zip
-sudo DEBIAN_FRONTEND=noninteractive apt-get -q -y install unzip
-cd ~/git/census-loader/data
-unzip data.zip -d ./data
-unzip data.zip -d ./web
+sudo wget -q http://minus34.com/opendata/census-2016/census_2016_data.dmp -O ~/git/census-loader/data/data.dmp
+sudo wget -q http://minus34.com/opendata/census-2016/census_2016_web.dmp -O ~/git/census-loader/data/web.dmp
+
+# tried to unzip postgres dump files for parallel loading - but unzip is a bit precious about files zipped on a Mac
+#sudo DEBIAN_FRONTEND=noninteractive apt-get -q -y install unzip
+#unzip ~/git/census-loader/data/data.zip -d ~/git/census-loader/data/data
+#unzip ~/git/census-loader/data/web.zip -d ~/git/census-loader/data/web
 
 # install Postgres
 sudo add-apt-repository -y "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main"
@@ -48,9 +49,9 @@ sudo -u postgres createdb geo
 #sudo -u postgres psql -c "GRANT postgres TO censususer; " geo
 sudo -u postgres psql -c "CREATE EXTENSION adminpack;CREATE EXTENSION postgis;" geo
 
-## import Postgres dump files into database
-#sudo pg_restore -Fd -j 2 -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/web
-#sudo pg_restore -Fd -j 2 -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/data
+# import Postgres dump files into database
+sudo pg_restore -Fd -j 2 -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/web
+sudo pg_restore -Fd -j 2 -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/data
 
 ## delete dump files
 cd ~/git/census-loader/data

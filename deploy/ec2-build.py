@@ -15,7 +15,7 @@ BUILDID = "small_1_2"
 # KEY_PAIR_NAME = "Default"
 AVAILABILITY_ZONE = "ap-southeast-2a"  # Sydney, AU
 PEM_FILE = "/Users/hugh.saalmans/.aws/LightsailDefaultPrivateKey-ap-southeast-2.pem"
-INSTANCE_NAME = "census_loader_instance_v2"
+INSTANCE_NAME = "census_loader_instance_test"
 
 
 def main():
@@ -112,8 +112,9 @@ def run_ssh_command(ssh_client, cmd):
     stdin.close()
 
     for line in stdout.read().splitlines():
-        if line:
-            logger.info("\t\t{0}".format(line))
+        pass
+        # if line:
+        #     logger.info("\t\t{0}".format(line))
     stdout.close()
 
     for line in stderr.read().splitlines():
