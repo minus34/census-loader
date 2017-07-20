@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-# -------------------------------
-# STEP 1 - install stuff
-# -------------------------------
+# --------------------------------------------
+# STEP 1 - update, upgrade and install stuff
+# --------------------------------------------
 
 # update and upgrade Ubuntu
 sudo DEBIAN_FRONTEND=noninteractive apt-get -q -y update
@@ -56,12 +56,3 @@ sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-load
 ## delete dump files
 cd ~/git/census-loader/data
 sudo find . -name "*.dmp" -type f -delete
-
-# ----------------------
-# STEP 3 - run the app
-# ----------------------
-
-# run 2 Python/Flask map servers in the background
-sudo gunicorn -w 2 -D --chdir /home/ubuntu/git/census-loader/web/ --pythonpath ~/git/census-loader/web/ -b 0.0.0.0:80 single_server:app
-
-# TODO: Put NGINX in front of gunicorn as a reverse proxy
