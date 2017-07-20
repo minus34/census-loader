@@ -50,8 +50,8 @@ sudo -u postgres createdb geo
 sudo -u postgres psql -c "CREATE EXTENSION adminpack;CREATE EXTENSION postgis;" geo
 
 # import Postgres dump files into database
-sudo pg_restore -Fd -j 2 -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/web
-sudo pg_restore -Fd -j 2 -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/data
+sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/web.dmp
+sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/data.dmp
 
 ## delete dump files
 cd ~/git/census-loader/data
