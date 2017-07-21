@@ -5,6 +5,7 @@ import arguments
 import ast
 import json
 import psycopg2
+import psycopg2.extras
 # import utils
 
 from datetime import datetime
@@ -16,7 +17,6 @@ from flask import request
 from flask import Response
 from flask_compress import Compress
 
-from psycopg2 import extras
 from psycopg2.extensions import AsIs
 from psycopg2.pool import ThreadedConnectionPool
 
@@ -30,12 +30,13 @@ args = arguments.set_arguments()
 settings = arguments.get_settings(args)
 
 # create database connection pool
-pool = ThreadedConnectionPool(10, 30,
-                              database=settings["pg_db"],
-                              user=settings["pg_user"],
-                              password=settings["pg_password"],
-                              host=settings["pg_host"],
-                              port=settings["pg_port"])
+pool = ThreadedConnectionPool(
+    10, 30,
+    database=settings["pg_db"],
+    user=settings["pg_user"],
+    password=settings["pg_password"],
+    host=settings["pg_host"],
+    port=settings["pg_port"])
 
 
 # get the boundary name that suits each (tiled map) zoom level and its minimum value to colour in

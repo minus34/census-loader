@@ -1,14 +1,6 @@
 FROM mdillon/postgis:9.6
 MAINTAINER Alex Leith <aleith@crcsi.com.au>
 
-# Do this first so it's cached
-RUN apt-get update && \
-	apt-get install -y python3 python3-pip \
-	python3-pandas python3-xlrd python3-psycopg2
-
-# Set the directory for the load process
-ENV APPDIR=/app
-
 # Set up a PGDATA directory, for persistence
 ENV PGDATA=/opt/data
 
@@ -16,15 +8,16 @@ ENV PGDATA=/opt/data
 ENV POSTGRES_USER=census
 ENV POSTGRES_PASSWORD=census
 
-COPY data $APPDIR/data
-WORKDIR $APPDIR
+# Get the data from Hugh (thanks, Hugh!)
+RUN mkdir -p /tmp/dumps/
+ADD http://minus34.com/opendata/census-2016/census_2016_data.dmp /tmp/dumps/
+ADD http://minus34.com/opendata/census-2016/census_2016_bdys.dmp /tmp/dumps/
+ADD http://minus34.com/opendata/census-2016/census_2016_web.dmp  /tmp/dumps/
 
-COPY docker-pg-loader.sh $APPDIR/docker-pg-loader.sh
-COPY load-census.py $APPDIR/load-census.py
-COPY web $APPDIR/web
+ADD docker-pg-loader.sh /tmp/
 
-# Launch the DB, wait until it is running and then run the load script
-RUN $APPDIR/docker-pg-loader.sh
+# Launch the DB, wait until it is running and then restore the dumps
+RUN /tmp/docker-pg-loader.sh
 
 # Clean up
-RUN rm $APPDIR/data
+RUN rm -rf /tmp/dumps

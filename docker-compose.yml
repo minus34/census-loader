@@ -1,8 +1,8 @@
 version: "2"
 services:
-  # shares volume with other images so we can use COPY
   db:
     build: .
+    restart: on-failure
     ports:
       - "5432:5432"
     environment:
