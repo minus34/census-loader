@@ -97,6 +97,8 @@ Create a Docker container with Census data and ASGS boundaries ready to go, so t
 5. Run docker-compose: `docker-compose up`. The database will be built.
 6. Use the constructed database as you wish.
 
+If you want only the db running, do `docker-compose up db`. If you want to view the webapp, navigate to `localhost`, or the docker machine IP on (if you're doing Docker the old way!).
+
 ## Option 3 - Load PG_DUMP Files
 Download Postgres dump files and restore them in your database.
 

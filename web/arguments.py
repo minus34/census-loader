@@ -64,7 +64,12 @@ def get_settings(args):
     settings['pg_password'] = args.pgpassword or os.getenv("POSTGRES_PASSWORD", "password")
 
     settings['pg_connect_string'] = "dbname='{0}' host='{1}' port='{2}' user='{3}' password='{4}'".format(
-        settings['pg_db'], settings['pg_host'], settings['pg_port'], settings['pg_user'], settings['pg_password'])
+        settings['pg_db'],
+        settings['pg_host'],
+        settings['pg_port'],
+        settings['pg_user'],
+        settings['pg_password']
+    )
 
     # set file name and field name defaults based on census year
     if settings['census_year'] == '2016':
