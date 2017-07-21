@@ -65,12 +65,8 @@ def main():
     try:
         pg_cur.execute("SET search_path = public, pg_catalog; CREATE EXTENSION IF NOT EXISTS postgis")
     except psycopg2.Error:
-        logger.warning(
-            (
-                "Unable to add PostGIS extension\n"
-                "ACTION: Check whether it is already loaded... continuing."
-            )
-        )
+        logger.fatal("Unable to add PostGIS extension\nACTION: Check your Postgres user privileges or PostGIS install")
+        return False
 
     # log PostGIS version
     utils.check_postgis_version(pg_cur, settings, logger)
@@ -130,7 +126,6 @@ def main():
 def create_metadata_tables(pg_cur, prefix, suffix, settings):
     # Step 1 of 2 : create metadata tables from Census Excel spreadsheets
     start_time = datetime.now()
-    logger.info("Creating metadata tables.")
 
     # create schema
     if settings['data_schema'] != "public":
@@ -249,7 +244,6 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
 def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part, settings):
     # Step 2 of 2 : create & populate stats tables with CSV files using multiprocessing
     start_time = datetime.now()
-    logger.info("Populating data tables.")
 
     # get the file list and create sql copy statements
     file_list = []
