@@ -51,6 +51,7 @@ def main():
         time.sleep(10)
         instance_dict = get_lightsail_instance(lightsail_client, INSTANCE_NAME)
 
+        # open the Postgres port on the instance
         response_dict = lightsail_client.open_instance_public_ports(
             portInfo={
                 'fromPort': 5432,

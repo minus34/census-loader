@@ -8,6 +8,9 @@
 sudo DEBIAN_FRONTEND=noninteractive apt-get -q -y update
 sudo DEBIAN_FRONTEND=noninteractive apt-get -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade
 
+# get census-loader code (note: creates the folder to download the PG dump file into)
+sudo git clone https://github.com/minus34/census-loader.git ~/git/census-loader/
+
 # install Postgres
 sudo add-apt-repository -y "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main"
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
@@ -85,6 +88,4 @@ sudo service postgresql restart
 cd ~/git/census-loader/data
 sudo find . -name "*.dmp" -type f -delete
 
-# get census-loader code
-sudo git clone https://github.com/minus34/census-loader.git ~/git/census-loader/
 
