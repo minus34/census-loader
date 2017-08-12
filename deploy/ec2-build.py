@@ -43,16 +43,6 @@ def main():
     )
     logger.info("\t\t{0}".format(response_dict))
 
-    response_dict = lightsail_client.open_instance_public_ports(
-        portInfo={
-            'fromPort': 5432,
-            'toPort': 5432,
-            'protocol': "tcp"
-        },
-        instanceName='string'
-    )
-
-
     # wait until instance is running
     instance_dict = get_lightsail_instance(lightsail_client, INSTANCE_NAME)
 
@@ -60,6 +50,16 @@ def main():
         logger.info('\t\tWaiting 10 seconds... instance is %s' % instance_dict["state"]["name"])
         time.sleep(10)
         instance_dict = get_lightsail_instance(lightsail_client, INSTANCE_NAME)
+
+        response_dict = lightsail_client.open_instance_public_ports(
+            portInfo={
+                'fromPort': 5432,
+                'toPort': 5432,
+                'protocol': "tcp"
+            },
+            instanceName=INSTANCE_NAME
+        )
+        logger.info("\t\t{0}".format(response_dict))
 
     logger.info('\t\tWaiting 30 seconds... instance is booting')
     time.sleep(30)
@@ -139,7 +139,7 @@ def run_ssh_command(ssh_client, cmd):
             logger.info("\t\t{0}".format(line))
     stderr.close()
 
-    logger.info("END : {0} : {1}".format(cmd, datetime.now() - start_time))
+    logger.info("END   : {0} : {1}".format(cmd, datetime.now() - start_time))
 
     # except:
     #     logger.warning("FAILED! : {0} : {1}".format(cmd, datetime.now() - start_time))

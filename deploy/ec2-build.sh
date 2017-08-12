@@ -8,18 +8,6 @@
 sudo DEBIAN_FRONTEND=noninteractive apt-get -q -y update
 sudo DEBIAN_FRONTEND=noninteractive apt-get -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade
 
-# get code
-sudo git clone https://github.com/minus34/census-loader.git ~/git/census-loader/
-
-# copy Postgres dump files to server
-sudo wget -q http://minus34.com/opendata/census-2016/census_2016_data.dmp -O ~/git/census-loader/data/data.dmp
-sudo wget -q http://minus34.com/opendata/census-2016/census_2016_web.dmp -O ~/git/census-loader/data/web.dmp
-
-# tried to unzip postgres dump files for parallel loading - but unzip is a bit precious about files zipped on a Mac
-#sudo DEBIAN_FRONTEND=noninteractive apt-get -q -y install unzip
-#unzip ~/git/census-loader/data/data.zip -d ~/git/census-loader/data/data
-#unzip ~/git/census-loader/data/web.zip -d ~/git/census-loader/data/web
-
 # install Postgres
 sudo add-apt-repository -y "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main"
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
@@ -47,28 +35,35 @@ sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'password';"
 sudo -u postgres createdb geo
 sudo -u postgres psql -c "CREATE EXTENSION adminpack;CREATE EXTENSION postgis;" geo
 
-# import Postgres dump files into database
-sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/web.dmp
-sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/data.dmp
-
 # create read only user and grant access to all tables & sequences
 sudo -u postgres psql -c "CREATE USER rouser WITH ENCRYPTED PASSWORD 'password';" geo
-sudo -u postgres psql -c "GRANT CONNECT ON DATABASE mydb TO rouser;" geo
-# census_2016_data schema
-sudo -u postgres psql -c "GRANT USAGE ON SCHEMA census_2016_data TO rouser;" geo
-sudo -u postgres psql -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA census_2016_data TO rouser;" geo
-sudo -u postgres psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA census_2016_data to rouser;" geo
-sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_data GRANT SELECT ON SEQUENCES TO rouser;" geo
-sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_data GRANT SELECT ON TABLES TO rouser;" geo
-# census_2016_web schema
-sudo -u postgres psql -c "GRANT USAGE ON SCHEMA census_2016_web TO rouser;" geo
-sudo -u postgres psql -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA census_2016_web TO rouser;" geo
-sudo -u postgres psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA census_2016_web to rouser;" geo
-sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_web GRANT SELECT ON SEQUENCES TO rouser;" geo
-sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_web GRANT SELECT ON TABLES TO rouser;" geo
+sudo -u postgres psql -c "GRANT CONNECT ON DATABASE geo TO rouser;" geo
+sudo -u postgres psql -c "GRANT USAGE ON SCHEMA public TO rouser;" geo
+sudo -u postgres psql -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO rouser;" geo
+sudo -u postgres psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA public to rouser;" geo
+sudo -u postgres psql -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO rouser;" geo  # for PostGIS functions
+## census_2016_data schema
+#sudo -u postgres psql -c "GRANT USAGE ON SCHEMA census_2016_data TO rouser;" geo
+#sudo -u postgres psql -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA census_2016_data TO rouser;" geo
+#sudo -u postgres psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA census_2016_data to rouser;" geo
+#sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_data GRANT SELECT ON SEQUENCES TO rouser;" geo
+#sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_data GRANT SELECT ON TABLES TO rouser;" geo
+## census_2016_web schema
+#sudo -u postgres psql -c "GRANT USAGE ON SCHEMA census_2016_web TO rouser;" geo
+#sudo -u postgres psql -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA census_2016_web TO rouser;" geo
+#sudo -u postgres psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA census_2016_web to rouser;" geo
+#sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_web GRANT SELECT ON SEQUENCES TO rouser;" geo
+#sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_web GRANT SELECT ON TABLES TO rouser;" geo
+#
+## copy Postgres dump files to server
+#sudo wget -q http://minus34.com/opendata/census-2016/census_2016_data.dmp -O ~/git/census-loader/data/data.dmp
+#sudo wget -q http://minus34.com/opendata/census-2016/census_2016_web.dmp -O ~/git/census-loader/data/web.dmp
+#
+## import Postgres dump files into database
+#sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/web.dmp
+#sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/data.dmp
 
-
-# stuff for Zappa and AWS Lambda testing (admin_bdys_201705_display schema)
+# stuff for Zappa and AWS Lambda testing
 sudo wget -q http://minus34.com/test/zappa/admin_bdys_201705_display.dmp -O ~/git/census-loader/data/admin_bdys_201705_display.dmp
 sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/admin_bdys_201705_display.dmp
 
@@ -78,7 +73,17 @@ sudo -u postgres psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA admin_bdys_201705
 sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA admin_bdys_201705_display GRANT SELECT ON SEQUENCES TO rouser;" geo
 sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA admin_bdys_201705_display GRANT SELECT ON TABLES TO rouser;" geo
 
+# alter whitelisted postgres clients (the AWS Lamdba and the test client)
+HBA_FILE="$(pg_conftool -s 9.6 main show hba_file)"
+echo "host\t geo\t rouser\t 859uppjni0.execute-api.ap-southeast-2.amazonaws.com\t md5" >> ${HBA_FILE}
+#echo "host\t geo\t rouser\t 101.164.227.2/22\t md5" >> ${HBA_FILE}
+echo "host\t all\t all\t 101.164.227.2/22\t md5" >> ${HBA_FILE}
+sudo service postgresql restart
 
 # delete dump files
 cd ~/git/census-loader/data
 sudo find . -name "*.dmp" -type f -delete
+
+# get census-loader code
+sudo git clone https://github.com/minus34/census-loader.git ~/git/census-loader/
+
