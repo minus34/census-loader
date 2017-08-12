@@ -74,10 +74,11 @@ sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA admin_bdys_201705_d
 sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA admin_bdys_201705_display GRANT SELECT ON TABLES TO rouser;" geo
 
 # alter whitelisted postgres clients (the AWS Lamdba and the test client)
-HBA_FILE="$(pg_conftool -s 9.6 main show hba_file)"
-echo "host\t geo\t rouser\t 859uppjni0.execute-api.ap-southeast-2.amazonaws.com\t md5" >> ${HBA_FILE}
-#echo "host\t geo\t rouser\t 101.164.227.2/22\t md5" >> ${HBA_FILE}
-echo "host\t all\t all\t 101.164.227.2/22\t md5" >> ${HBA_FILE}
+#export HBAFILE=$(pg_conftool -s 9.6 main show hba_file)
+#echo $HBAFILE
+echo -e "host\t geo\t rouser\t 859uppjni0.execute-api.ap-southeast-2.amazonaws.com\t md5" | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
+#echo -e "host\t geo\t rouser\t 101.164.227.2/22\t md5" | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
+echo -e "host\t all\t all\t 101.164.227.2/22\t md5" | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
 sudo service postgresql restart
 
 # delete dump files
