@@ -15,7 +15,7 @@ BUILDID = "medium_1_2"
 # KEY_PAIR_NAME = "Default"
 AVAILABILITY_ZONE = "ap-southeast-2a"  # Sydney, AU
 PEM_FILE = "/Users/hugh.saalmans/.aws/LightsailDefaultPrivateKey-ap-southeast-2.pem"
-INSTANCE_NAME = "census_loader_instance"
+INSTANCE_NAME = "census_loader_instance_test"
 
 
 def main():
@@ -42,6 +42,16 @@ def main():
         # userData=initial_script
     )
     logger.info("\t\t{0}".format(response_dict))
+
+    response_dict = lightsail_client.open_instance_public_ports(
+        portInfo={
+            'fromPort': 5432,
+            'toPort': 5432,
+            'protocol': "tcp"
+        },
+        instanceName='string'
+    )
+
 
     # wait until instance is running
     instance_dict = get_lightsail_instance(lightsail_client, INSTANCE_NAME)

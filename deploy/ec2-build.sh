@@ -42,17 +42,43 @@ sudo pip3 install gunicorn
 # STEP 2 - restore data to Postgres and run server
 # ---------------------------------------------------
 
-# create user and database
+# alter postgres user and create database
 sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'password';"
-#sudo -u postgres createuser -P censususer
 sudo -u postgres createdb geo
-#sudo -u postgres psql -c "GRANT postgres TO censususer; " geo
 sudo -u postgres psql -c "CREATE EXTENSION adminpack;CREATE EXTENSION postgis;" geo
 
 # import Postgres dump files into database
 sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/web.dmp
 sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/data.dmp
 
-## delete dump files
+# create read only user and grant access to all tables & sequences
+sudo -u postgres psql -c "CREATE USER rouser WITH ENCRYPTED PASSWORD 'password';" geo
+sudo -u postgres psql -c "GRANT CONNECT ON DATABASE mydb TO rouser;" geo
+# census_2016_data schema
+sudo -u postgres psql -c "GRANT USAGE ON SCHEMA census_2016_data TO rouser;" geo
+sudo -u postgres psql -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA census_2016_data TO rouser;" geo
+sudo -u postgres psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA census_2016_data to rouser;" geo
+sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_data GRANT SELECT ON SEQUENCES TO rouser;" geo
+sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_data GRANT SELECT ON TABLES TO rouser;" geo
+# census_2016_web schema
+sudo -u postgres psql -c "GRANT USAGE ON SCHEMA census_2016_web TO rouser;" geo
+sudo -u postgres psql -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA census_2016_web TO rouser;" geo
+sudo -u postgres psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA census_2016_web to rouser;" geo
+sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_web GRANT SELECT ON SEQUENCES TO rouser;" geo
+sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_web GRANT SELECT ON TABLES TO rouser;" geo
+
+
+# stuff for Zappa and AWS Lambda testing (admin_bdys_201705_display schema)
+sudo wget -q http://minus34.com/test/zappa/admin_bdys_201705_display.dmp -O ~/git/census-loader/data/admin_bdys_201705_display.dmp
+sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/admin_bdys_201705_display.dmp
+
+sudo -u postgres psql -c "GRANT USAGE ON SCHEMA admin_bdys_201705_display TO rouser;" geo
+sudo -u postgres psql -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA admin_bdys_201705_display TO rouser;" geo
+sudo -u postgres psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA admin_bdys_201705_display to rouser;" geo
+sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA admin_bdys_201705_display GRANT SELECT ON SEQUENCES TO rouser;" geo
+sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA admin_bdys_201705_display GRANT SELECT ON TABLES TO rouser;" geo
+
+
+# delete dump files
 cd ~/git/census-loader/data
 sudo find . -name "*.dmp" -type f -delete
