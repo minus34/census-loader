@@ -6,6 +6,7 @@ import ast
 import json
 import psycopg2
 import psycopg2.extras
+import os
 
 # from datetime import datetime
 
@@ -33,11 +34,11 @@ settings['data_schema'] = "census_2016_data"
 settings['web_schema'] = "census_2016_web"
 
 # create postgres connect string
-settings['pg_host'] = "localhost"
-settings['pg_port'] = 5432
-settings['pg_db'] = "geo"
-settings['pg_user'] = "postgres"
-settings['pg_password'] = "password"
+settings['pg_host'] = os.getenv("PGHOST", "localhost")
+settings['pg_port'] = os.getenv("PGPORT", 5432)
+settings['pg_db'] = os.getenv("PGDB", "geo")
+settings['pg_user'] = os.getenv("PGUSER", "postgres")
+settings['pg_password'] = os.getenv("PGPASSWORD", "password")
 
 settings['pg_connect_string'] = "dbname='{0}' host='{1}' port='{2}' user='{3}' password='{4}'".format(
     settings['pg_db'], settings['pg_host'], settings['pg_port'], settings['pg_user'], settings['pg_password'])
