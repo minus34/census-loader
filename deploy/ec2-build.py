@@ -4,6 +4,7 @@ import logging
 import os
 import paramiko
 import time
+import uuid
 
 from datetime import datetime
 
@@ -20,6 +21,10 @@ INSTANCE_NAME = "census_loader_instance_test"
 
 def main():
     full_start_time = datetime.now()
+
+    # get uuid based passwords
+    admin_password = str(uuid.uuid4())
+    readonly_password = str(uuid.uuid4())
 
     # create lightsail client
     lightsail_client = boto3.client('lightsail')
@@ -85,7 +90,13 @@ def main():
 
     for cmd in bash_commands:
         if cmd[:1] != "#" and cmd[:1].strip(" ") != "":  # ignore comments and blank lines
-            run_ssh_command(ssh_client, cmd)
+            # replace text with passwords if required
+            if "<postgres-password>" in cmd:
+                cmd = cmd.replace("<postgres-password>", admin_password)
+            if "<rouser-password>" in cmd:
+                cmd = cmd.replace("<rouser-password>", readonly_password)
+
+            run_ssh_command(ssh_client, cmd, admin_password)
 
     # data and code loaded - run the thing using gunicorn!
     cmd = "sudo gunicorn -w {0} -D --pythonpath ~/git/census-loader/web/ -b 0.0.0.0:80 single_server:app"\
@@ -96,7 +107,10 @@ def main():
 
     ssh_client.close()
 
-    logger.info("Public IP address: {0}".format(instance_ip))
+    logger.info("Public IP address : {}".format(instance_ip))
+    logger.info("")
+    logger.info("Admin password    : {}".format(admin_password))
+    logger.info("Readonly password : {}".format(readonly_password))
     logger.info("")
     logger.info("Total time : : {0}".format(datetime.now() - full_start_time))
     logger.info("")
@@ -109,7 +123,7 @@ def get_lightsail_instance(lightsail_client, name):
     return response["instance"]
 
 
-def run_ssh_command(ssh_client, cmd):
+def run_ssh_command(ssh_client, cmd, admin_password):
     start_time = datetime.now()
     logger.info("START : {0}".format(cmd))
 
@@ -119,7 +133,7 @@ def run_ssh_command(ssh_client, cmd):
 
     # send Postgres user password when running pg_restore
     if "pg_restore" in cmd:
-        stdin.write('password\n')
+        stdin.write(admin_password + '\n')
         stdin.flush()
 
     # log everything
