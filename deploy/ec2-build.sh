@@ -78,8 +78,6 @@ sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA admin_bdys_201705_d
 sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA admin_bdys_201705_display GRANT SELECT ON TABLES TO rouser;" geo
 
 # alter whitelisted postgres clients (the AWS Lamdba and the test client)
-#export HBAFILE=$(pg_conftool -s 9.6 main show hba_file)
-#echo $HBAFILE
 sudo sed -i -e "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/postgresql/9.6/main/postgresql.conf
 echo -e "host\t geo\t rouser\t 0.0.0.0/0\t md5" | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
 #echo -e "host\t geo\t rouser\t 859uppjni0.execute-api.ap-southeast-2.amazonaws.com\t md5" | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
@@ -91,4 +89,6 @@ sudo service postgresql restart
 cd ~/git/census-loader/data
 sudo find . -name "*.dmp" -type f -delete
 
-
+# set environment variables for census-loader web map
+sudo export PGUSER="rouser"
+sudo export PGPASSWORD="<rouser-password>"

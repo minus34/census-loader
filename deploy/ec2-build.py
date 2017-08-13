@@ -16,7 +16,7 @@ BUILDID = "medium_1_2"
 # KEY_PAIR_NAME = "Default"
 AVAILABILITY_ZONE = "ap-southeast-2a"  # Sydney, AU
 PEM_FILE = "/Users/hugh.saalmans/.aws/LightsailDefaultPrivateKey-ap-southeast-2.pem"
-INSTANCE_NAME = "census_loader_instance_test"
+INSTANCE_NAME = "census_loader_instance_v2"
 
 
 def main():
