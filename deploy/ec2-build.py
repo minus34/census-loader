@@ -23,10 +23,8 @@ def main():
     full_start_time = datetime.now()
 
     # get uuid based passwords
-    password_array = str(uuid.uuid4()).split("-")
-    admin_password = password_array[3] + password_array[0]
-    password_array = str(uuid.uuid4()).split("-")
-    readonly_password = password_array[3] + password_array[0]
+    admin_password = str(uuid.uuid4()).strip("-")
+    readonly_password = str(uuid.uuid4()).strip("-")
 
     # create lightsail client
     lightsail_client = boto3.client('lightsail')
