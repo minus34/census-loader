@@ -81,7 +81,8 @@ sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA admin_bdys_201705_d
 #export HBAFILE=$(pg_conftool -s 9.6 main show hba_file)
 #echo $HBAFILE
 sudo sed -i -e "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/postgresql/9.6/main/postgresql.conf
-echo -e "host\t geo\t rouser\t 859uppjni0.execute-api.ap-southeast-2.amazonaws.com\t md5" | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
+echo -e "host\t geo\t rouser\t 0.0.0.0/0\t md5" | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
+#echo -e "host\t geo\t rouser\t 859uppjni0.execute-api.ap-southeast-2.amazonaws.com\t md5" | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
 echo -e "host\t geo\t rouser\t 101.164.227.2/22\t md5" | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
 #echo -e "host\t all\t all\t 101.164.227.2/22\t md5" | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
 sudo service postgresql restart
