@@ -23,8 +23,10 @@ def main():
     full_start_time = datetime.now()
 
     # get uuid based passwords
-    admin_password = str(uuid.uuid4())
-    readonly_password = str(uuid.uuid4())
+    password_array = str(uuid.uuid4()).split("-")
+    admin_password = password_array[3] + password_array[0]
+    password_array = str(uuid.uuid4()).split("-")
+    readonly_password = password_array[3] + password_array[0]
 
     # create lightsail client
     lightsail_client = boto3.client('lightsail')
@@ -52,8 +54,8 @@ def main():
     instance_dict = get_lightsail_instance(lightsail_client, INSTANCE_NAME)
 
     while instance_dict["state"]["name"] != 'running':
-        logger.info('\t\tWaiting 10 seconds... instance is %s' % instance_dict["state"]["name"])
-        time.sleep(10)
+        logger.info('\t\tWaiting 15 seconds... instance is %s' % instance_dict["state"]["name"])
+        time.sleep(15)
         instance_dict = get_lightsail_instance(lightsail_client, INSTANCE_NAME)
 
         # open the Postgres port on the instance
@@ -101,7 +103,7 @@ def main():
     # data and code loaded - run the thing using gunicorn!
     cmd = "sudo gunicorn -w {0} -D --pythonpath ~/git/census-loader/web/ -b 0.0.0.0:80 single_server:app"\
         .format(cpu_count * 2)
-    run_ssh_command(ssh_client, cmd)
+    run_ssh_command(ssh_client, cmd, admin_password)
 
     # TODO: Put NGINX in front of gunicorn as a reverse proxy"
 
