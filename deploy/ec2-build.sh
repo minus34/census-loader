@@ -34,7 +34,7 @@ sudo pip3 install gunicorn
 # ---------------------------------------------------
 
 # alter postgres user and create database
-sudo -u postgres psql -c "ALTER USER postgres PASSWORD '<postgres-password>';"
+sudo -u postgres psql -c "ALTER USER postgres ENCRYPTED PASSWORD '<postgres-password>';"
 sudo -u postgres createdb geo
 sudo -u postgres psql -c "CREATE EXTENSION adminpack;CREATE EXTENSION postgis;" geo
 
@@ -46,26 +46,26 @@ sudo -u postgres psql -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO rous
 sudo -u postgres psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA public to rouser;" geo
 sudo -u postgres psql -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO rouser;" geo  # for PostGIS functions
 
-## copy Postgres dump files to server
-#sudo wget -q http://minus34.com/opendata/census-2016/census_2016_data.dmp -O ~/git/census-loader/data/data.dmp
-#sudo wget -q http://minus34.com/opendata/census-2016/census_2016_web.dmp -O ~/git/census-loader/data/web.dmp
-#
-## import Postgres dump files into database
-#sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/web.dmp
-#sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/data.dmp
-#
-## census_2016_data schema
-#sudo -u postgres psql -c "GRANT USAGE ON SCHEMA census_2016_data TO rouser;" geo
-#sudo -u postgres psql -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA census_2016_data TO rouser;" geo
-#sudo -u postgres psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA census_2016_data to rouser;" geo
-#sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_data GRANT SELECT ON SEQUENCES TO rouser;" geo
-#sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_data GRANT SELECT ON TABLES TO rouser;" geo
-## census_2016_web schema
-#sudo -u postgres psql -c "GRANT USAGE ON SCHEMA census_2016_web TO rouser;" geo
-#sudo -u postgres psql -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA census_2016_web TO rouser;" geo
-#sudo -u postgres psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA census_2016_web to rouser;" geo
-#sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_web GRANT SELECT ON SEQUENCES TO rouser;" geo
-#sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_web GRANT SELECT ON TABLES TO rouser;" geo
+# copy Postgres dump files to server
+sudo wget -q http://minus34.com/opendata/census-2016/census_2016_data.dmp -O ~/git/census-loader/data/data.dmp
+sudo wget -q http://minus34.com/opendata/census-2016/census_2016_web.dmp -O ~/git/census-loader/data/web.dmp
+
+# import Postgres dump files into database
+sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/web.dmp
+sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/data.dmp
+
+# census_2016_data schema
+sudo -u postgres psql -c "GRANT USAGE ON SCHEMA census_2016_data TO rouser;" geo
+sudo -u postgres psql -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA census_2016_data TO rouser;" geo
+sudo -u postgres psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA census_2016_data to rouser;" geo
+sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_data GRANT SELECT ON SEQUENCES TO rouser;" geo
+sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_data GRANT SELECT ON TABLES TO rouser;" geo
+# census_2016_web schema
+sudo -u postgres psql -c "GRANT USAGE ON SCHEMA census_2016_web TO rouser;" geo
+sudo -u postgres psql -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA census_2016_web TO rouser;" geo
+sudo -u postgres psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA census_2016_web to rouser;" geo
+sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_web GRANT SELECT ON SEQUENCES TO rouser;" geo
+sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_web GRANT SELECT ON TABLES TO rouser;" geo
 
 # stuff for Zappa and AWS Lambda testing
 sudo wget -q http://minus34.com/test/zappa/admin_bdys_201705_display.dmp -O ~/git/census-loader/data/admin_bdys_201705_display.dmp
