@@ -90,5 +90,5 @@ cd ~/git/census-loader/data
 sudo find . -name "*.dmp" -type f -delete
 
 # set environment variables for census-loader web map
-sudo export PGUSER="rouser"
-sudo export PGPASSWORD="<rouser-password>"
+export PGUSER="rouser"
+export PGPASSWORD="<rouser-password>"
