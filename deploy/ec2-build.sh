@@ -67,23 +67,23 @@ sudo -u postgres psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA census_2016_web t
 sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_web GRANT SELECT ON SEQUENCES TO rouser;" geo
 sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA census_2016_web GRANT SELECT ON TABLES TO rouser;" geo
 
-# stuff for Zappa and AWS Lambda testing
-sudo wget -q http://minus34.com/test/zappa/admin_bdys_201705_display.dmp -O ~/git/census-loader/data/admin_bdys_201705_display.dmp
-sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/admin_bdys_201705_display.dmp
-
-sudo -u postgres psql -c "GRANT USAGE ON SCHEMA admin_bdys_201705_display TO rouser;" geo
-sudo -u postgres psql -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA admin_bdys_201705_display TO rouser;" geo
-sudo -u postgres psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA admin_bdys_201705_display to rouser;" geo
-sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA admin_bdys_201705_display GRANT SELECT ON SEQUENCES TO rouser;" geo
-sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA admin_bdys_201705_display GRANT SELECT ON TABLES TO rouser;" geo
-
-# alter whitelisted postgres clients (the AWS Lamdba and the test client)
-sudo sed -i -e "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/postgresql/9.6/main/postgresql.conf
-echo -e "host\t geo\t rouser\t 0.0.0.0/0\t md5" | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
-#echo -e "host\t geo\t rouser\t 859uppjni0.execute-api.ap-southeast-2.amazonaws.com\t md5" | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
-echo -e "host\t geo\t rouser\t 101.164.227.2/22\t md5" | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
-#echo -e "host\t all\t all\t 101.164.227.2/22\t md5" | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
-sudo service postgresql restart
+## stuff for Zappa and AWS Lambda testing
+#sudo wget -q http://minus34.com/test/zappa/admin_bdys_201705_display.dmp -O ~/git/census-loader/data/admin_bdys_201705_display.dmp
+#sudo pg_restore -Fc -v -d geo -p 5432 -U postgres -h localhost ~/git/census-loader/data/admin_bdys_201705_display.dmp
+#
+#sudo -u postgres psql -c "GRANT USAGE ON SCHEMA admin_bdys_201705_display TO rouser;" geo
+#sudo -u postgres psql -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA admin_bdys_201705_display TO rouser;" geo
+#sudo -u postgres psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA admin_bdys_201705_display to rouser;" geo
+#sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA admin_bdys_201705_display GRANT SELECT ON SEQUENCES TO rouser;" geo
+#sudo -u postgres psql -c "ALTER DEFAULT PRIVILEGES IN SCHEMA admin_bdys_201705_display GRANT SELECT ON TABLES TO rouser;" geo
+#
+## alter whitelisted postgres clients (the AWS Lamdba and the test client)
+#sudo sed -i -e "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/postgresql/9.6/main/postgresql.conf
+#echo -e "host\t geo\t rouser\t 0.0.0.0/0\t md5" | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
+##echo -e "host\t geo\t rouser\t 859uppjni0.execute-api.ap-southeast-2.amazonaws.com\t md5" | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
+#echo -e "host\t geo\t rouser\t 101.164.227.2/22\t md5" | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
+##echo -e "host\t all\t all\t 101.164.227.2/22\t md5" | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
+#sudo service postgresql restart
 
 # delete dump files
 cd ~/git/census-loader/data
