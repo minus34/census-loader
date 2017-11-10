@@ -152,7 +152,8 @@ def create_metadata_tables(pg_cur, prefix, suffix, settings):
     for root, dirs, files in os.walk(settings['data_directory']):
         for file_name in files:
             if file_name.lower().startswith(prefix.lower()):
-                if file_name.lower().endswith(suffix.lower()):
+                # find all XLS and XLSX files (2016 data has a mix!)
+                if file_name.lower().endswith(suffix.lower()) or file_name.lower().endswith(suffix.lower() + "x"):
                     file_path = os.path.join(root, file_name)
 
                     file_dict = dict()
