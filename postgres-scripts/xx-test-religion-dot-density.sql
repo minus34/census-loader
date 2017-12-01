@@ -18,6 +18,7 @@ SELECT row_number() OVER () as gid,
   FROM census_2016_bdys.sa1_2016_aust AS bdy
   INNER JOIN census_2016_data.sa1_G14 AS tab ON bdy.sa1_7dig16 = tab.region_id
   WHERE tab.G5447::integer > 0
+  AND bdy.ste_code16 IN ('1', '2')
   AND NOT ST_IsEmpty(geom);
 
 DROP TABLE IF EXISTS census_2016_sandpit.dots_non_religious;
@@ -35,37 +36,33 @@ CREATE INDEX dots_non_religious_geom_idx
 
 ALTER TABLE census_2016_sandpit.dots_non_religious
     CLUSTER ON dots_non_religious_geom_idx;
-    
+
 
 -- christianity
 
 DROP TABLE IF EXISTS census_2016_sandpit.temp_sa1; -- 55706
 SELECT row_number() OVER () as gid,
   bdy.sa1_7dig16,
-  tab.G5447::integer as val,
+  tab.G5423::integer as val,
   ST_Buffer(ST_SnapToGrid(bdy.geom, 0.0001), 0.0) As geom
   INTO census_2016_sandpit.temp_sa1
   FROM census_2016_bdys.sa1_2016_aust AS bdy
   INNER JOIN census_2016_data.sa1_G14 AS tab ON bdy.sa1_7dig16 = tab.region_id
-  WHERE tab.G5447::integer > 0
+  WHERE tab.G5423::integer > 0
   AND NOT ST_IsEmpty(geom);
 
-DROP TABLE IF EXISTS census_2016_sandpit.dots_non_religious;
+DROP TABLE IF EXISTS census_2016_sandpit.dots_christian;
 SELECT row_number() OVER () as gid,
   ST_RandomPointsInPolygon(geom, val) As geom
-  INTO census_2016_sandpit.dots_non_religious
+  INTO census_2016_sandpit.dots_christian
   FROM census_2016_sandpit.temp_sa1
   WHERE ST_Area(ST_Envelope(geom)) > 0.0;
 
---ALTER TABLE census_2016_sandpit.dots_non_religious_g5423 ADD CONSTRAINT dots_non_religious_g5423_pkey PRIMARY KEY (gid);
-ALTER TABLE census_2016_sandpit.dots_non_religious OWNER to postgres;
+--ALTER TABLE census_2016_sandpit.dots_christian_g5423 ADD CONSTRAINT dots_christian_g5423_pkey PRIMARY KEY (gid);
+ALTER TABLE census_2016_sandpit.dots_christian OWNER to postgres;
 
-CREATE INDEX dots_non_religious_geom_idx
-    ON census_2016_sandpit.dots_non_religious USING gist (geom);
+CREATE INDEX dots_christian_geom_idx
+    ON census_2016_sandpit.dots_christian USING gist (geom);
 
-ALTER TABLE census_2016_sandpit.dots_non_religious
-    CLUSTER ON dots_non_religious_g5423_geom_idx;
-    
-
-
-
+ALTER TABLE census_2016_sandpit.dots_christian
+    CLUSTER ON dots_christian_geom_idx;
