@@ -7,6 +7,30 @@ SELECT * FROM census_2016_data.metadata_stats WHERE table_number = 'G14' AND col
 select SUM(G5447) from census_2016_data.sa1_G14;
 
 
+-- the entire population
+
+DROP TABLE IF EXISTS census_2016_sandpit.dots_population;
+WITH temp_sa1 AS (
+  SELECT tab.G5462::integer as val,
+    ST_Buffer(ST_SnapToGrid(bdy.geom, 0.0001), 0.0) As geom
+    FROM census_2016_bdys.sa1_2016_aust AS bdy
+    INNER JOIN census_2016_data.sa1_G14 AS tab ON bdy.sa1_7dig16 = tab.region_id
+    WHERE tab.G5462::integer > 0
+    AND bdy.ste_code16 IN ('1', '8')
+    AND NOT ST_IsEmpty(geom)
+)
+SELECT row_number() OVER () as gid,
+  ST_GeneratePoints(geom, val) As geom
+  INTO census_2016_sandpit.dots_population
+  FROM temp_sa1
+  WHERE ST_Area(ST_Envelope(geom)) > 0.0;
+
+ALTER TABLE census_2016_sandpit.dots_population OWNER to postgres;
+ALTER TABLE census_2016_sandpit.dots_population ADD CONSTRAINT dots_population_pkey PRIMARY KEY (gid);
+CREATE INDEX dots_population_geom_idx ON census_2016_sandpit.dots_population USING gist (geom);
+ALTER TABLE census_2016_sandpit.dots_population CLUSTER ON dots_population_geom_idx;
+
+
 -- no religion
 
 DROP TABLE IF EXISTS census_2016_sandpit.dots_non_religious;
