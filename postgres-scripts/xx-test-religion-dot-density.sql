@@ -1,10 +1,10 @@
-
-SELECT * FROM census_2016_data.metadata_stats WHERE lower(long_id) LIKE '%relig%' AND column_heading_description = 'Persons' ORDER BY sequential_id;
-
-SELECT * FROM census_2016_data.metadata_stats WHERE table_number = 'G14' AND column_heading_description = 'Persons' ORDER BY sequential_id;
-
-
-select SUM(G5447) from census_2016_data.sa1_G14;
+--
+-- SELECT * FROM census_2016_data.metadata_stats WHERE lower(long_id) LIKE '%relig%' AND column_heading_description = 'Persons' ORDER BY sequential_id;
+--
+-- SELECT * FROM census_2016_data.metadata_stats WHERE table_number = 'G14' AND column_heading_description = 'Persons' ORDER BY sequential_id;
+--
+--
+-- select SUM(G5447) from census_2016_data.sa1_G14;
 
 
 -- the entire population
@@ -30,6 +30,8 @@ ALTER TABLE census_2016_sandpit.dots_population ADD CONSTRAINT dots_population_p
 CREATE INDEX dots_population_geom_idx ON census_2016_sandpit.dots_population USING gist (geom);
 ALTER TABLE census_2016_sandpit.dots_population CLUSTER ON dots_population_geom_idx;
 
+VACUUM ANALYZE census_2016_sandpit.dots_population;
+
 
 -- no religion
 
@@ -53,6 +55,8 @@ ALTER TABLE census_2016_sandpit.dots_non_religious OWNER to postgres;
 ALTER TABLE census_2016_sandpit.dots_non_religious ADD CONSTRAINT dots_non_religious_pkey PRIMARY KEY (gid);
 CREATE INDEX dots_non_religious_geom_idx ON census_2016_sandpit.dots_non_religious USING gist (geom);
 ALTER TABLE census_2016_sandpit.dots_non_religious CLUSTER ON dots_non_religious_geom_idx;
+
+VACUUM ANALYZE census_2016_sandpit.dots_non_religious;
 
 
 -- christianity
@@ -78,6 +82,8 @@ ALTER TABLE census_2016_sandpit.dots_christian ADD CONSTRAINT dots_christian_pke
 CREATE INDEX dots_christian_geom_idx ON census_2016_sandpit.dots_christian USING gist (geom);
 ALTER TABLE census_2016_sandpit.dots_christian CLUSTER ON dots_christian_geom_idx;
 
+VACUUM ANALYZE census_2016_sandpit.dots_christian;
+
 
 -- islam
 
@@ -101,6 +107,8 @@ ALTER TABLE census_2016_sandpit.dots_islam OWNER to postgres;
 ALTER TABLE census_2016_sandpit.dots_islam ADD CONSTRAINT dots_islam_pkey PRIMARY KEY (gid);
 CREATE INDEX dots_islam_geom_idx ON census_2016_sandpit.dots_islam USING gist (geom);
 ALTER TABLE census_2016_sandpit.dots_islam CLUSTER ON dots_islam_geom_idx;
+
+VACUUM ANALYZE census_2016_sandpit.dots_islam;
 
 
 -- buddhism
@@ -126,6 +134,8 @@ ALTER TABLE census_2016_sandpit.dots_buddhism ADD CONSTRAINT dots_buddhism_pkey 
 CREATE INDEX dots_buddhism_geom_idx ON census_2016_sandpit.dots_buddhism USING gist (geom);
 ALTER TABLE census_2016_sandpit.dots_buddhism CLUSTER ON dots_buddhism_geom_idx;
 
+VACUUM ANALYZE census_2016_sandpit.dots_buddhism;
+
 
 -- hinduism
 
@@ -150,6 +160,8 @@ ALTER TABLE census_2016_sandpit.dots_hinduism ADD CONSTRAINT dots_hinduism_pkey 
 CREATE INDEX dots_hinduism_geom_idx ON census_2016_sandpit.dots_hinduism USING gist (geom);
 ALTER TABLE census_2016_sandpit.dots_hinduism CLUSTER ON dots_hinduism_geom_idx;
 
+VACUUM ANALYZE census_2016_sandpit.dots_hinduism;
+
 
 -- judaism
 
@@ -173,3 +185,5 @@ ALTER TABLE census_2016_sandpit.dots_judaism OWNER to postgres;
 ALTER TABLE census_2016_sandpit.dots_judaism ADD CONSTRAINT dots_judaism_pkey PRIMARY KEY (gid);
 CREATE INDEX dots_judaism_geom_idx ON census_2016_sandpit.dots_judaism USING gist (geom);
 ALTER TABLE census_2016_sandpit.dots_judaism CLUSTER ON dots_judaism_geom_idx;
+
+VACUUM ANALYZE census_2016_sandpit.dots_judaism;
