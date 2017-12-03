@@ -16,7 +16,7 @@ WITH temp_sa1 AS (
     FROM census_2016_bdys.sa1_2016_aust AS bdy
     INNER JOIN census_2016_data.sa1_G14 AS tab ON bdy.sa1_7dig16 = tab.region_id
     WHERE tab.G5462::integer > 0
-    AND bdy.ste_code16 IN ('1', '8')
+    -- AND bdy.ste_code16 IN ('1', '8')
     AND NOT ST_IsEmpty(geom)
 )
 SELECT row_number() OVER () as gid,
@@ -42,7 +42,7 @@ WITH temp_sa1 AS (
     FROM census_2016_bdys.sa1_2016_aust AS bdy
     INNER JOIN census_2016_data.sa1_G14 AS tab ON bdy.sa1_7dig16 = tab.region_id
     WHERE tab.G5447::integer > 0
-    AND bdy.ste_code16 IN ('1', '8')
+    -- AND bdy.ste_code16 IN ('1', '8')
     AND NOT ST_IsEmpty(geom)
 )
 SELECT row_number() OVER () as gid,
@@ -68,7 +68,7 @@ WITH temp_sa1 AS (
     FROM census_2016_bdys.sa1_2016_aust AS bdy
     INNER JOIN census_2016_data.sa1_G14 AS tab ON bdy.sa1_7dig16 = tab.region_id
     WHERE tab.G5423::integer > 0
-    AND bdy.ste_code16 IN ('1', '8')
+    -- AND bdy.ste_code16 IN ('1', '8')
     AND NOT ST_IsEmpty(geom)
 )
 SELECT row_number() OVER () as gid,
@@ -94,7 +94,7 @@ WITH temp_sa1 AS (
     FROM census_2016_bdys.sa1_2016_aust AS bdy
     INNER JOIN census_2016_data.sa1_G14 AS tab ON bdy.sa1_7dig16 = tab.region_id
     WHERE tab.G5429::integer > 0
-    AND bdy.ste_code16 IN ('1', '8')
+    -- AND bdy.ste_code16 IN ('1', '8')
     AND NOT ST_IsEmpty(geom)
 )
 SELECT row_number() OVER () as gid,
@@ -120,7 +120,7 @@ WITH temp_sa1 AS (
     FROM census_2016_bdys.sa1_2016_aust AS bdy
     INNER JOIN census_2016_data.sa1_G14 AS tab ON bdy.sa1_7dig16 = tab.region_id
     WHERE tab.G5363::integer > 0
-    AND bdy.ste_code16 IN ('1', '8')
+    -- AND bdy.ste_code16 IN ('1', '8')
     AND NOT ST_IsEmpty(geom)
 )
 SELECT row_number() OVER () as gid,
@@ -146,7 +146,7 @@ WITH temp_sa1 AS (
     FROM census_2016_bdys.sa1_2016_aust AS bdy
     INNER JOIN census_2016_data.sa1_G14 AS tab ON bdy.sa1_7dig16 = tab.region_id
     WHERE tab.G5426::integer > 0
-    AND bdy.ste_code16 IN ('1', '8')
+    -- AND bdy.ste_code16 IN ('1', '8')
     AND NOT ST_IsEmpty(geom)
 )
 SELECT row_number() OVER () as gid,
@@ -172,7 +172,7 @@ WITH temp_sa1 AS (
     FROM census_2016_bdys.sa1_2016_aust AS bdy
     INNER JOIN census_2016_data.sa1_G14 AS tab ON bdy.sa1_7dig16 = tab.region_id
     WHERE tab.G5432::integer > 0
-    AND bdy.ste_code16 IN ('1', '8')
+    -- AND bdy.ste_code16 IN ('1', '8')
     AND NOT ST_IsEmpty(geom)
 )
 SELECT row_number() OVER () as gid,
