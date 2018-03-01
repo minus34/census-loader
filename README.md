@@ -5,7 +5,7 @@ A quick way to get started with Australian Bureau of Statistics (ABS) Census 201
 1. A quick way to load the entire census into Postgres
 2. A [map server](https://github.com/minus34/census-loader/tree/master/web) for quickly visualising census data and trends
 
-**DEMOS**
+**DEMOS** (CURRENTLY OFFLINE)
 
 * Age: [http://census.minus34.com?stats=G247,G248,G249,G250,G251,G252,G253,G254,G255](http://census.minus34.com?stats=G247,G248,G249,G250,G251,G252,G253,G254,G255)
 * Religion: [http://census.minus34.com?stats=G5456,G5363,G5423,G5426,G5429,G5432](http://census.minus34.com?stats=G5456,G5363,G5423,G5426,G5429,G5432)
