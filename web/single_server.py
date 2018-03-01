@@ -415,7 +415,7 @@ def get_data():
     # table_id = request.args.get('t')
     # boundary_name = request.args.get('b')
     # boundary_name = 'sa1'
-    zoom_level = int(request.args.get('z'))
+    # zoom_level = int(request.args.get('z'))
 
     # TODO: get rid of this hardcoding!
 
@@ -433,12 +433,14 @@ def get_data():
         table_name = 'dots_hinduism'
     elif stat_id == 'g5432':
         table_name = 'dots_judaism'
+    else:
+        table_name = 'dots_non_religious'
 
     # # get the boundary table name from zoom level
     # if boundary_name is None:
     #     boundary_name, min_val = get_boundary(zoom_level)
 
-    display_zoom = str(zoom_level).zfill(2)
+    # display_zoom = str(zoom_level).zfill(2)
 
     # build SQL with SQL injection protection
     # yes, this is ridiculous - if someone can find a shorthand way of doing this then fire up the pull requests!
