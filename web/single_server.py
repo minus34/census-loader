@@ -35,7 +35,7 @@ settings['web_schema'] = "census_2016_web"
 
 # create postgres connect string
 settings['pg_host'] = os.getenv("PGHOST", "localhost")
-settings['pg_port'] = os.getenv("PGPORT", 5433)
+settings['pg_port'] = os.getenv("PGPORT", 5432)
 settings['pg_db'] = os.getenv("PGDB", "geo")
 settings['pg_user'] = os.getenv("PGUSER", "postgres")
 settings['pg_password'] = os.getenv("PGPASSWORD", "password")
@@ -163,7 +163,7 @@ def homepage():
 
 
 @app.route("/dots/")
-def homepage():
+def dot_homepage():
     return render_template('density.html')
 
 
@@ -399,7 +399,7 @@ def get_data():
 
 
 @app.route("/get-dot-data")
-def get_data():
+def get_dot_data():
     # full_start_time = datetime.now()
     # start_time = datetime.now()
 
@@ -505,4 +505,4 @@ def get_data():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80, debug=False)
+    app.run(host='0.0.0.0', port=5000, debug=False)
