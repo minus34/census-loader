@@ -20,7 +20,7 @@ WITH temp_sa1 AS (
     AND NOT ST_IsEmpty(geom)
 )
 SELECT id, NULL::numeric(7,5) AS latitude, NULL::numeric(8,5) AS longitude,
-  (ST_Dump(ST_GeneratePoints(geom, val))).geom AS geom
+  (ST_Dump(ST_GeneratePoints(geom, (val/10)::integer))).geom AS geom
   INTO census_2016_sandpit.dots_population
   FROM temp_sa1
   WHERE ST_Area(ST_Envelope(geom)) > 0.0;
@@ -50,7 +50,7 @@ WITH temp_sa1 AS (
     AND NOT ST_IsEmpty(geom)
 )
 SELECT id, NULL::numeric(7,5) AS latitude, NULL::numeric(8,5) AS longitude,
-  (ST_Dump(ST_GeneratePoints(geom, val))).geom AS geom
+  (ST_Dump(ST_GeneratePoints(geom, (val/10)::integer))).geom AS geom
   INTO census_2016_sandpit.dots_non_religious
   FROM temp_sa1
   WHERE ST_Area(ST_Envelope(geom)) > 0.0;
@@ -80,7 +80,7 @@ WITH temp_sa1 AS (
     AND NOT ST_IsEmpty(geom)
 )
 SELECT id, NULL::numeric(7,5) AS latitude, NULL::numeric(8,5) AS longitude,
-  (ST_Dump(ST_GeneratePoints(geom, val))).geom AS geom
+  (ST_Dump(ST_GeneratePoints(geom, (val/10)::integer))).geom AS geom
   INTO census_2016_sandpit.dots_christian
   FROM temp_sa1
   WHERE ST_Area(ST_Envelope(geom)) > 0.0;
@@ -110,7 +110,7 @@ WITH temp_sa1 AS (
     AND NOT ST_IsEmpty(geom)
 )
 SELECT id, NULL::numeric(7,5) AS latitude, NULL::numeric(8,5) AS longitude,
-  (ST_Dump(ST_GeneratePoints(geom, val))).geom AS geom
+  (ST_Dump(ST_GeneratePoints(geom, (val/10)::integer))).geom AS geom
   INTO census_2016_sandpit.dots_islam
   FROM temp_sa1
   WHERE ST_Area(ST_Envelope(geom)) > 0.0;
@@ -140,7 +140,7 @@ WITH temp_sa1 AS (
     AND NOT ST_IsEmpty(geom)
 )
 SELECT id, NULL::numeric(7,5) AS latitude, NULL::numeric(8,5) AS longitude,
-  (ST_Dump(ST_GeneratePoints(geom, val))).geom AS geom
+  (ST_Dump(ST_GeneratePoints(geom, (val/10)::integer))).geom AS geom
   INTO census_2016_sandpit.dots_buddhism
   FROM temp_sa1
   WHERE ST_Area(ST_Envelope(geom)) > 0.0;
@@ -170,7 +170,7 @@ WITH temp_sa1 AS (
     AND NOT ST_IsEmpty(geom)
 )
 SELECT id, NULL::numeric(7,5) AS latitude, NULL::numeric(8,5) AS longitude,
-  (ST_Dump(ST_GeneratePoints(geom, val))).geom AS geom
+  (ST_Dump(ST_GeneratePoints(geom, (val/10)::integer))).geom AS geom
   INTO census_2016_sandpit.dots_hinduism
   FROM temp_sa1
   WHERE ST_Area(ST_Envelope(geom)) > 0.0;
@@ -200,7 +200,7 @@ WITH temp_sa1 AS (
     AND NOT ST_IsEmpty(geom)
 )
 SELECT id, NULL::numeric(7,5) AS latitude, NULL::numeric(8,5) AS longitude,
-  (ST_Dump(ST_GeneratePoints(geom, val))).geom AS geom
+  (ST_Dump(ST_GeneratePoints(geom, (val/10)::integer))).geom AS geom
   INTO census_2016_sandpit.dots_judaism
   FROM temp_sa1
   WHERE ST_Area(ST_Envelope(geom)) > 0.0;
@@ -220,3 +220,21 @@ ANALYZE census_2016_sandpit.dots_judaism;
 
 -- SELECT * FROM census_2016_bdys.sa1_2016_aust
 --   WHERE ST_Area(ST_Buffer(ST_SnapToGrid(geom, 0.0001), 0.0))/ST_Area(ST_Envelope(ST_Buffer(ST_SnapToGrid(geom, 0.0001), 0.0))) < 0.0001;
+
+DROP TABLE census_2016_sandpit.mv_dots_religion;
+CREATE TABLE census_2016_sandpit.mv_dots_religion AS
+SELECT 'Christian' AS religion, latitude, longitude FROM census_2016_sandpit.dots_christian
+  UNION ALL
+SELECT 'Judaism' AS religion, latitude, longitude FROM census_2016_sandpit.dots_judaism
+UNION ALL
+SELECT 'Islam' AS religion, latitude, longitude FROM census_2016_sandpit.dots_islam
+UNION ALL
+SELECT 'Hinduism' AS religion, latitude, longitude FROM census_2016_sandpit.dots_hinduism
+UNION ALL
+SELECT 'Buddhism' AS religion, latitude, longitude FROM census_2016_sandpit.dots_buddhism
+UNION ALL
+SELECT 'No Religion' AS religion, latitude, longitude FROM census_2016_sandpit.dots_non_religious;
+
+ALTER TABLE census_2016_sandpit.mv_dots_religion OWNER to postgres;
+CREATE INDEX mv_dots_religion_lat_long_idx ON census_2016_sandpit.mv_dots_religion USING btree (latitude, longitude);
+ALTER TABLE census_2016_sandpit.mv_dots_religion CLUSTER ON mv_dots_religion_lat_long_idx;
