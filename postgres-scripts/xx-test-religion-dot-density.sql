@@ -221,7 +221,7 @@ ANALYZE census_2016_sandpit.dots_judaism;
 -- SELECT * FROM census_2016_bdys.sa1_2016_aust
 --   WHERE ST_Area(ST_Buffer(ST_SnapToGrid(geom, 0.0001), 0.0))/ST_Area(ST_Envelope(ST_Buffer(ST_SnapToGrid(geom, 0.0001), 0.0))) < 0.0001;
 
-DROP MATERIALIZED VIEW census_2016_sandpit.mv_dots_religion;
+DROP MATERIALIZED VIEW IF EXISTS census_2016_sandpit.mv_dots_religion;
 CREATE MATERIALIZED VIEW census_2016_sandpit.mv_dots_religion AS
 SELECT 'Christian' AS religion, latitude, longitude FROM census_2016_sandpit.dots_christian
   UNION ALL
