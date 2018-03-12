@@ -19,14 +19,18 @@ WITH temp_sa1 AS (
     -- AND bdy.ste_code16 IN ('1', '8')
     AND NOT ST_IsEmpty(geom)
 )
-SELECT id,
-  ST_GeneratePoints(geom, val) As geom
+SELECT id, NULL::numeric(7,5) AS latitude, NULL::numeric(8,5) AS longitude,
+  (ST_Dump(ST_GeneratePoints(geom, val))).geom AS geom
   INTO census_2016_sandpit.dots_population
   FROM temp_sa1
   WHERE ST_Area(ST_Envelope(geom)) > 0.0;
 
+UPDATE census_2016_sandpit.dots_population
+  SET latitude = ST_Y(geom),
+    longitude = ST_X(geom);
+
 ALTER TABLE census_2016_sandpit.dots_population OWNER to postgres;
-ALTER TABLE census_2016_sandpit.dots_population ADD CONSTRAINT dots_population_pkey PRIMARY KEY (id);
+-- ALTER TABLE census_2016_sandpit.dots_population ADD CONSTRAINT dots_population_pkey PRIMARY KEY (id);
 CREATE INDEX dots_population_geom_idx ON census_2016_sandpit.dots_population USING gist (geom);
 ALTER TABLE census_2016_sandpit.dots_population CLUSTER ON dots_population_geom_idx;
 
@@ -45,14 +49,18 @@ WITH temp_sa1 AS (
     -- AND bdy.ste_code16 IN ('1', '8')
     AND NOT ST_IsEmpty(geom)
 )
-SELECT id,
-  ST_GeneratePoints(geom, val) As geom
+SELECT id, NULL::numeric(7,5) AS latitude, NULL::numeric(8,5) AS longitude,
+  (ST_Dump(ST_GeneratePoints(geom, val))).geom AS geom
   INTO census_2016_sandpit.dots_non_religious
   FROM temp_sa1
   WHERE ST_Area(ST_Envelope(geom)) > 0.0;
 
+UPDATE census_2016_sandpit.dots_non_religious
+SET latitude = ST_Y(geom),
+  longitude = ST_X(geom);
+
 ALTER TABLE census_2016_sandpit.dots_non_religious OWNER to postgres;
-ALTER TABLE census_2016_sandpit.dots_non_religious ADD CONSTRAINT dots_non_religious_pkey PRIMARY KEY (id);
+-- ALTER TABLE census_2016_sandpit.dots_non_religious ADD CONSTRAINT dots_non_religious_pkey PRIMARY KEY (id);
 CREATE INDEX dots_non_religious_geom_idx ON census_2016_sandpit.dots_non_religious USING gist (geom);
 ALTER TABLE census_2016_sandpit.dots_non_religious CLUSTER ON dots_non_religious_geom_idx;
 
@@ -71,14 +79,18 @@ WITH temp_sa1 AS (
     -- AND bdy.ste_code16 IN ('1', '8')
     AND NOT ST_IsEmpty(geom)
 )
-SELECT id,
-  ST_GeneratePoints(geom, val) As geom
+SELECT id, NULL::numeric(7,5) AS latitude, NULL::numeric(8,5) AS longitude,
+  (ST_Dump(ST_GeneratePoints(geom, val))).geom AS geom
   INTO census_2016_sandpit.dots_christian
   FROM temp_sa1
   WHERE ST_Area(ST_Envelope(geom)) > 0.0;
 
+UPDATE census_2016_sandpit.dots_christian
+  SET latitude = ST_Y(geom),
+    longitude = ST_X(geom);
+
 ALTER TABLE census_2016_sandpit.dots_christian OWNER to postgres;
-ALTER TABLE census_2016_sandpit.dots_christian ADD CONSTRAINT dots_christian_pkey PRIMARY KEY (id);
+-- ALTER TABLE census_2016_sandpit.dots_christian ADD CONSTRAINT dots_christian_pkey PRIMARY KEY (id);
 CREATE INDEX dots_christian_geom_idx ON census_2016_sandpit.dots_christian USING gist (geom);
 ALTER TABLE census_2016_sandpit.dots_christian CLUSTER ON dots_christian_geom_idx;
 
@@ -97,14 +109,18 @@ WITH temp_sa1 AS (
     -- AND bdy.ste_code16 IN ('1', '8')
     AND NOT ST_IsEmpty(geom)
 )
-SELECT id,
-  ST_GeneratePoints(geom, val) As geom
+SELECT id, NULL::numeric(7,5) AS latitude, NULL::numeric(8,5) AS longitude,
+  (ST_Dump(ST_GeneratePoints(geom, val))).geom AS geom
   INTO census_2016_sandpit.dots_islam
   FROM temp_sa1
   WHERE ST_Area(ST_Envelope(geom)) > 0.0;
 
+UPDATE census_2016_sandpit.dots_islam
+  SET latitude = ST_Y(geom),
+    longitude = ST_X(geom);
+
 ALTER TABLE census_2016_sandpit.dots_islam OWNER to postgres;
-ALTER TABLE census_2016_sandpit.dots_islam ADD CONSTRAINT dots_islam_pkey PRIMARY KEY (id);
+-- ALTER TABLE census_2016_sandpit.dots_islam ADD CONSTRAINT dots_islam_pkey PRIMARY KEY (id);
 CREATE INDEX dots_islam_geom_idx ON census_2016_sandpit.dots_islam USING gist (geom);
 ALTER TABLE census_2016_sandpit.dots_islam CLUSTER ON dots_islam_geom_idx;
 
@@ -123,14 +139,18 @@ WITH temp_sa1 AS (
     -- AND bdy.ste_code16 IN ('1', '8')
     AND NOT ST_IsEmpty(geom)
 )
-SELECT id,
-  ST_GeneratePoints(geom, val) As geom
+SELECT id, NULL::numeric(7,5) AS latitude, NULL::numeric(8,5) AS longitude,
+  (ST_Dump(ST_GeneratePoints(geom, val))).geom AS geom
   INTO census_2016_sandpit.dots_buddhism
   FROM temp_sa1
   WHERE ST_Area(ST_Envelope(geom)) > 0.0;
 
+UPDATE census_2016_sandpit.dots_buddhism
+       SET latitude = ST_Y(geom),
+longitude = ST_X(geom);
+
 ALTER TABLE census_2016_sandpit.dots_buddhism OWNER to postgres;
-ALTER TABLE census_2016_sandpit.dots_buddhism ADD CONSTRAINT dots_buddhism_pkey PRIMARY KEY (id);
+-- ALTER TABLE census_2016_sandpit.dots_buddhism ADD CONSTRAINT dots_buddhism_pkey PRIMARY KEY (id);
 CREATE INDEX dots_buddhism_geom_idx ON census_2016_sandpit.dots_buddhism USING gist (geom);
 ALTER TABLE census_2016_sandpit.dots_buddhism CLUSTER ON dots_buddhism_geom_idx;
 
@@ -149,14 +169,18 @@ WITH temp_sa1 AS (
     -- AND bdy.ste_code16 IN ('1', '8')
     AND NOT ST_IsEmpty(geom)
 )
-SELECT id,
-  ST_GeneratePoints(geom, val) As geom
+SELECT id, NULL::numeric(7,5) AS latitude, NULL::numeric(8,5) AS longitude,
+  (ST_Dump(ST_GeneratePoints(geom, val))).geom AS geom
   INTO census_2016_sandpit.dots_hinduism
   FROM temp_sa1
   WHERE ST_Area(ST_Envelope(geom)) > 0.0;
 
+UPDATE census_2016_sandpit.dots_hinduism
+       SET latitude = ST_Y(geom),
+longitude = ST_X(geom);
+
 ALTER TABLE census_2016_sandpit.dots_hinduism OWNER to postgres;
-ALTER TABLE census_2016_sandpit.dots_hinduism ADD CONSTRAINT dots_hinduism_pkey PRIMARY KEY (id);
+-- ALTER TABLE census_2016_sandpit.dots_hinduism ADD CONSTRAINT dots_hinduism_pkey PRIMARY KEY (id);
 CREATE INDEX dots_hinduism_geom_idx ON census_2016_sandpit.dots_hinduism USING gist (geom);
 ALTER TABLE census_2016_sandpit.dots_hinduism CLUSTER ON dots_hinduism_geom_idx;
 
@@ -175,14 +199,18 @@ WITH temp_sa1 AS (
     -- AND bdy.ste_code16 IN ('1', '8')
     AND NOT ST_IsEmpty(geom)
 )
-SELECT id,
-  ST_GeneratePoints(geom, val) As geom
+SELECT id, NULL::numeric(7,5) AS latitude, NULL::numeric(8,5) AS longitude,
+  (ST_Dump(ST_GeneratePoints(geom, val))).geom AS geom
   INTO census_2016_sandpit.dots_judaism
   FROM temp_sa1
   WHERE ST_Area(ST_Envelope(geom)) > 0.0;
 
+UPDATE census_2016_sandpit.dots_judaism
+       SET latitude = ST_Y(geom),
+longitude = ST_X(geom);
+
 ALTER TABLE census_2016_sandpit.dots_judaism OWNER to postgres;
-ALTER TABLE census_2016_sandpit.dots_judaism ADD CONSTRAINT dots_judaism_pkey PRIMARY KEY (id);
+-- ALTER TABLE census_2016_sandpit.dots_judaism ADD CONSTRAINT dots_judaism_pkey PRIMARY KEY (id);
 CREATE INDEX dots_judaism_geom_idx ON census_2016_sandpit.dots_judaism USING gist (geom);
 ALTER TABLE census_2016_sandpit.dots_judaism CLUSTER ON dots_judaism_geom_idx;
 
