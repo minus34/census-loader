@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# set this to taste - NOTE: can't use ~ for your home folder
+# set this to taste - NOTE: can't use "~" for your home folder
 output_folder="/Users/hugh.saalmans/tmp"
 
 # dump schemas to backup files
