@@ -18,6 +18,6 @@ output_folder="/Users/hugh.saalmans/tmp"
 #
 #for f in census_2016_*.dmp;
 #  do
-#    aws --profile=default s3 cp ./${f} s3://minus34.com/opendata/census-2016/${f};
+#    aws --profile=default s3 cp --storage-class REDUCED_REDUNDANCY ./${f} s3://minus34.com/opendata/census-2016/${f};
 #    aws --profile=default s3api put-object-acl --acl public-read --bucket minus34.com --key opendata/census-2016/${f}
 #  done
