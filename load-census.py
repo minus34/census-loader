@@ -377,7 +377,7 @@ def fix_boundary_ids(settings):
         boundary_name = boundary_dict["boundary"]
         input_pg_table = "{0}_{1}_aust".format(boundary_name, settings["census_year"])
 
-        if boundary_name in ["ced", "iare", "iloc", "ireg", "lga", "poa", "sed", "ssc"]:
+        if boundary_name in ["ced", "iare", "iloc", "ireg", "lga", "poa", "ra", "sed", "ssc", "sos", "sosr", "ucl"]:
             id_field = boundary_dict["id_field"]
 
             sql = "ALTER TABLE {0}.{1} ALTER COLUMN {2} TYPE text"\

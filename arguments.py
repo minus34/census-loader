@@ -132,7 +132,6 @@ def get_settings(args):
              {"boundary": "sua", "id_field": "sua_code16", "name_field": "sua_name16", "area_field": "areasqkm16"},
              {"boundary": "tr", "id_field": "tr_code16", "name_field": "tr_name16", "area_field": "areasqkm16"},
              {"boundary": "ucl", "id_field": "ucl_code16", "name_field": "ucl_name16", "area_field": "areasqkm16"}]
-             # {"boundary": "add", "id_field": "add_code16", "name_field": "add_name16", "area_field": "areasqkm16"},
 
     elif settings['census_year'] == '2011':
         settings['metadata_file_prefix'] = "Metadata_"
