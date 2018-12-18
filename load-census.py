@@ -414,7 +414,7 @@ def create_display_boundaries(pg_cur, settings):
     for boundary_dict in settings['bdy_table_dicts']:
         boundary_name = boundary_dict["boundary"]
 
-        if boundary_name not in ["mb", "nrmr", "tr"]:  # these 3 bdy types have no population data in the GCP profile
+        if boundary_name not in ["mb", "nrmr", "tr"]:  # these 3 bdy types have no population data in the BCP/GCP profile
             id_field = boundary_dict["id_field"]
             name_field = boundary_dict["name_field"]
             area_field = boundary_dict["area_field"]
