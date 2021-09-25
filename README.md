@@ -7,10 +7,10 @@ A quick way to get started with Australian Bureau of Statistics (ABS) Census 201
 
 **DEMOS** (CURRENTLY OFFLINE)
 
-* Age: [http://census.minus34.com?stats=G247,G248,G249,G250,G251,G252,G253,G254,G255](http://census.minus34.com?stats=G247,G248,G249,G250,G251,G252,G253,G254,G255)
-* Religion: [http://census.minus34.com?stats=G5456,G5363,G5423,G5426,G5429,G5432](http://census.minus34.com?stats=G5456,G5363,G5423,G5426,G5429,G5432)
-* Median age, income, rent, mortgages: [http://census.minus34.com?stats=G109,G110,G111,G112,G113,G114,G115,G116](http://census.minus34.com?stats=G109,G110,G111,G112,G113,G114,G115,G116)
-* Country of birth: [http://census.minus34.com?stats=G2320,G2380,G2410,G2450,G2470,G2520,G2620,G2660,G2780](http://census.minus34.com?stats=G2320,G2380,G2410,G2450,G2470,G2520,G2620,G2660,G2780)
+* Age: [https://census.minus34.com?stats=G247,G248,G249,G250,G251,G252,G253,G254,G255](https://census.minus34.com?stats=G247,G248,G249,G250,G251,G252,G253,G254,G255)
+* Religion: [https://census.minus34.com?stats=G5456,G5363,G5423,G5426,G5429,G5432](https://census.minus34.com?stats=G5456,G5363,G5423,G5426,G5429,G5432)
+* Median age, income, rent, mortgages: [https://census.minus34.com?stats=G109,G110,G111,G112,G113,G114,G115,G116](https://census.minus34.com?stats=G109,G110,G111,G112,G113,G114,G115,G116)
+* Country of birth: [https://census.minus34.com?stats=G2320,G2380,G2410,G2450,G2470,G2520,G2620,G2660,G2780](https://census.minus34.com?stats=G2320,G2380,G2410,G2450,G2470,G2520,G2620,G2660,G2780)
 
 
 ![melbourne_rent.png](https://github.com/minus34/census-loader/blob/master/sample-images/melbourne_rent.png)
@@ -28,7 +28,7 @@ Benchmarks are:
 - MacBook Pro = 25 mins
 
 ### Performance
-To get a good load time you'll need to configure your Postgres server for performance. There's a good guide [here](http://revenant.ca/www/postgis/workshop/tuning.html), noting it's a few years old and some of the memory parameters can be beefed up if you have the RAM.
+To get a good load time you'll need to configure your Postgres server for performance. There's a good guide [here](https://revenant.ca/www/postgis/workshop/tuning.html), noting it's a few years old and some of the memory parameters can be beefed up if you have the RAM.
 
 ### Pre-requisites
 - Postgres 9.6+ with PostGIS 2.3+ (tested on 9.6 on macOS Sierra and Windows 10)
@@ -37,8 +37,8 @@ To get a good load time you'll need to configure your Postgres server for perfor
 
 ### Process
 1. Download [ABS Census DataPacks](https://datapacks.censusdata.abs.gov.au/datapacks/)
-2. Download [ABS 2016 ASGS boundaries](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.001) or [ABS 2011 ASGS boundaries](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login) **IMPORTANT - download the ESRI Shapefile versions**
-3. (optional) Download the 2016 [Indigenous](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.002) and [Non-ABS](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.003) boundaries as well
+2. Download [ABS 2016 ASGS boundaries](https://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.001) or [ABS 2011 ASGS boundaries](https://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login) **IMPORTANT - download the ESRI Shapefile versions**
+3. (optional) Download the 2016 [Indigenous](https://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.002) and [Non-ABS](https://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.003) boundaries as well
 4. Unzip the Census CSV files to a directory on your Postgres server
 5. Alter security on the directory to grant Postgres read access
 6. Unzip the ASGS boundaries to a local directory
@@ -77,7 +77,7 @@ Loads the 2016 Census data using a maximum of 3 parallel processes into the defa
 Loads the 2011 Census data using a maximum of 6 parallel processes into renamed schemas. Census data archives have been extracted to the folder `C:\temp\census_2011_data`, and ASGS boundaries have been extracted to the `C:\temp\census_2011_boundaries` folder.
 
 ### Attribution
-When using the resulting data from this process - you will need to adhere to the ABS data attribution requirements for the [Census and ASGS data](http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material), as per the Creative Commons (Attribution) license.
+When using the resulting data from this process - you will need to adhere to the ABS data attribution requirements for the [Census and ASGS data](https://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material), as per the Creative Commons (Attribution) license.
 
 ### WARNING:
 - The scripts will DROP ALL TABLES and recreate them using CASCADE; meaning you'll LOSE YOUR VIEWS if you have created any! If you want to keep the existing data - you'll need to change the schema names in the script or use a different database
@@ -91,8 +91,8 @@ Create a Docker container with Census data and ASGS boundaries ready to go, so t
 
 ### Process
 1. Download [ABS Census DataPacks](https://datapacks.censusdata.abs.gov.au/datapacks/)
-2. Download [ABS 2016 ASGS boundaries](http://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/1270.0.55.001July%202016) or [ABS 2011 ASGS boundaries](http://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login) **IMPORTANT - download the ESRI Shapefile versions**
-3. (optional) Download the 2016 [Indigenous](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.002) and [Non-ABS](http://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.003) boundaries as well
+2. Download [ABS 2016 ASGS boundaries](https://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/1270.0.55.001July%202016) or [ABS 2011 ASGS boundaries](https://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login) **IMPORTANT - download the ESRI Shapefile versions**
+3. (optional) Download the 2016 [Indigenous](https://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.002) and [Non-ABS](https://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.003) boundaries as well
 4. Unzip Census data and ASGS boundaries in the data/ directory of this repository
 5. Run docker-compose: `docker-compose up`. The database will be built.
 6. Use the constructed database as you wish.
@@ -106,18 +106,18 @@ Should take 15-30 minutes.
 
 ### Pre-requisites
 - Postgres 9.6+ with PostGIS 2.2+
-- A knowledge of [Postgres pg_restore parameters](http://www.postgresql.org/docs/9.6/static/app-pgrestore.html)
+- A knowledge of [Postgres pg_restore parameters](https://www.postgresql.org/docs/9.6/static/app-pgrestore.html)
 
 ### Process
-1. Download [census_2016_data.dmp](http://minus34.com/opendata/census-2016/census_2016_data.dmp) (~0.6Gb)
-2. Download [census_2016_bdys.dmp](http://minus34.com/opendata/census-2016/census_2016_bdys.dmp) (~1.1Gb)
-3. Download [census_2016_web.dmp](http://minus34.com/opendata/census-2016/census_2016_web.dmp) (~0.8Gb)
+1. Download [census_2016_data.dmp](https://minus34.com/opendata/census-2016/census_2016_data.dmp) (~0.6Gb)
+2. Download [census_2016_bdys.dmp](https://minus34.com/opendata/census-2016/census_2016_bdys.dmp) (~1.1Gb)
+3. Download [census_2016_web.dmp](https://minus34.com/opendata/census-2016/census_2016_web.dmp) (~0.8Gb)
 4. Edit the restore-census-schemas.bat or .sh script in the supporting-files folder for your database parameters and for the location of pg_restore
 5. Run the script, come back in 15-30 minutes and enjoy!
 
 ### Data License
 
-Source: [Australian Bureau of Statistics](http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material)
+Source: [Australian Bureau of Statistics](https://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material)
 
 ## DATA CUSTOMISATION
 
