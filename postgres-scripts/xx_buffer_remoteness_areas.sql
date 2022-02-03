@@ -13,4 +13,4 @@ from census_2016_bdys.ra_2016_aust
 ;
 
 CREATE INDEX ra_2016_aust_buffer_geom_idx ON census_2016_bdys.ra_2016_aust_buffer USING spgist (geom);
-ALTER TABLE census_2016_bdys.ra_2016_aust_buffer CLUSTER ON ra_2016_aust_buffer_geom_idx;
+-- ALTER TABLE census_2016_bdys.ra_2016_aust_buffer CLUSTER ON ra_2016_aust_buffer_geom_idx;
