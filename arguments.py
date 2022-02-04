@@ -92,7 +92,53 @@ def get_settings(args):
     settings['sql_dir'] = os.path.join(os.path.dirname(os.path.realpath(__file__)), "postgres-scripts")
 
     # set file name and field name defaults based on census year
-    if settings['census_year'] == '2016':
+    if settings['census_year'] == '2021':
+        settings['metadata_file_prefix'] = "Metadata_"
+        settings['metadata_file_type'] = ".xls"
+        settings["census_metadata_dicts"] = [{"table": "metadata_tables", "first_row": "table number"},
+                                             {"table": "metadata_stats", "first_row": "sequential"}]
+
+        settings['data_file_prefix'] = "2021Census_"
+        settings['data_file_type'] = ".csv"
+        settings['table_name_part'] = 1  # position in the data file name that equals it's destination table name
+        settings['bdy_name_part'] = 3  # position in the data file name that equals it's census boundary name
+        settings['region_id_field'] = "region_id"
+
+        settings['population_stat'] = "g3"
+        settings['population_table'] = "g01"
+        settings['indigenous_population_stat'] = "i3"
+        settings['indigenous_population_table'] = "i01a"
+
+        settings['bdy_table_dicts'] = \
+            [{"boundary": "add", "id_field": "add_code_2021", "name_field": "add_name_2021", "area_field": "area_albers_sqkm"},
+             {"boundary": "aus", "id_field": "aus_code_2021", "name_field": "aus_name_2021", "area_field": "area_albers_sqkm"},
+             {"boundary": "ced", "id_field": "ced_code_2021", "name_field": "ced_name_2021", "area_field": "area_albers_sqkm"},
+             {"boundary": "dzn", "id_field": "dzn_code_2021", "name_field": "dzn_name_2021", "area_field": "area_albers_sqkm"},
+             {"boundary": "gccsa", "id_field": "gcc_code_2021", "name_field": "gcc_name_2021", "area_field": "area_albers_sqkm"},
+             {"boundary": "iare", "id_field": "iar_code_2021", "name_field": "iar_name_2021", "area_field": "area_albers_sqkm"},
+             {"boundary": "iloc", "id_field": "ilo_code_2021", "name_field": "ilo_name_2021", "area_field": "area_albers_sqkm"},
+             {"boundary": "ireg", "id_field": "ire_code_2021", "name_field": "ire_name_2021", "area_field": "area_albers_sqkm"},
+             {"boundary": "lga", "id_field": "lga_code_2021", "name_field": "lga_name_2021", "area_field": "area_albers_sqkm"},
+             {"boundary": "mb", "id_field": "mb_code_2021", "name_field": "'MB ' || mb_code_2021", "area_field": "area_albers_sqkm"},
+             # {"boundary": "nrmr", "id_field": "nrm_code_2021", "name_field": "nrm_name_2021", "area_field": "area_albers_sqkm"},
+             {"boundary": "poa", "id_field": "poa_code_2021", "name_field": "'Postcode ' || poa_name_2021", "area_field": "area_albers_sqkm"},
+             # {"boundary": "ra", "id_field": "ra_code_2021", "name_field": "ra_name_2021", "area_field": "area_albers_sqkm"},
+             {"boundary": "sa1", "id_field": "sa1_code_2021", "name_field": "'SA1 ' || sa1_code_2021", "area_field": "area_albers_sqkm"},
+             {"boundary": "sa2", "id_field": "sa2_code_2021", "name_field": "sa2_name_2021", "area_field": "area_albers_sqkm"},
+             {"boundary": "sa3", "id_field": "sa3_code_2021", "name_field": "sa3_name_2021", "area_field": "area_albers_sqkm"},
+             {"boundary": "sa4", "id_field": "sa4_code_2021", "name_field": "sa4_name_2021", "area_field": "area_albers_sqkm"},
+             {"boundary": "sal", "id_field": "sal_code_2021", "name_field": "sal_name_2021", "area_field": "area_albers_sqkm"},
+             {"boundary": "sed", "id_field": "sed_code_2021", "name_field": "sed_name_2021", "area_field": "area_albers_sqkm"},
+             # {"boundary": "sos", "id_field": "sos_code_2021", "name_field": "sos_name_2021", "area_field": "area_albers_sqkm"},
+             # {"boundary": "sosr", "id_field": "ssr_code_2021", "name_field": "ssr_name_2021", "area_field": "area_albers_sqkm"},
+             # {"boundary": "ssc", "id_field": "ssc_code_2021", "name_field": "ssc_name_2021", "area_field": "area_albers_sqkm"},
+             {"boundary": "ste", "id_field": "ste_code_2021", "name_field": "ste_name_2021", "area_field": "area_albers_sqkm"},
+             # {"boundary": "sua", "id_field": "sua_code_2021", "name_field": "sua_name_2021", "area_field": "area_albers_sqkm"},
+             {"boundary": "tr", "id_field": "tr_code_2021", "name_field": "tr_name_2021", "area_field": "area_albers_sqkm"}
+             # {"boundary": "ucl", "id_field": "ucl_code_2021", "name_field": "ucl_name_2021", "area_field": "area_albers_sqkm"}
+            ]
+
+    elif settings['census_year'] == '2016':
         settings['metadata_file_prefix'] = "Metadata_"
         settings['metadata_file_type'] = ".xls"
         settings["census_metadata_dicts"] = [{"table": "metadata_tables", "first_row": "table number"},
