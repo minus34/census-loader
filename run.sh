@@ -13,8 +13,19 @@ cd ~/git/minus34/census-loader
 # load boundaries using OGR (requires GDAL to be installed)
 psql -d geo -c "create schema if not exists ${BDYS_SCHEMA};alter schema ${BDYS_SCHEMA} owner to postgres"
 
-ogr2ogr -f "PostgreSQL" "PG:database" -t_srs EPSG:4283 -overwrite -lco GEOMETRY_NAME=geom -lco SCHEMA=${BDYS_SCHEMA} /Users/s57405/tmp/census_2021_bdys/ASGS_Ed3_2021_Indigenous_Structure_GDA94_GPKG/ASGS_Ed3_2021_Indigenous_Structure_GDA94.gpkg
+cd ${BDYS_PATH}
 
+files=(`find . -name "*.gpkg"`)
+
+echo${files}
+
+
+for f in ${files};
+  do
+    echo "Importing ${f}"
+    ogr2ogr -f "PostgreSQL" "PG:host=localhost user=postgres dbname=geo password=password port=5432" \
+    -a_srs EPSG:4283 -lco OVERWRITE=YES -lco GEOMETRY_NAME=geom -lco SCHEMA=${BDYS_SCHEMA} ${f}
+  done
 
 
 #python.exe load-census.py --census-year=2011 --data-schema=census_2011_data --boundary-schema=census_2011_bdys --web-schema=census_2011_web --census-data-path=~/tmp/abs_census_2011_data --census-bdys-path=~/tmp/abs_census_2011_boundaries
