@@ -34,9 +34,9 @@ RUN mkdir -p /data \
     && wget --quiet ${BASE_URL}/census_${CENSUS_YEAR}_bdys.dmp \
     && wget --quiet ${BASE_URL}/census_${CENSUS_YEAR}_web.dmp \
     && /etc/init.d/postgresql start \
-    && pg_restore -Fc -d postgres -h localhost -p 5432 -U postgres /census_${CENSUS_YEAR}_data.dmp \
-    && pg_restore -Fc -d postgres -h localhost -p 5432 -U postgres /census_${CENSUS_YEAR}_bdys.dmp \
-    && pg_restore -Fc -d postgres -h localhost -p 5432 -U postgres /census_${CENSUS_YEAR}_web.dmp \
+    && pg_restore -Fc -d postgres -h localhost -p 5432 -U postgres /data/census_${CENSUS_YEAR}_data.dmp \
+    && pg_restore -Fc -d postgres -h localhost -p 5432 -U postgres /data/census_${CENSUS_YEAR}_bdys.dmp \
+    && pg_restore -Fc -d postgres -h localhost -p 5432 -U postgres /data/census_${CENSUS_YEAR}_web.dmp \
     && /etc/init.d/postgresql stop \
     && rm /data/gnaf-202111.dmp \
     && rm /data/admin-bdys-202111.dmp
