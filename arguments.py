@@ -8,13 +8,13 @@ import os
 # set the command line arguments for the script
 def set_arguments():
     parser = argparse.ArgumentParser(
-        description='A quick way to load the complete GNAF and PSMA Admin Boundaries into Postgres, '
-                    'simplified and ready to use as reference data for geocoding, analysis and visualisation.')
+        description='A quick way to load the complete ABS 2021, 2016 or 2011 Census into Postgres, '
+                    'ready to use as reference data for analysis and visualisation.')
 
     parser.add_argument(
-        '--max-processes', type=int, default=3,
+        '--max-processes', type=int, default=4,
         help='Maximum number of parallel processes to use for the data load. (Set it to the number of cores on the '
-             'Postgres server minus 2, limit to 12 if 16+ cores - there is minimal benefit beyond 12). Defaults to 3.')
+             'Postgres server minus 2, limit to 12 if 16+ cores - there is minimal benefit beyond 12). Defaults to 4.')
 
     # PG Options
     parser.add_argument(
@@ -36,11 +36,11 @@ def set_arguments():
              'otherwise \'password\'.')
 
     # schema names for the census data & boundary tables
-    census_year = '2016'
+    census_year = '2021'
 
     parser.add_argument(
         '--census-year', default=census_year,
-        help='Census year as YYYY. Valid values are \'2011\' or \'2016\'. '
+        help='Census year as YYYY. Valid values are \'2011\', \'2016\' or \'2021\'. '
              'Defaults to \'' + census_year + '\'.')
 
     parser.add_argument(
