@@ -38,8 +38,9 @@ RUN mkdir -p /data \
     && pg_restore -Fc -d postgres -h localhost -p 5432 -U postgres /data/census_${CENSUS_YEAR}_bdys.dmp \
     && pg_restore -Fc -d postgres -h localhost -p 5432 -U postgres /data/census_${CENSUS_YEAR}_web.dmp \
     && /etc/init.d/postgresql stop \
-    && rm /data/gnaf-202111.dmp \
-    && rm /data/admin-bdys-202111.dmp
+    && rm /data/census_${CENSUS_YEAR}_data.dmp \
+    && rm /data/census_${CENSUS_YEAR}_bdys.dmp \
+    && rm /data/census_${CENSUS_YEAR}_web.dmp
 
 # enable external access to postgres - WARNING: these are insecure settings! Edit these to restrict access
 RUN echo "host all  all    0.0.0.0/0  md5" >> /etc/postgresql/13/main/pg_hba.conf
