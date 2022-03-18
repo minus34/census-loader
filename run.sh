@@ -3,8 +3,8 @@
 SECONDS=0*
 
 CENSUS_YEAR="2021"
-DATA_PATH="/Users/$(whoami)/tmp/census_2021_data"
-BDYS_PATH="/Users/$(whoami)/tmp/census_2021_bdys"
+DATA_PATH="/Users/$(whoami)/tmp/census_${CENSUS_YEAR}_data"
+BDYS_PATH="/Users/$(whoami)/tmp/census_${CENSUS_YEAR}_bdys"
 
 DATA_SCHEMA="census_${CENSUS_YEAR}_data"
 BDYS_SCHEMA="census_${CENSUS_YEAR}_bdys"
