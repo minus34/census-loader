@@ -9,8 +9,6 @@
 # download, unzip, and delete file
 function getfile {
   echo "  - Downloading $1.zip"
-  mkdir -p "$2"
-  cd "$2"
   curl -O -L -s --insecure "https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files/$1.zip"
   unzip -q "$1.zip" -d "$2"
   rm "$1.zip"
@@ -38,15 +36,20 @@ INDIGENOUSBDYFILE="ASGS_Ed3_2021_Indigenous_Structure_${DATUM}_GPKG"
 NONABSBDYFILE="ASGS_Ed3_2021_Non_ABS_Structures_${DATUM}_GPKG"
 
 echo "-------------------------------------------------------------------------"
-echo "Downloading boundary files"
+echo "Downloading ${DATUM} boundary files"
 echo "-------------------------------------------------------------------------"
+
+## WARNING: deletes the bdy directory
+#rm -rf "${BDYS_PATH}"
+mkdir -p "${BDYS_PATH}"
+cd "${BDYS_PATH}"
 
 getfile "${MAINBDYFILE}" "${BDYS_PATH}"
 getfile "${INDIGENOUSBDYFILE}" "${BDYS_PATH}"
 getfile "${NONABSBDYFILE}" "${BDYS_PATH}"
 
 echo "-------------------------------------------------------------------------"
-echo "Importing into Postgres"
+echo "Importing ${DATUM} files into Postgres"
 echo "-------------------------------------------------------------------------"
 
 # requires GDAL to be installed
