@@ -6,15 +6,20 @@
 #   1. The datum of the boundary files: valid values are GDA94 or GDA2020
 #
 
-# download, unzip, and delete file
+# function to download, unzip, and delete file
 function getfile {
   echo "  - Downloading $1.zip"
+  # use insecure to enable through man-in-the-middle proxy servers
   curl -O -L -s --insecure "https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files/$1.zip"
   unzip -q "$1.zip" -d "$2"
   rm "$1.zip"
 }
 
 SECONDS=0*
+
+# start GDAL environment
+conda deactivate
+conda activate geo
 
 # set Postgres connection string
 PG_CONNECT_STRING="PG:host=localhost user=postgres dbname=geo password=password port=5432"
@@ -40,7 +45,7 @@ echo "Downloading ${DATUM} boundary files"
 echo "-------------------------------------------------------------------------"
 
 ## WARNING: deletes the bdy directory
-#rm -rf "${BDYS_PATH}"
+rm -rf "${BDYS_PATH}"
 mkdir -p "${BDYS_PATH}"
 cd "${BDYS_PATH}"
 
