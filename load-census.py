@@ -41,9 +41,13 @@ from datetime import datetime
 def main():
     full_start_time = datetime.now()
 
-    if settings.census_year not in [2021, 2016, 2011]:
-        logger.fatal("Invalid Census Year\nACTION: Set value to 2021, 2016 or 2011")
+    if settings.census_year not in ['2021', '2016', '2011']:
+        logger.fatal("Invalid Census Year - ACTION: Set value to 2021, 2016 or 2011")
         return False
+
+    # log Python and OS versions
+    logger.info(f"\t- running Python {settings.python_version} with Psycopg2 {settings.psycopg2_version}")
+    logger.info(f"\t- on {settings.os_version}")
 
     # connect to Postgres
     try:
@@ -62,8 +66,9 @@ def main():
         logger.fatal("Unable to add PostGIS extension\nACTION: Check your Postgres user privileges or PostGIS install")
         return False
 
-    # log PostGIS version
-    utils.check_postgis_version(pg_cur, settings, logger)
+    # test if ST_Subdivide exists (only in PostGIS 2.2+). It's used to split boundaries for faster processing
+    logger.info(f"\t- using Postgres {settings.pg_version} and PostGIS {settings.postgis_version} "
+                f"(with GEOS {settings.geos_version})")
 
     # # test if ST_ClusterKMeans exists (only in PostGIS 2.3+).
     # # It's used to create classes to display the data in the map

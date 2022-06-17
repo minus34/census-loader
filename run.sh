@@ -79,4 +79,7 @@ echo "${DATUM} Boundaries loaded in $((duration / 60)) mins"
 #
 ##python.exe load-census.py --census-year=2011 --data-schema=census_2011_data --boundary-schema=census_2011_bdys --web-schema=census_2011_web --census-data-path=~/tmp/abs_census_2011_data --census-bdys-path=~/tmp/abs_census_2011_boundaries
 ##python.exe load-census.py --census-year=2016 --data-schema=census_2016_data --boundary-schema=census_2016_bdys --web-schema=census_2016_web --census-data-path=~/tmp/abs_census_2016_data --census-bdys-path=~/tmp/abs_census_2016_boundaries
+##python.exe load-census.py --census-data-path=~/tmp/abs_census_2021_data --census-bdys-path=~/tmp/abs_census_2021_boundaries
+
+
 ##python.exe load-census.py --census-data-path=${DATA_PATH} --census-bdys-path=${BDYS_PATH}

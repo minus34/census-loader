@@ -2,8 +2,19 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import platform
+import psycopg2
 import os
+import sys
 
+
+# default census year
+temp_census_year = '2021'
+
+# get python, psycopg2 and OS versions
+python_version = sys.version.split("(")[0].strip()
+psycopg2_version = psycopg2.__version__.split("(")[0].strip()
+os_version = platform.system() + " " + platform.version().strip()
 
 # set the command line arguments for the script
 parser = argparse.ArgumentParser(
@@ -35,22 +46,20 @@ parser.add_argument(
          'otherwise \'password\'.')
 
 # schema names for the census data & boundary tables
-census_year = '2021'
-
 parser.add_argument(
-    '--census-year', default=census_year,
+    '--census-year', default=temp_census_year,
     help='Census year as YYYY. Valid values are \'2011\', \'2016\' or \'2021\'. '
-         'Defaults to \'' + census_year + '\'.')
+         'Defaults to \'' + temp_census_year + '\'.')
 
 parser.add_argument(
     '--data-schema',
-    help='Schema name to store data tables in. Defaults to \'census_' + census_year + '_data\'.')
+    help='Schema name to store data tables in. Defaults to \'census_' + temp_census_year + '_data\'.')
 parser.add_argument(
     '--boundary-schema',
-    help='Schema name to store raw boundary tables in. Defaults to \'census_' + census_year + '_bdys\'.')
+    help='Schema name to store raw boundary tables in. Defaults to \'census_' + temp_census_year + '_bdys\'.')
 parser.add_argument(
     '--web-schema',
-    help='Schema name to store web optimised boundary tables in. Defaults to \'census_' + census_year + '_web\'.')
+    help='Schema name to store web optimised boundary tables in. Defaults to \'census_' + temp_census_year + '_web\'.')
 
 # input directories
 parser.add_argument(
@@ -81,8 +90,7 @@ pg_db = args.pgdb or os.getenv("POSTGRES_USER", "geo")
 pg_user = args.pguser or os.getenv("POSTGRES_USER", "postgres")
 pg_password = args.pgpassword or os.getenv("POSTGRES_PASSWORD", "password")
 
-pg_connect_string = "dbname='{0}' host='{1}' port='{2}' user='{3}' password='{4}'".format(
-    pg_db, pg_host, pg_port, pg_user, pg_password)
+pg_connect_string = f"dbname='{pg_db}' host='{pg_host}' port='{pg_port}' user='{pg_user}' password='{pg_password}'"
 
 # set postgres script directory
 sql_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "postgres-scripts")
@@ -216,3 +224,40 @@ elif census_year == '2011':
          {"boundary": "ste", "id_field": "state_code", "name_field": "state_name", "area_field": "area_sqkm"},
          {"boundary": "sua", "id_field": "sua_code", "name_field": "sua_name", "area_field": "area_sqkm"},
          {"boundary": "ucl", "id_field": "ucl_code", "name_field": "ucl_name", "area_field": "area_sqkm"}]
+
+# get Postgres, PostGIS & GEOS versions and flag if ST_Subdivide is supported
+
+# get Postgres connection & cursor
+temp_pg_conn = psycopg2.connect(pg_connect_string)
+temp_pg_cur = temp_pg_conn.cursor()
+
+# get Postgres version
+temp_pg_cur.execute("SELECT version()")
+pg_version = temp_pg_cur.fetchone()[0].replace("PostgreSQL ", "").split(",")[0]
+
+# get PostGIS version
+temp_pg_cur.execute("SELECT PostGIS_full_version()")
+lib_strings = temp_pg_cur.fetchone()[0].replace("\"", "").split(" ")
+
+temp_pg_cur.close()
+temp_pg_cur = None
+temp_pg_conn.close()
+temp_pg_conn = None
+
+postgis_version = "UNKNOWN"
+postgis_version_num = 0.0
+geos_version = "UNKNOWN"
+geos_version_num = 0.0
+
+st_subdivide_supported = False
+
+for lib_string in lib_strings:
+    if lib_string[:8] == "POSTGIS=":
+        postgis_version = lib_string.replace("POSTGIS=", "")
+        postgis_version_num = float(postgis_version[:3])
+    if lib_string[:5] == "GEOS=":
+        geos_version = lib_string.replace("GEOS=", "")
+        geos_version_num = float(geos_version[:3])
+
+if postgis_version_num >= 2.2 and geos_version_num >= 3.5:
+    st_subdivide_supported = True
