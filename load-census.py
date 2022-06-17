@@ -14,25 +14,25 @@
 # Copyright:
 #  - Code is licensed under an Apache License, version 2.0
 #  - Data is copyright ABS - licensed under Creative Commons (By Attribution) license.
-#    See http://abs.gov.au for the correct attribution
+#    See http://abs.gov.au for correct attribution
 
 # Process:
-#   1. load census metadata Excel files using Pandas dataframes
-#   2. load all census data CSV files
-#   3. load census boundary Shapefiles
-#   4. create web display optimised census boundaries using Visvalingam-Whyatt simplification
-#   5. got to the web folder and fire up the map server
+#   1. loads census metadata Excel files using Pandas dataframes
+#   2. loads all census data CSV files
+#   3. loads census boundary Shapefiles (if 2011 or 2016 Census, 2021 loaded using GDAL command lines)
+#   4. creates web display optimised census boundaries using Visvalingam-Whyatt simplification
+#   5. go to the web folder and fire up the map server
 #   6. party on!
 #
 # *********************************************************************************************************************
 
-import arguments
 import io
 import logging.config
 import os
 import pandas  # module needs to be installed (IMPORTANT: need to install 'xlrd' module for Pandas to read .xlsx files)
 import psycopg2  # module needs to be installed
 import psycopg2.extensions
+import settings
 import utils
 
 from datetime import datetime
