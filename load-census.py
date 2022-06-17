@@ -45,10 +45,6 @@ def main():
         logger.fatal("Invalid Census Year - ACTION: Set value to 2021, 2016 or 2011")
         return False
 
-    # log Python and OS versions
-    logger.info(f"\t- running Python {settings.python_version} with Psycopg2 {settings.psycopg2_version}")
-    logger.info(f"\t- on {settings.os_version}")
-
     # connect to Postgres
     try:
         pg_conn = psycopg2.connect(settings.pg_connect_string)
