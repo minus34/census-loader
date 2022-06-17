@@ -5,7 +5,7 @@
 # load-census.py
 # *********************************************************************************************************************
 #
-# A script for loading Australian Bureau of Statistics Census 2011, 2016 or 2021 data and boundaries
+# A script for loading Australian Bureau of Statistics Census 2021, 2016 or 2011 data and boundaries
 #
 # Author: Hugh Saalmans
 # GitHub: minus34
@@ -29,7 +29,7 @@
 import io
 import logging.config
 import os
-import pandas  # module needs to be installed (IMPORTANT: need to install 'xlrd' module for Pandas to read .xlsx files)
+import pandas  # module needs to be installed
 import psycopg2  # module needs to be installed
 import psycopg2.extensions
 import settings
