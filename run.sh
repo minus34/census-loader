@@ -1,33 +1,39 @@
 #!/usr/bin/env bash
 
-# downloads ABS Census 2021 boundaries in GeoPackage format, and imports them into Postgres/PostgGIS
+# downloads ABS Census boundaries in GeoPackage format, and imports them into Postgres/PostgGIS
 #
 # Arguments:
-#   1. The datum of the boundary files: valid values are GDA94 or GDA2020
+#   1. Census year: valid value is 2021
+#   2. The datum of the boundary files: valid values are GDA94 or GDA2020
+#
+# Sample command line: . /Users/$(whoami)/git/minus34/census-loader/run.sh 2021 GDA94
 #
 
 # function to download, unzip, and delete file
 function getfile {
   echo "  - Downloading $1.zip"
   # use insecure to enable through man-in-the-middle proxy servers
-  curl -O -L -s --insecure "https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files/$1.zip"
+  result=$(curl -O -L --insecure "https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files/$1.zip")
+#  echo "Curl exit code: $result"
   unzip -q "$1.zip" -d "$2"
   rm "$1.zip"
 }
 
 SECONDS=0*
 
-# start GDAL environment
+# start Python environment with GDAL and Psycopg2
 conda deactivate
 conda activate geo
 
 # set Postgres connection string
 PG_CONNECT_STRING="PG:host=localhost user=postgres dbname=geo password=password port=5432"
 
-# get datum argument
-DATUM=$(echo $1 | tr '[:lower:]' '[:upper:]')
+# get census year
+CENSUS_YEAR=$1
 
-CENSUS_YEAR="2021"
+# get datum
+DATUM=$(echo $2 | tr '[:lower:]' '[:upper:]')
+
 DATA_PATH="/Users/$(whoami)/tmp/census_${CENSUS_YEAR}_data"
 BDYS_PATH="/Users/$(whoami)/tmp/census_${CENSUS_YEAR}_bdys"
 
@@ -36,9 +42,10 @@ BDYS_SCHEMA="census_${CENSUS_YEAR}_bdys"
 WEB_SCHEMA="census_${CENSUS_YEAR}_web"
 
 # boundary Geopackage file names - DO NOT EDIT
-MAINBDYFILE="ASGS_2021_MAIN_STRUCTURE_GPKG_${DATUM}"
-INDIGENOUSBDYFILE="ASGS_Ed3_2021_Indigenous_Structure_${DATUM}_GPKG"
-NONABSBDYFILE="ASGS_Ed3_2021_Non_ABS_Structures_${DATUM}_GPKG"
+MAINBDYFILE="ASGS_${CENSUS_YEAR}_MAIN_STRUCTURE_GPKG_${DATUM}"
+INDIGENOUSBDYFILE="ASGS_Ed3_${CENSUS_YEAR}_Indigenous_Structure_${DATUM}_GPKG"
+NONABSBDYFILE="ASGS_Ed3_Non_ABS_Structures_${DATUM}_GPKG_updated_2022"
+
 
 echo "-------------------------------------------------------------------------"
 echo "Downloading ${DATUM} boundary files"
@@ -52,6 +59,7 @@ cd "${BDYS_PATH}"
 getfile "${MAINBDYFILE}" "${BDYS_PATH}"
 getfile "${INDIGENOUSBDYFILE}" "${BDYS_PATH}"
 getfile "${NONABSBDYFILE}" "${BDYS_PATH}"
+
 
 echo "-------------------------------------------------------------------------"
 echo "Importing ${DATUM} files into Postgres"
