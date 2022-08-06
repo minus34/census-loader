@@ -33,12 +33,13 @@ CENSUS_YEAR=$1
 
 # get datum
 DATUM=$(echo $2 | tr '[:lower:]' '[:upper:]')
+BDY_SCHEMA_SUFFIX=$(echo ${DATUM} | tr '[:upper:]' '[:lower:]')
 
 DATA_PATH="/Users/$(whoami)/tmp/census_${CENSUS_YEAR}_data"
 BDYS_PATH="/Users/$(whoami)/tmp/census_${CENSUS_YEAR}_bdys"
 
 DATA_SCHEMA="census_${CENSUS_YEAR}_data"
-BDYS_SCHEMA="census_${CENSUS_YEAR}_bdys"
+BDYS_SCHEMA="census_${CENSUS_YEAR}_bdys_${BDY_SCHEMA_SUFFIX}"
 WEB_SCHEMA="census_${CENSUS_YEAR}_web"
 
 # boundary Geopackage file names - DO NOT EDIT
@@ -68,13 +69,13 @@ echo "-------------------------------------------------------------------------"
 # requires GDAL to be installed
 psql -d geo -c "create schema if not exists ${BDYS_SCHEMA};alter schema ${BDYS_SCHEMA} owner to postgres"
 
-find ${BDYS_PATH} -name "*_${DATUM}.gpkg" > ${BDYS_PATH}/temp.txt
+find ${BDYS_PATH} -name "*_${DATUM}*.gpkg" > ${BDYS_PATH}/temp.txt
 
 while read f;
   do
     echo "  - Importing ${f}"
-    ogr2ogr -f "PostgreSQL" "${PG_CONNECT_STRING}" \
-    -a_srs EPSG:4283 -lco OVERWRITE=YES -lco GEOMETRY_NAME=geom -lco SCHEMA=${BDYS_SCHEMA} ${f}
+    ogr2ogr -f "PostgreSQL" "${PG_CONNECT_STRING}" -lco OVERWRITE=YES -lco GEOMETRY_NAME=geom -lco SCHEMA=${BDYS_SCHEMA} ${f}
+#    ogr2ogr -f "PostgreSQL" "${PG_CONNECT_STRING}" -a_srs EPSG:4283 -lco OVERWRITE=YES -lco GEOMETRY_NAME=geom -lco SCHEMA=${BDYS_SCHEMA} ${f}
   done < ${BDYS_PATH}/temp.txt
 
 rm ${BDYS_PATH}/temp.txt
