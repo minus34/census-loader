@@ -13,8 +13,7 @@
 function getfile {
   echo "  - Downloading $1.zip"
   # use insecure to enable through man-in-the-middle proxy servers
-  result=$(curl -O -L --insecure "https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files/$1.zip")
-#  echo "Curl exit code: $result"
+  curl -O -L -s --insecure "https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files/$1.zip"
   unzip -q "$1.zip" -d "$2"
   rm "$1.zip"
 }
@@ -82,6 +81,15 @@ rm ${BDYS_PATH}/temp.txt
 
 duration=$SECONDS
 echo "${DATUM} Boundaries loaded in $((duration / 60)) mins"
+
+
+
+
+
+#https://www.abs.gov.au/census/find-census-data/geopackages/download/Geopackage_2021_G01_AUST_GDA94.zip
+
+
+
 
 
 ##cd ~/git/minus34/census-loader
