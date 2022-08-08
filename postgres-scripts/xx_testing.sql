@@ -12,16 +12,29 @@ FROM mvtgeom;
 
 
 select count(*) as num_geoms,
-       sum(st_npoints(geom)),
-       sum(st_npoints(st_simplifyvw(geom, 0.0000001))),
-       sum(st_npoints(st_simplify(geom, 0.00005))),
-       sum(st_npoints(st_simplifypreservetopology(geom, 0.00005)))
+       sum(st_npoints(geom))
+--        sum(st_npoints(st_simplifyvw(geom, 0.0000001))),
+--        sum(st_npoints(st_simplify(geom, 0.00005))),
+--        sum(st_npoints(st_simplifypreservetopology(geom, 0.00005)))
 from census_2021_bdys.sa1_2021_aust_gda94
 ;
 
+-- +---------+-------+
+-- |num_geoms|sum    |
+-- +---------+-------+
+-- |61811    |9400814|
+-- +---------+-------+
 
+select count(*) as num_geoms,
+       sum(st_npoints(geom))
+from testing.sa1_thinned
+;
 
-
+-- +---------+-------+
+-- |num_geoms|sum    |
+-- +---------+-------+
+-- |61811    |3671235|
+-- +---------+-------+
 
 
 -- create thinned polygons
