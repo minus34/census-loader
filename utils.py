@@ -416,3 +416,7 @@ def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_
             return "\tImporting {0} - Couldn't cluster on spatial index".format(pg_table)
 
     return "SUCCESS"
+
+
+# print(get_tolerance(13))
+
