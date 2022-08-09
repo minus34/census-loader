@@ -26,7 +26,7 @@ do
   ogr2ogr "${BDYS_PATH}/${dataset}.shp" \
   PG:"host='localhost' dbname='geo' user='postgres' password='password' port='5432'" -sql "SELECT * FROM census_2021_bdys_gda94.${dataset} WHERE geom IS NOT NULL"
 
-	for scaleM in "5"
+	for scaleM in "1" "3" "5" "7" "9"˚
 	do
     echo "Thinning ${dataset} at 1:${scaleM}000000"
 		java -Xmx12g -Xms4g -jar ./target/RegionSimplify-1.4.0-SNAPSHOT.jar -i "${BDYS_PATH}/${dataset}.shp" -o "${BDYS_PATH}//thinned/${dataset}_${scaleM}m.gpkg" -s "${scaleM}000000"
