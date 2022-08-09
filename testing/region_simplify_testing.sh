@@ -20,7 +20,7 @@ conda activate geo
 # thin each layer and output to geopackage
 cd $GIT_HOME/eurostat/RegionSimplify
 
-for dataset in "sa1_2021_aust_gda94"
+for dataset in "sa1_2021_aust_gda94" "sa2_2021_aust_gda94" "sa3_2021_aust_gda94" "sa4_2021_aust_gda94" "ste_2021_aust_gda94"
 do
   echo "Exporting ${dataset} to GeoPackage"
   ogr2ogr -f GPKG "${BDYS_PATH}/${dataset}.gpkg" \
