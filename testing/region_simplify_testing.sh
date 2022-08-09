@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 
+# SETUP - download Git repo and build locally (requires Java and Maven)
 cd ${GIT_HOME}
 mkdir -p eurostat
 cd eurostat
 git clone https://github.com/eurostat/RegionSimplify.git
 cd RegionSimplify
 mvn package
+
 
 # mkdir -p test_out
 
