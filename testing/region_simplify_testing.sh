@@ -22,7 +22,7 @@ cd $GIT_HOME/eurostat/RegionSimplify
 
 # "ste_2021_aust_gda94" "sa4_2021_aust_gda94" "sa3_2021_aust_gda94" "sa2_2021_aust_gda94" "sa1_2021_aust_gda94"
 
-scale=1200000
+scale=1600000
 
 for dataset in "ste_2021_aust_gda94" "sa4_2021_aust_gda94" "sa3_2021_aust_gda94" "sa2_2021_aust_gda94" "sa1_2021_aust_gda94"
 do
@@ -40,7 +40,8 @@ do
 
   # load results into PostGIS
   ogr2ogr -f "PostgreSQL" -overwrite -lco geometry_name=geom -nlt MULTIPOLYGON -nln "testing.${filename}" \
-  PG:"host=localhost port=5432 dbname=geo user=postgres password=password" "${BDYS_PATH}//thinned/${filename}.gpkg"
+  PG:"host=localhost port=5432 dbname=geo user=postgres password=password" "${BDYS_PATH}//thinned/${filename}.gpkg" \
+   > /dev/null
 
   scale=$((scale / 2))
 done
