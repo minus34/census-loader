@@ -26,7 +26,7 @@ scale=1200000
 
 for dataset in "ste_2021_aust_gda94" "sa4_2021_aust_gda94" "sa3_2021_aust_gda94" "sa2_2021_aust_gda94" "sa1_2021_aust_gda94"
 do
-  echo "Exporting ${dataset} to GeoPackge and removing NULL geometries"
+  echo "Exporting ${dataset} to GeoPackage and removing NULL geometries"
   ogr2ogr -f GPKG "${BDYS_PATH}/${dataset}.gpkg" \
   PG:"host='localhost' dbname='geo' user='postgres' password='password' port='5432'" \
   -sql "SELECT * FROM census_2021_bdys_gda94.${dataset} WHERE geom IS NOT NULL"
@@ -42,5 +42,5 @@ do
   ogr2ogr -f "PostgreSQL" -overwrite -lco geometry_name=geom -nlt MULTIPOLYGON -nln "testing.${filename}" \
   PG:"host=localhost port=5432 dbname=geo user=postgres password=password" "${BDYS_PATH}//thinned/${filename}.gpkg"
 
-  scale = scale / 2
+  scale=$((scale / 2))
 done
