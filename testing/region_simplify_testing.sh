@@ -40,8 +40,7 @@ do
 
   # load results into PostGIS
   ogr2ogr -f "PostgreSQL" -overwrite -lco geometry_name=geom -nlt MULTIPOLYGON -nln "testing.${filename}" \
-  PG:"host=localhost port=5432 dbname=geo user=postgres password=password" "${BDYS_PATH}//thinned/${filename}.gpkg" \
-   > /dev/null
+  PG:"host=localhost port=5432 dbname=geo user=postgres password=password" "${BDYS_PATH}//thinned/${filename}.gpkg"
 
   scale=$((scale / 2))
 done
