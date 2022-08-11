@@ -20,12 +20,12 @@ where geom is not null
 -- |9        |34018      |3780      |164       |11494     |
 -- +---------+-----------+----------+----------+----------+
 select count(*) as num_geoms,
-       count(distinct state_code_2021) as num_ids,
+       count(distinct sa1_code_2021) as num_ids,
        sum(st_npoints(geom)) as coord_count,
        avg(st_npoints(geom))::integer as avg_coords,
        min(st_npoints(geom)) as min_coords,
        max(st_npoints(geom)) as max_coords
-from testing.ste_2021_aust_gda94_8000000;
+from testing.sa1_2021_aust_gda94_2000000;
 
 
 
