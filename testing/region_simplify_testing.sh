@@ -22,7 +22,7 @@ cd $GIT_HOME/eurostat/RegionSimplify
 
 # "ste_2021_aust_gda94" "sa4_2021_aust_gda94" "sa3_2021_aust_gda94" "sa2_2021_aust_gda94" "sa1_2021_aust_gda94"
 
-scale=1600000
+scale=800000
 
 for dataset in "ste_2021_aust_gda94" "sa4_2021_aust_gda94" "sa3_2021_aust_gda94" "sa2_2021_aust_gda94" "sa1_2021_aust_gda94"
 do

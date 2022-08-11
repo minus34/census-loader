@@ -25,7 +25,8 @@ select count(*) as num_geoms,
        avg(st_npoints(geom))::integer as avg_coords,
        min(st_npoints(geom)) as min_coords,
        max(st_npoints(geom)) as max_coords
-from testing.sa1_2021_aust_gda94_2000000;
+from testing.sa1_2021_aust_gda94_100000
+;
 
 
 
