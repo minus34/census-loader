@@ -36,7 +36,7 @@ do
   filename="${dataset}_${scale}"
 
   java -Xmx12g -Xms4g -jar ./target/RegionSimplify-1.4.0-SNAPSHOT.jar -i "${BDYS_PATH}/${dataset}.gpkg" \
-  -o "${BDYS_PATH}//thinned/${filename}.gpkg" -s "${scale}" > /dev/null
+  -o "${BDYS_PATH}//thinned/${filename}.gpkg" -s "${scale}" -omcn 256 > /dev/null
 
   # load results into PostGIS
   ogr2ogr -f "PostgreSQL" -overwrite -lco geometry_name=geom -nlt MULTIPOLYGON -nln "testing.${filename}" \
