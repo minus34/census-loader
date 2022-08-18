@@ -17,14 +17,17 @@ group by profile
 
 
 select *
-from census_2021_data.poa_g02;
+from census_2021_data.add_g01;
 
 select *
-from census_2021_data.iloc_i0;
+from census_2021_data.ireg_i01a;
 
 select *
-from census_2021_bdys_gda94.dzn_2021_aust_gda94
+from census_2021_bdys_gda94.gccsa_2021_aust_gda94
 ;
+
+
+
 
 
 WITH mvtgeom AS

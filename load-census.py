@@ -45,23 +45,14 @@ def main():
     logger.info(f"\t- running Python {settings.python_version} with Psycopg2 {settings.psycopg2_version}")
     logger.info(f"\t- on {settings.os_version}")
 
-    if settings.census_year not in ['2021', '2016', '2011']:
-        logger.fatal("Invalid Census Year - ACTION: Set value to 2021, 2016 or 2011")
-        return False
-
-    # connect to Postgres
-    try:
-        pg_conn = psycopg2.connect(settings.pg_connect_string)
-    except psycopg2.Error:
-        logger.fatal("Unable to connect to database\nACTION: Check your Postgres parameters and/or database security")
-        return False
-
+    # get Postgres connection & cursor
+    pg_conn = psycopg2.connect(settings.pg_connect_string)
     pg_conn.autocommit = True
     pg_cur = pg_conn.cursor()
 
     # add postgis to database (in the public schema) - run this in a try to confirm db user has privileges
     try:
-        pg_cur.execute(f"SET search_path = public, pg_catalog; CREATE EXTENSION IF NOT EXISTS postgis")
+        pg_cur.execute("SET search_path = public, pg_catalog; CREATE EXTENSION IF NOT EXISTS postgis")
     except psycopg2.Error:
         logger.fatal("Unable to add PostGIS extension\nACTION: Check your Postgres user privileges or PostGIS install")
         return False
@@ -70,25 +61,24 @@ def main():
     logger.info(f"\t- using Postgres {settings.pg_version} and PostGIS {settings.postgis_version} "
                 f"(with GEOS {settings.geos_version})")
 
-    # test if ST_ClusterKMeans exists (only in PostGIS 2.3+).
-    # It's used to create classes to display the data in the map
-    if not settings.st_clusterkmeans_supported:
-        logger.warning("YOU NEED TO INSTALL POSTGIS 2.3 OR HIGHER FOR THE MAP SERVER TO WORK\n"
-                       "it utilises the ST_ClusterKMeans() function in v2.3+")
+    # # test if ST_ClusterKMeans exists (only in PostGIS 2.3+). It's used to create classes to display the data in the map
+    # if not settings.st_clusterkmeans_supported:
+    #     logger.warning("YOU NEED TO INSTALL POSTGIS 2.3 OR HIGHER FOR THE MAP SERVER TO WORK\n"
+    #                    "it utilises the ST_ClusterKMeans() function in v2.3+")
+
+    # log the user's input parameters
+    logger.info("")
+    logger.info("Arguments")
+    for arg in vars(settings.args):
+        value = getattr(settings.args, arg)
+
+        if value is not None:
+            if arg != "pgpassword":
+                logger.info(f"\t- {arg} : {value}")
+            else:
+                logger.info(f"\t- {arg} : ************")
 
     # START LOADING DATA
-
-    # test runtime parameters - 2011
-    # --census-year=2011
-    # --data-schema=census_2011_data
-    # --boundary-schema=census_2011_bdys
-    # --web-schema=census_2011_web
-    # --census-data-path=/Users/hugh/tmp/abs_census_2011_data
-    # --census-bdys-path=/Users/hugh/tmp/abs_census_2011_bdys
-
-    # test runtime parameters - 2016
-    # --census-data-path=/Users/hugh/tmp/abs_census_2016_data
-    # --census-bdys-path=/Users/hugh/tmp/abs_census_2016_bdys
 
     # PART 1 - load census data from CSV files
     # logger.info(f"")
@@ -392,9 +382,10 @@ def fix_boundary_ids():
             sql = f"ALTER TABLE {settings.boundary_schema}.{input_pg_table} ALTER COLUMN {id_field} TYPE text"
             alter_sql_list.append(sql)
 
+            # need the where clause to prevent prefix being added each time script is run
             sql = f"""UPDATE {settings.boundary_schema}.{input_pg_table} 
                           SET {id_field} = upper('{boundary_name}') || {id_field}
-                      WHERE {id_field} <> upper('{boundary_name}') || {id_field}"""
+#                       WHERE substring({id_field}, 1 , 3) <> upper('{boundary_name}')"""
             update_sql_list.append(sql)
 
             vacuum_sql_list.append(f"VACUUM ANALYZE {settings.boundary_schema}.{input_pg_table}")
@@ -425,8 +416,8 @@ def create_display_boundaries(pg_cur):
     for boundary_dict in settings.bdy_table_dicts:
         boundary_name = boundary_dict["boundary"]
 
-        # these 3 bdy types have no population data in the BCP/GCP profile
-        if boundary_name not in ["mb", "nrmr", "tr"]:
+        # these  bdy types have no population data in the BCP/GCP profile
+        if boundary_name not in settings.display_bdy_ignore_list:
             id_field = boundary_dict["id_field"]
             name_field = boundary_dict["name_field"]
             area_field = boundary_dict["area_field"]

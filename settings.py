@@ -125,27 +125,28 @@ if census_year == '2021':
 
     population_stat = "g3"
     population_table = "g01"
-    indigenous_population_stat = "i3"
 
-    # TODO: verify this
     indigenous_population_table = "i01a"
+    indigenous_population_stat = "i03"
 
     # bdys that need their IDs prefixed by bdy type to match census stats (go figure...)
     bdy_prefix_list = ["add", "ced", "dzn", "iare", "iloc", "ireg", "lga", "poa", "sal", "sed", "tr"]
     # bdy_prefix_list = ["add", "ced", "dzn", "iare", "iloc", "ireg", "lga", "nrmr", "poa", "ra", "sal", "sed", "sos", "sosr", "ssc", "sua", "tr", "ucl"]
+
+    display_bdy_ignore_list = ["add", "dzn", "mb", "nrmr", "tr"]
 
     bdy_table_dicts = \
         [{"boundary": "add", "id_field": "add_code_2021", "name_field": "add_name_2021", "area_field": "area_albers_sqkm"},
          {"boundary": "aus", "id_field": "aus_code_2021", "name_field": "aus_name_2021", "area_field": "area_albers_sqkm"},
          {"boundary": "ced", "id_field": "ced_code_2021", "name_field": "ced_name_2021", "area_field": "area_albers_sqkm"},
          {"boundary": "dzn", "id_field": "dzn_code_2021", "name_field": "dzn_name_2021", "area_field": "area_albers_sqkm"},
-         {"boundary": "gccsa", "id_field": "gcc_code_2021", "name_field": "gcc_name_2021", "area_field": "area_albers_sqkm"},
-         {"boundary": "iare", "id_field": "iar_code_2021", "name_field": "iare_name_2021", "area_field": "area_albers_sqkm"},
-         {"boundary": "iloc", "id_field": "ilo_code_2021", "name_field": "iloc_name_2021", "area_field": "area_albers_sqkm"},
-         {"boundary": "ireg", "id_field": "ire_code_2021", "name_field": "ireg_name_2021", "area_field": "area_albers_sqkm"},
+         {"boundary": "gccsa", "id_field": "gccsa_code_2021", "name_field": "gccsa_name_2021", "area_field": "area_albers_sqkm"},
+         {"boundary": "iare", "id_field": "iare_code_2021", "name_field": "iare_name_2021", "area_field": "area_albers_sqkm"},
+         {"boundary": "iloc", "id_field": "iloc_code_2021", "name_field": "iloc_name_2021", "area_field": "area_albers_sqkm"},
+         {"boundary": "ireg", "id_field": "ireg_code_2021", "name_field": "ireg_name_2021", "area_field": "area_albers_sqkm"},
          {"boundary": "lga", "id_field": "lga_code_2021", "name_field": "lga_name_2021", "area_field": "area_albers_sqkm"},
          {"boundary": "mb", "id_field": "mb_code_2021", "name_field": "'MB ' || mb_code_2021", "area_field": "area_albers_sqkm"},
-         # {"boundary": "nrmr", "id_field": "nrm_code_2021", "name_field": "nrm_name_2021", "area_field": "area_albers_sqkm"},
+         # {"boundary": "nrmr", "id_field": "nrmr_code_2021", "name_field": "nrmr_name_2021", "area_field": "area_albers_sqkm"},
          {"boundary": "poa", "id_field": "poa_code_2021", "name_field": "'Postcode ' || poa_name_2021", "area_field": "area_albers_sqkm"},
          # {"boundary": "ra", "id_field": "ra_code_2021", "name_field": "ra_name_2021", "area_field": "area_albers_sqkm"},
          {"boundary": "sa1", "id_field": "sa1_code_2021", "name_field": "'SA1 ' || sa1_code_2021", "area_field": "area_albers_sqkm"},
