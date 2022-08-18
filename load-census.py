@@ -19,7 +19,7 @@
 # Process:
 #   1. loads census metadata Excel files using Pandas dataframes
 #   2. loads all census data CSV files
-#   3. loads census boundary Shapefiles (if 2011 or 2016 Census, 2021 loaded using GDAL command lines)
+#   3. loads census boundary Shapefiles (if 2011 or 2016 Census, 2021 loaded using GDAL ogr2ogr command line)
 #   4. creates web display optimised census boundaries using Visvalingam-Whyatt simplification
 #   5. go to the web folder and fire up the map server
 #   6. party on!
@@ -81,13 +81,13 @@ def main():
     # START LOADING DATA
 
     # PART 1 - load census data from CSV files
-    # logger.info(f"")
-    # start_time = datetime.now()
-    # logger.info(f"Part 1 of 2 : Start census data load : {start_time}")
-    # create_metadata_tables(pg_cur, settings.metadata_file_prefix, settings.metadata_file_type)
-    # populate_data_tables(settings.data_file_prefix, settings.data_file_type,
-    #                      settings.table_name_part, settings.bdy_name_part)
-    # logger.info(f"Part 1 of 2 : Census data loaded! : {datetime.now() - start_time}")
+    logger.info(f"")
+    start_time = datetime.now()
+    logger.info(f"Part 1 of 2 : Start census data load : {start_time}")
+    create_metadata_tables(pg_cur, settings.metadata_file_prefix, settings.metadata_file_type)
+    populate_data_tables(settings.data_file_prefix, settings.data_file_type,
+                         settings.table_name_part, settings.bdy_name_part)
+    logger.info(f"Part 1 of 2 : Census data loaded! : {datetime.now() - start_time}")
 
     # PART 2 - load census boundaries from Shapefiles and optimise them for web visualisation
     logger.info(f"")
@@ -416,7 +416,7 @@ def create_display_boundaries(pg_cur):
     for boundary_dict in settings.bdy_table_dicts:
         boundary_name = boundary_dict["boundary"]
 
-        # these  bdy types have no population data in the BCP/GCP profile
+        # these bdy types have no population data in the BCP/GCP profile
         if boundary_name not in settings.display_bdy_ignore_list:
             id_field = boundary_dict["id_field"]
             name_field = boundary_dict["name_field"]
