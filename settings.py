@@ -133,6 +133,7 @@ if census_year == '2021':
     bdy_prefix_list = ["add", "ced", "dzn", "iare", "iloc", "ireg", "lga", "poa", "sal", "sed", "tr"]
     # bdy_prefix_list = ["add", "ced", "dzn", "iare", "iloc", "ireg", "lga", "nrmr", "poa", "ra", "sal", "sed", "sos", "sosr", "ssc", "sua", "tr", "ucl"]
 
+    # bdys that don't have population data and can't be added to web map
     display_bdy_ignore_list = ["add", "aus", "dzn", "mb", "nrmr", "tr"]
 
     bdy_table_dicts = \
@@ -182,7 +183,11 @@ elif census_year == '2016':
     indigenous_population_table = "i01a"
 
     # bdys that need their IDs prefixed by bdy type to match census stats (go figure...)
-    bdy_prefix_list = ["ced", "iare", "iloc", "ireg", "lga", "poa", "ra", "sed", "ssc", "sos", "sosr", "ucl"]
+    bdy_prefix_list = ["add", "ced", "dzn", "iare", "iloc", "ireg", "lga", "poa", "sal", "sed", "tr"]
+    # bdy_prefix_list = ["add", "ced", "dzn", "iare", "iloc", "ireg", "lga", "nrmr", "poa", "ra", "sal", "sed", "sos", "sosr", "ssc", "sua", "tr", "ucl"]
+
+    # bdys that don't have population data and can't be added to web map
+    display_bdy_ignore_list = ["add", "aus", "dzn", "mb", "nrmr", "tr"]
 
     bdy_table_dicts = \
          [{"boundary": "ced", "id_field": "ced_code16", "name_field": "ced_name16", "area_field": "areasqkm16"},
@@ -226,7 +231,11 @@ elif census_year == '2011':
     indigenous_population_table = "i01a"
 
     # bdys that need their IDs prefixed by bdy type to match census stats (go figure...)
-    bdy_prefix_list = ["ced", "iare", "iloc", "ireg", "lga", "poa", "ra", "sed", "ssc", "sos", "sosr", "ucl"]
+    bdy_prefix_list = ["add", "ced", "dzn", "iare", "iloc", "ireg", "lga", "poa", "sal", "sed", "tr"]
+    # bdy_prefix_list = ["add", "ced", "dzn", "iare", "iloc", "ireg", "lga", "nrmr", "poa", "ra", "sal", "sed", "sos", "sosr", "ssc", "sua", "tr", "ucl"]
+
+    # bdys that don't have population data and can't be added to web map
+    display_bdy_ignore_list = ["add", "aus", "dzn", "mb", "nrmr", "tr"]
 
     bdy_table_dicts = \
         [{"boundary": "ced", "id_field": "ced_code", "name_field": "ced_name", "area_field": "area_sqkm"},
