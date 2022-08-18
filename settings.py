@@ -133,7 +133,7 @@ if census_year == '2021':
     bdy_prefix_list = ["add", "ced", "dzn", "iare", "iloc", "ireg", "lga", "poa", "sal", "sed", "tr"]
     # bdy_prefix_list = ["add", "ced", "dzn", "iare", "iloc", "ireg", "lga", "nrmr", "poa", "ra", "sal", "sed", "sos", "sosr", "ssc", "sua", "tr", "ucl"]
 
-    display_bdy_ignore_list = ["add", "dzn", "mb", "nrmr", "tr"]
+    display_bdy_ignore_list = ["add", "aus", "dzn", "mb", "nrmr", "tr"]
 
     bdy_table_dicts = \
         [{"boundary": "add", "id_field": "add_code_2021", "name_field": "add_name_2021", "area_field": "area_albers_sqkm"},

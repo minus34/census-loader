@@ -385,7 +385,7 @@ def fix_boundary_ids():
             # need the where clause to prevent prefix being added each time script is run
             sql = f"""UPDATE {settings.boundary_schema}.{input_pg_table} 
                           SET {id_field} = upper('{boundary_name}') || {id_field}
-#                       WHERE substring({id_field}, 1 , 3) <> upper('{boundary_name}')"""
+                      WHERE substring({id_field}, 1 , {len(boundary_name)}) <> upper('{boundary_name}')"""
             update_sql_list.append(sql)
 
             vacuum_sql_list.append(f"VACUUM ANALYZE {settings.boundary_schema}.{input_pg_table}")

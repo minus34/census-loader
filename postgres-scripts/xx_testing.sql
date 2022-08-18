@@ -23,10 +23,12 @@ select *
 from census_2021_data.ireg_i01a;
 
 select *
-from census_2021_bdys_gda94.gccsa_2021_aust_gda94
+from census_2021_bdys_gda94.poa_2021_aust_gda94
 ;
 
-
+UPDATE census_2021_bdys_gda94.iare_2021_aust_gda94
+SET iare_code_2021 = upper('iare') || iare_code_2021
+                           WHERE substring(iare_code_2021, 1 , 3) <> upper('iare')
 
 
 
