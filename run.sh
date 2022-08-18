@@ -3,8 +3,7 @@
 # downloads ABS Census boundaries in GeoPackage format, and imports them into Postgres/PostgGIS
 #
 # Arguments:
-#   1. Census year: valid value is 2021
-#   2. The datum of the boundary files: valid values are GDA94 or GDA2020
+#   1. The datum of the boundary files: valid values are GDA94 or GDA2020
 #
 # Sample command line: . /Users/$(whoami)/git/minus34/census-loader/run.sh 2021 GDA94
 #
@@ -27,19 +26,13 @@ conda activate geo
 # set Postgres connection string
 PG_CONNECT_STRING="PG:host=localhost user=postgres dbname=geo password=password port=5432"
 
-# get census year
-CENSUS_YEAR=$1
-
 # get datum
-DATUM=$(echo $2 | tr '[:lower:]' '[:upper:]')
+DATUM=$(echo $1 | tr '[:lower:]' '[:upper:]')
 BDY_SCHEMA_SUFFIX=$(echo ${DATUM} | tr '[:upper:]' '[:lower:]')
 
-DATA_PATH="/Users/$(whoami)/tmp/census_${CENSUS_YEAR}_data"
-BDYS_PATH="/Users/$(whoami)/tmp/census_${CENSUS_YEAR}_bdys"
-
-DATA_SCHEMA="census_${CENSUS_YEAR}_data"
+#DATA_SCHEMA="census_${CENSUS_YEAR}_data"
 BDYS_SCHEMA="census_${CENSUS_YEAR}_bdys_${BDY_SCHEMA_SUFFIX}"
-WEB_SCHEMA="census_${CENSUS_YEAR}_web"
+#WEB_SCHEMA="census_${CENSUS_YEAR}_web"
 
 # boundary Geopackage file names - DO NOT EDIT
 MAINBDYFILE="ASGS_${CENSUS_YEAR}_MAIN_STRUCTURE_GPKG_${DATUM}"
@@ -81,22 +74,3 @@ rm ${BDYS_PATH}/temp.txt
 
 duration=$SECONDS
 echo "${DATUM} Boundaries loaded in $((duration / 60)) mins"
-
-
-
-
-
-#https://www.abs.gov.au/census/find-census-data/geopackages/download/Geopackage_2021_G01_AUST_GDA94.zip
-
-
-
-
-
-##cd ~/git/minus34/census-loader
-#
-##python.exe load-census.py --census-year=2011 --data-schema=census_2011_data --boundary-schema=census_2011_bdys --web-schema=census_2011_web --census-data-path=~/tmp/abs_census_2011_data --census-bdys-path=~/tmp/abs_census_2011_boundaries
-##python.exe load-census.py --census-year=2016 --data-schema=census_2016_data --boundary-schema=census_2016_bdys --web-schema=census_2016_web --census-data-path=~/tmp/abs_census_2016_data --census-bdys-path=~/tmp/abs_census_2016_boundaries
-##python.exe load-census.py --census-data-path=~/tmp/census_2021_data --census-bdys-path=~/tmp/census_2021_boundaries
-
-
-##python.exe load-census.py --census-data-path=${DATA_PATH} --census-bdys-path=${BDYS_PATH}
