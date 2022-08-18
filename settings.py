@@ -50,6 +50,9 @@ parser.add_argument(
     '--census-year', default=temp_census_year,
     help='Census year as YYYY. Valid values are \'2011\', \'2016\' or \'2021\'. '
          'Defaults to \'' + temp_census_year + '\'.')
+parser.add_argument(
+    "--srid", type=int, default=4283,
+    help="Sets the coordinate system (SRID aka EPSG number) of the input data. Valid values are 4283 (GDA94) and 7844 (GDA2020)")
 
 parser.add_argument(
     '--data-schema',
@@ -82,6 +85,12 @@ boundary_schema = args.boundary_schema or 'census_' + census_year + '_bdys'
 web_schema = args.web_schema or 'census_' + census_year + '_web'
 data_directory = census_data_path.replace("\\", "/")
 boundaries_directory = census_bdys_path.replace("\\", "/")
+
+srid = args.srid
+
+if srid not in (4283, 7844):
+    print("Invalid coordinate system (SRID) - EXITING!\nValid values are 4283 (GDA94) and 7844 (GDA2020)")
+    exit()
 
 # create postgres connect string
 pg_host = args.pghost or os.getenv("PGHOST", "localhost")

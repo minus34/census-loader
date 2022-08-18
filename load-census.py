@@ -57,7 +57,7 @@ def main():
 
     # add postgis to database (in the public schema) - run this in a try to confirm db user has privileges
     try:
-        pg_cur.execute("SET search_path = public, pg_catalog; CREATE EXTENSION IF NOT EXISTS postgis")
+        pg_cur.execute(f"SET search_path = public, pg_catalog; CREATE EXTENSION IF NOT EXISTS postgis")
     except psycopg2.Error:
         logger.fatal("Unable to add PostGIS extension\nACTION: Check your Postgres user privileges or PostGIS install")
         return False
@@ -87,33 +87,33 @@ def main():
     # --census-bdys-path=/Users/hugh/tmp/abs_census_2016_bdys
 
     # PART 1 - load census data from CSV files
-    logger.info("")
+    logger.info(f"")
     start_time = datetime.now()
-    logger.info("Part 1 of 2 : Start census data load : {0}".format(start_time))
+    logger.info(f"Part 1 of 2 : Start census data load : {start_time}")
     create_metadata_tables(pg_cur, settings.metadata_file_prefix, settings.metadata_file_type)
     populate_data_tables(settings.data_file_prefix, settings.data_file_type,
                          settings.table_name_part, settings.bdy_name_part)
-    logger.info("Part 1 of 2 : Census data loaded! : {0}".format(datetime.now() - start_time))
+    logger.info(f"Part 1 of 2 : Census data loaded! : {datetime.now() - start_time}")
 
-    # PART 2 - load census boundaries from Shapefiles and optimise them for web visualisation
-    logger.info("")
-    start_time = datetime.now()
-    logger.info("Part 2 of 2 : Start census boundary load : {0}".format(start_time))
-    load_boundaries(pg_cur)
-    # add bdy type prefix to bdy id to enabled joins with stat data (Census 2016 data issue only)
-    if settings.census_year == "2016":
-        fix_boundary_ids(settings)
-    else:
-        logger.info("\t- Step 2 of 3 : boundary id prefixes not required : {0}".format(datetime.now() - start_time))
-    create_display_boundaries(pg_cur)
-    logger.info("Part 2 of 2 : Census boundaries loaded! : {0}".format(datetime.now() - start_time))
+    # # PART 2 - load census boundaries from Shapefiles and optimise them for web visualisation
+    # logger.info(f"")
+    # start_time = datetime.now()
+    # logger.info(f"Part 2 of 2 : Start census boundary load : {start_time}")
+    # load_boundaries(pg_cur)
+    # # add bdy type prefix to bdy id to enabled joins with stat data (Census 2016 data issue only)
+    # if settings.census_year == "2016":
+    #     fix_boundary_ids()
+    # else:
+    #     logger.info(f"\t- Step 2 of 3 : boundary id prefixes not required : {datetime.now() - start_time}")
+    # create_display_boundaries(pg_cur)
+    # logger.info(f"Part 2 of 2 : Census boundaries loaded! : {datetime.now() - start_time}")
 
     # close Postgres connection
     pg_cur.close()
     pg_conn.close()
 
     logger.info("")
-    logger.info("Total time : : {0}".format(datetime.now() - full_start_time))
+    logger.info(f"Total time : : {datetime.now() - full_start_time}")
 
     return True
 
@@ -136,11 +136,17 @@ def create_metadata_tables(pg_cur, prefix, suffix):
               ALTER TABLE {settings.data_schema}.metadata_tables OWNER TO {settings.pg_user}"""
     pg_cur.execute(sql)
 
-    sql = "DROP TABLE IF EXISTS {0}.metadata_stats CASCADE;" \
-          "CREATE TABLE {0}.metadata_stats (sequential_id text, short_id text, long_id text, " \
-          "table_number text, profile_table text, column_heading_description text) " \
-          "WITH (OIDS=FALSE);" \
-          "ALTER TABLE {0}.metadata_stats OWNER TO {1}".format(settings.data_schema, settings.pg_user)
+    sql = f"""DROP TABLE IF EXISTS {settings.data_schema}.metadata_stats CASCADE;
+              CREATE TABLE {settings.data_schema}.metadata_stats (
+                  sequential_id text,
+                  short_id text,
+                  long_id text,
+                  table_number text,
+                  profile_table text,
+                  column_heading_description text
+              )
+              WITH (OIDS=FALSE);
+              ALTER TABLE {settings.data_schema}.metadata_stats OWNER TO {settings.pg_user}"""
     pg_cur.execute(sql)
 
     # get a list of all files matching the metadata filename prefix
@@ -208,34 +214,34 @@ def create_metadata_tables(pg_cur, prefix, suffix):
                         # tsv_file.seek(0)
 
                         # import into Postgres
-                        sql = "COPY {0}.{1} FROM stdin WITH CSV DELIMITER as '\t' NULL as ''" \
-                            .format(settings.data_schema, table_dict["table"])
+                        sql = f"""COPY {settings.data_schema}.{table_dict['table']} 
+                                      FROM stdin WITH CSV DELIMITER as '\t' NULL as ''"""
                         pg_cur.copy_expert(sql, tsv_file)
 
                     j += 1
 
                 i += 1
 
-            logger.info("\t\t- imported {0}".format(file_dict["name"]))
+            logger.info(f"\t\t- imported {file_dict['name']}")
 
     # clean up invalid rows
-    pg_cur.execute("DELETE FROM {0}.metadata_tables WHERE table_number IS NULL".format(settings.data_schema))
+    pg_cur.execute(f"DELETE FROM {settings.data_schema}.metadata_tables WHERE table_number IS NULL")
 
     # add primary keys
-    pg_cur.execute("ALTER TABLE {0}.metadata_tables ADD CONSTRAINT metadata_tables_pkey PRIMARY KEY (table_number)"
-                   .format(settings.data_schema))
-    pg_cur.execute("ALTER TABLE {0}.metadata_stats ADD CONSTRAINT metadata_stats_pkey PRIMARY KEY (sequential_id)"
-                   .format(settings.data_schema))
+    pg_cur.execute(f"""ALTER TABLE {settings.data_schema}.metadata_tables
+                           ADD CONSTRAINT metadata_tables_pkey PRIMARY KEY (table_number)""")
+    pg_cur.execute(f"""ALTER TABLE {settings.data_schema}.metadata_stats 
+                           ADD CONSTRAINT metadata_stats_pkey PRIMARY KEY (sequential_id)""")
 
     # cluster tables on primary key (for minor performance improvement)
-    pg_cur.execute("ALTER TABLE {0}.metadata_tables CLUSTER ON metadata_tables_pkey".format(settings.data_schema))
-    pg_cur.execute("ALTER TABLE {0}.metadata_stats CLUSTER ON metadata_stats_pkey".format(settings.data_schema))
+    pg_cur.execute(f"ALTER TABLE {settings.data_schema}.metadata_tables CLUSTER ON metadata_tables_pkey")
+    pg_cur.execute(f"ALTER TABLE {settings.data_schema}.metadata_stats CLUSTER ON metadata_stats_pkey")
 
     # update stats
-    pg_cur.execute("VACUUM ANALYZE {0}.metadata_tables".format(settings.data_schema))
-    pg_cur.execute("VACUUM ANALYZE {0}.metadata_stats".format(settings.data_schema))
+    pg_cur.execute(f"VACUUM ANALYZE {settings.data_schema}.metadata_tables")
+    pg_cur.execute(f"VACUUM ANALYZE {settings.data_schema}.metadata_stats")
 
-    logger.info("\t- Step 1 of 2 : metadata tables created : {0}".format(datetime.now() - start_time))
+    logger.info(f"\t- Step 1 of 2 : metadata tables created : {datetime.now() - start_time}")
 
 
 # create stats tables and import data from CSV files using multiprocessing
@@ -257,7 +263,7 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part):
                     table = file_name_components[table_name_part]
 
                     # manual fix for the Australia wide data - has a different file name structure
-                    if settings.census_year == '2016':
+                    if settings.census_year != '2011':
                         if "_aus." in file_name.lower():
                             boundary = "aust"
                         else:
@@ -286,7 +292,7 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part):
     else:
         # load all files using multiprocessing
         utils.multiprocess_csv_import(file_list, settings, logger)
-        logger.info("\t- Step 2 of 2 : stats tables created & populated : {0}".format(datetime.now() - start_time))
+        logger.info(f"\t- Step 2 of 2 : stats tables created & populated : {datetime.now() - start_time}")
 
 
 # loads the admin bdy shapefiles using the shp2pgsql command line tool (part of PostGIS), using multiprocessing
@@ -296,8 +302,7 @@ def load_boundaries(pg_cur):
 
     # create schema
     if settings.boundary_schema != "public":
-        pg_cur.execute("CREATE SCHEMA IF NOT EXISTS {0} AUTHORIZATION {1}"
-                       .format(settings.boundary_schema, settings.pg_user))
+        pg_cur.execute(f"CREATE SCHEMA IF NOT EXISTS {settings.boundary_schema} AUTHORIZATION {settings.pg_user}")
 
     # get file list
     table_list = list()
@@ -359,7 +364,7 @@ def load_boundaries(pg_cur):
             utils.import_shapefile_to_postgres(pg_cur, shp['file_path'], shp['pg_table'], shp['pg_schema'],
                                                shp['delete_table'], True)
 
-        logger.info("\t- Step 1 of 3 : boundaries loaded : {0}".format(datetime.now() - start_time))
+        logger.info(f"\t- Step 1 of 3 : boundaries loaded : {datetime.now() - start_time}")
 
 
 def fix_boundary_ids():
@@ -372,26 +377,25 @@ def fix_boundary_ids():
 
     for boundary_dict in settings.bdy_table_dicts:
         boundary_name = boundary_dict["boundary"]
-        input_pg_table = "{0}_{1}_aust".format(boundary_name, settings.census_year)
+        input_pg_table = "{boundary_name}_{settings.census_year}_aust"
 
         if boundary_name in ["ced", "iare", "iloc", "ireg", "lga", "poa", "ra", "sed", "ssc", "sos", "sosr", "ucl"]:
             id_field = boundary_dict["id_field"]
 
-            sql = "ALTER TABLE {0}.{1} ALTER COLUMN {2} TYPE text"\
-                .format(settings.boundary_schema, input_pg_table, id_field)
+            sql = f"ALTER TABLE {settings.boundary_schema}.{input_pg_table} ALTER COLUMN {id_field} TYPE text"
             alter_sql_list.append(sql)
 
-            sql = "UPDATE {0}.{1} SET {2} = upper('{3}') || {2}"\
-                .format(settings.boundary_schema, input_pg_table, id_field, boundary_name)
+            sql = f"""UPDATE {settings.boundary_schema}.{input_pg_table} 
+                          SET {id_field} = upper('{boundary_name}') || {id_field}"""
             update_sql_list.append(sql)
 
-            vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(settings.boundary_schema, input_pg_table))
+            vacuum_sql_list.append(f"VACUUM ANALYZE {settings.boundary_schema}.{input_pg_table}")
 
     utils.multiprocess_list("sql", alter_sql_list, settings, logger)
     utils.multiprocess_list("sql", update_sql_list, settings, logger)
     utils.multiprocess_list("sql", vacuum_sql_list, settings, logger)
 
-    logger.info("\t- Step 2 of 3 : boundary ids prefixed : {0}".format(datetime.now() - start_time))
+    logger.info(f"\t- Step 2 of 3 : boundary ids prefixed : {datetime.now() - start_time}")
 
 
 def create_display_boundaries(pg_cur):
@@ -400,8 +404,7 @@ def create_display_boundaries(pg_cur):
 
     # create schema
     if settings.web_schema != "public":
-        pg_cur.execute("CREATE SCHEMA IF NOT EXISTS {0} AUTHORIZATION {1}"
-                       .format(settings.web_schema, settings.pg_user))
+        pg_cur.execute(f"CREATE SCHEMA IF NOT EXISTS {settings.web_schema} AUTHORIZATION {settings.pg_user}")
 
     # prepare boundaries for all tiled map zoom levels
     create_sql_list = list()
@@ -417,8 +420,8 @@ def create_display_boundaries(pg_cur):
             name_field = boundary_dict["name_field"]
             area_field = boundary_dict["area_field"]
 
-            input_pg_table = "{0}_{1}_aust".format(boundary_name, settings.census_year)
-            pg_table = "{0}".format(boundary_name)
+            input_pg_table = "{boundary_name}_{settings.census_year}_aust"
+            pg_table = boundary_name
 
             # build create table statement
             create_table_list = list()
@@ -435,16 +438,15 @@ def create_display_boundaries(pg_cur):
 
             for zoom_level in range(4, 18):
                 display_zoom = str(zoom_level).zfill(2)
-                column_list.append("geojson_{0} jsonb NOT NULL".format(display_zoom))
+                column_list.append(f"geojson_{display_zoom} jsonb NOT NULL")
 
             # add columns to create table statement and finish it
-            create_table_list.append(",".join(column_list))
-            create_table_list.append(") WITH (OIDS=FALSE);")
-            create_table_list.append("ALTER TABLE {0}.{1} OWNER TO {2};")
-            create_table_list.append("CREATE INDEX {1}_geom_idx ON {0}.{1} USING gist (geom);")
-            create_table_list.append("ALTER TABLE {0}.{1} CLUSTER ON {1}_geom_idx")
+            sql = f"""{','.join(column_list)}) WITH (OIDS=FALSE);
+                      ALTER TABLE {settings.web_schema}.{pg_table} OWNER TO {settings.pg_user};
+                      CREATE INDEX {pg_table}_geom_idx ON {settings.web_schema}.{pg_table} USING gist (geom);
+                      ALTER TABLE {settings.web_schema}.{pg_table} CLUSTER ON {pg_table}_geom_idx"""
 
-            sql = "".join(create_table_list).format(settings.web_schema, pg_table, settings.pg_user)
+            sql = "".join(create_table_list)
             create_sql_list.append(sql)
 
             # get population field and table
@@ -460,14 +462,17 @@ def create_display_boundaries(pg_cur):
 
             # build insert statement
             insert_into_list = list()
-            insert_into_list.append("INSERT INTO {0}.{1}".format(settings.web_schema, pg_table))
-            insert_into_list.append("SELECT bdy.{0} AS id, {1} AS name, SUM(bdy.{2}) AS area, tab.{3} AS population,"
-                                    .format(id_field, name_field, area_field, pop_stat))
+            insert_into_list.append(f"INSERT INTO {settings.web_schema}.{pg_table}")
+            insert_into_list.append(f"""SELECT bdy.{id_field} AS id, 
+                                               {name_field} AS name, 
+                                               SUM(bdy.{area_field}) AS area, 
+                                               tab.{pop_stat} AS population,""")
 
             # thin geometry to make querying faster
             tolerance = utils.get_tolerance(10)
-            insert_into_list.append("ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW("
-                                    "ST_Transform(geom, 3577), {0}))), 4283),".format(tolerance,))
+            insert_into_list.append(f"""ST_Transform(ST_Multi(ST_Union(
+                                             ST_SimplifyVW(ST_Transform(geom, 3577), {tolerance})
+                                        )), 4283),""")
 
             # create statements for geojson optimised for each zoom level
             geojson_list = list()
@@ -478,22 +483,22 @@ def create_display_boundaries(pg_cur):
                 # trim coords to only the significant ones
                 decimal_places = utils.get_decimal_places(zoom_level)
 
-                geojson_list.append("ST_AsGeoJSON(ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform("
+                geojson_list.append(f"ST_AsGeoJSON(ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform("
                                     "bdy.geom, 3577), {0}))), 4283), {1})::jsonb"
                                     .format(tolerance, decimal_places))
 
             insert_into_list.append(",".join(geojson_list))
-            insert_into_list.append("FROM {0}.{1} AS bdy".format(settings.boundary_schema, input_pg_table))
-            insert_into_list.append("INNER JOIN {0}.{1}_{2} AS tab"
+            insert_into_list.append(f"FROM {0}.{1} AS bdy".format(settings.boundary_schema, input_pg_table))
+            insert_into_list.append(f"INNER JOIN {0}.{1}_{2} AS tab"
                                     .format(settings.data_schema, boundary_name, pop_table))
-            insert_into_list.append("ON bdy.{0} = tab.{1}".format(id_field, settings.region_id_field))
-            insert_into_list.append("WHERE bdy.geom IS NOT NULL")
-            insert_into_list.append("GROUP BY {0}, {1}, {2}".format(id_field, name_field, pop_stat))
+            insert_into_list.append(f"ON bdy.{0} = tab.{1}".format(id_field, settings.region_id_field))
+            insert_into_list.append(f"WHERE bdy.geom IS NOT NULL")
+            insert_into_list.append(f"GROUP BY {0}, {1}, {2}".format(id_field, name_field, pop_stat))
 
             sql = " ".join(insert_into_list)
             insert_sql_list.append(sql)
 
-            vacuum_sql_list.append("VACUUM ANALYZE {0}.{1}".format(settings.web_schema, pg_table))
+            vacuum_sql_list.append(f"VACUUM ANALYZE {0}.{1}".format(settings.web_schema, pg_table))
 
     # print("\n".join(insert_sql_list))
 
@@ -501,7 +506,7 @@ def create_display_boundaries(pg_cur):
     utils.multiprocess_list("sql", insert_sql_list, settings, logger)
     utils.multiprocess_list("sql", vacuum_sql_list, settings, logger)
 
-    logger.info("\t- Step 3 of 3 : web optimised boundaries created : {0}".format(datetime.now() - start_time))
+    logger.info(f"\t- Step 3 of 3 : web optimised boundaries created : {datetime.now() - start_time}")
 
 
 if __name__ == '__main__':
@@ -523,14 +528,14 @@ if __name__ == '__main__':
     # add the handler to the root logger
     logging.getLogger('').addHandler(console)
 
-    logger.info("")
-    logger.info("Start census-loader")
+    logger.info(f"")
+    logger.info(f"Start census-loader")
     utils.check_python_version(logger)
 
     if main():
-        logger.info("Finished successfully!")
+        logger.info(f"Finished successfully!")
     else:
         logger.fatal("Something bad happened!")
 
-    logger.info("")
-    logger.info("-------------------------------------------------------------------------------")
+    logger.info(f"")
+    logger.info(f"-------------------------------------------------------------------------------")
