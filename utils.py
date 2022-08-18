@@ -57,12 +57,15 @@ def get_decimal_places(zoom_level):
 
 
 # takes a list of sql queries or command lines and runs them using multiprocessing
-def multiprocess_csv_import(work_list, settings, logger):
-    pool = multiprocessing.Pool(processes=settings.max_concurrent_processes)
+def multiprocess_csv_import(work_list, max_concurrent_processes, pg_connect_string,
+                            data_schema, pg_user, region_id_field, logger):
+
+    pool = multiprocessing.Pool(processes=max_concurrent_processes)
 
     num_jobs = len(work_list)
 
-    results = pool.imap_unordered(run_csv_import_multiprocessing, [[w, settings] for w in work_list])
+    results = pool.imap_unordered(run_csv_import_multiprocessing,
+                                  [[w, pg_connect_string, data_schema, pg_user, region_id_field] for w in work_list])
 
     pool.close()
     pool.join()
@@ -80,9 +83,12 @@ def multiprocess_csv_import(work_list, settings, logger):
 
 def run_csv_import_multiprocessing(args):
     file_dict = args[0]
-    settings = args[1]
+    pg_connect_string = args[1]
+    data_schema = args[2]
+    pg_user = args[3]
+    region_id_field = args[4]
 
-    pg_conn = psycopg2.connect(settings.pg_connect_string)
+    pg_conn = psycopg2.connect(pg_connect_string)
     pg_conn.autocommit = True
     pg_cur = pg_conn.cursor()
 
@@ -96,7 +102,7 @@ def run_csv_import_multiprocessing(args):
           "FROM {0}.metadata_stats " \
           "WHERE lower(table_number) LIKE '{1}%' " \
           "ORDER BY table_number, right(sequential_id, length(sequential_id) - 1)::integer " \
-        .format(settings.data_schema, file_dict["table"])
+        .format(data_schema, file_dict["table"])
     pg_cur.execute(sql)
 
     fields = pg_cur.fetchall()
@@ -112,8 +118,8 @@ def run_csv_import_multiprocessing(args):
     create_table_sql = "DROP TABLE IF EXISTS {0}.{1} CASCADE;" \
                        "CREATE TABLE {0}.{1} ({4} text, {2}) WITH (OIDS=FALSE);" \
                        "ALTER TABLE {0}.metadata_tables OWNER TO {3}" \
-        .format(settings.data_schema, table_name, fields_string,
-                settings.pg_user, settings.region_id_field)
+        .format(data_schema, table_name, fields_string,
+                pg_user, region_id_field)
 
     pg_cur.execute(create_table_sql)
 
@@ -132,7 +138,7 @@ def run_csv_import_multiprocessing(args):
 
         # import into Postgres
         sql = "COPY {0}.{1} FROM stdin WITH CSV HEADER DELIMITER as ',' NULL as '..'" \
-            .format(settings.data_schema, table_name)
+            .format(data_schema, table_name)
         pg_cur.copy_expert(sql, csv_file)
 
     except Exception as ex:
@@ -141,10 +147,10 @@ def run_csv_import_multiprocessing(args):
     # add primary key and vacuum index
     sql = "ALTER TABLE {0}.{1} ADD CONSTRAINT {1}_pkey PRIMARY KEY ({2});" \
           "ALTER TABLE {0}.{1} CLUSTER ON {1}_pkey" \
-        .format(settings.data_schema, table_name, settings.region_id_field)
+        .format(data_schema, table_name, region_id_field)
     pg_cur.execute(sql)
 
-    pg_cur.execute("VACUUM ANALYSE {0}.{1}".format(settings.data_schema, table_name))
+    pg_cur.execute("VACUUM ANALYSE {0}.{1}".format(data_schema, table_name))
 
     result = "SUCCESS"
 
@@ -155,13 +161,13 @@ def run_csv_import_multiprocessing(args):
 
 
 # takes a list of sql queries or command lines and runs them using multiprocessing
-def multiprocess_list(mp_type, work_list, settings, logger):
-    pool = multiprocessing.Pool(processes=settings.max_concurrent_processes)
+def multiprocess_list(mp_type, work_list, max_concurrent_processes, pg_connect_string, logger):
+    pool = multiprocessing.Pool(processes=max_concurrent_processes)
 
     num_jobs = len(work_list)
 
     if mp_type == "sql":
-        results = pool.imap_unordered(run_sql_multiprocessing, [[w, settings] for w in work_list])
+        results = pool.imap_unordered(run_sql_multiprocessing, [[w, pg_connect_string] for w in work_list])
     else:
         results = pool.imap_unordered(run_command_line, work_list)
 
@@ -181,14 +187,15 @@ def multiprocess_list(mp_type, work_list, settings, logger):
 
 def run_sql_multiprocessing(args):
     the_sql = args[0]
-    settings = args[1]
-    pg_conn = psycopg2.connect(settings.pg_connect_string)
+    pg_connect_string = args[1]
+
+    pg_conn = psycopg2.connect(pg_connect_string)
     pg_conn.autocommit = True
     pg_cur = pg_conn.cursor()
 
     # # set raw gnaf database schema (it's needed for the primary and foreign key creation)
-    # if settings.raw_gnaf_schema != "public":
-    #     pg_cur.execute("SET search_path = {0}, public, pg_catalog".format(settings.raw_gnaf_schema,))
+    # if raw_gnaf_schema != "public":
+    #     pg_cur.execute("SET search_path = {0}, public, pg_catalog".format(raw_gnaf_schema,))
 
     try:
         pg_cur.execute(the_sql)
@@ -214,7 +221,8 @@ def run_command_line(cmd):
     return result
 
 
-def split_sql_into_list(pg_cur, the_sql, table_schema, table_name, table_alias, table_gid, settings, logger):
+def split_sql_into_list(pg_cur, the_sql, table_schema, table_name, table_alias, table_gid,
+                        max_concurrent_processes, logger):
     # get min max gid values from the table to split
     min_max_sql = "SELECT MIN({2}) AS min, MAX({2}) AS max FROM {0}.{1}".format(table_schema, table_name, table_gid)
 
@@ -228,17 +236,17 @@ def split_sql_into_list(pg_cur, the_sql, table_schema, table_name, table_alias, 
         diff = max_pkey - min_pkey
 
         # Number of records in each query
-        rows_per_request = int(math.floor(float(diff) / float(settings.max_concurrent_processes))) + 1
+        rows_per_request = int(math.floor(float(diff) / float(max_concurrent_processes))) + 1
 
         # If less records than processes or rows per request,
         # reduce both to allow for a minimum of 15 records each process
-        if float(diff) / float(settings.max_concurrent_processes) < 10.0:
+        if float(diff) / float(max_concurrent_processes) < 10.0:
             rows_per_request = 10
             processes = int(math.floor(float(diff) / 10.0)) + 1
             logger.info("\t\t- running {0} processes (adjusted due to low row count in table to split)"
                         .format(processes))
         else:
-            processes = settings.max_concurrent_processes
+            processes = max_concurrent_processes
 
         # create list of sql statements to run with multiprocessing
         sql_list = []
@@ -286,12 +294,13 @@ def check_python_version(logger):
     logger.info("\t- on {0}".format(os_version))
 
 
-def multiprocess_shapefile_load(work_list, settings, logger):
-    pool = multiprocessing.Pool(processes=settings.max_concurrent_processes)
+def multiprocess_shapefile_load(work_list, max_concurrent_processes, pg_connect_string, logger):
+    pool = multiprocessing.Pool(processes=max_concurrent_processes)
 
     num_jobs = len(work_list)
 
-    results = pool.imap_unordered(intermediate_shapefile_load_step, [[w, settings] for w in work_list])
+    results = pool.imap_unordered(intermediate_shapefile_load_step,
+                                  [[w, pg_connect_string] for w in work_list])
 
     pool.close()
     pool.join()
@@ -309,7 +318,7 @@ def multiprocess_shapefile_load(work_list, settings, logger):
 
 def intermediate_shapefile_load_step(args):
     work_dict = args[0]
-    settings = args[1]
+    pg_connect_string = args[1]
     # logger = args[2]
 
     file_path = work_dict["file_path"]
@@ -318,7 +327,7 @@ def intermediate_shapefile_load_step(args):
     delete_table = work_dict["delete_table"]
     spatial = work_dict["spatial"]
 
-    pg_conn = psycopg2.connect(settings.pg_connect_string)
+    pg_conn = psycopg2.connect(pg_connect_string)
     pg_conn.autocommit = True
     pg_cur = pg_conn.cursor()
 

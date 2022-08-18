@@ -291,7 +291,8 @@ def populate_data_tables(prefix, suffix, table_name_part, bdy_name_part):
         logger.fatal("\t- Step 2 of 2 : stats table create & populate FAILED!")
     else:
         # load all files using multiprocessing
-        utils.multiprocess_csv_import(file_list, settings, logger)
+        utils.multiprocess_csv_import(file_list, settings.max_concurrent_processes, settings.pg_connect_string,
+                                      settings.data_schema, settings.pg_user, settings.region_id_field, logger)
         logger.info(f"\t- Step 2 of 2 : stats tables created & populated : {datetime.now() - start_time}")
 
 
@@ -356,10 +357,12 @@ def load_boundaries(pg_cur):
         logger.fatal("No census boundary files found\nACTION: Check your 'census-bdys-path' argument")
     else:
         # load files in separate processes
-        utils.multiprocess_shapefile_load(create_list, settings, logger)
+        utils.multiprocess_shapefile_load(create_list, settings.max_concurrent_processes,
+                                          settings.pg_connect_string, logger)
 
-        # Run the appends one at a time (Can't multi process as large sets of parallel INSERTs cause database deadlocks)
-        # utils.multiprocess_shapefile_load(append_list, settings, logger)
+        # Run the appends one at a time (Can't multiprocess as large sets of parallel INSERTs cause database deadlocks)
+        # utils.multiprocess_shapefile_load(append_list, settings.max_concurrent_processes,
+        #                                   settings.pg_connect_string, logger)
         for shp in append_list:
             utils.import_shapefile_to_postgres(pg_cur, shp['file_path'], shp['pg_table'], shp['pg_schema'],
                                                shp['delete_table'], True)
@@ -391,9 +394,12 @@ def fix_boundary_ids():
 
             vacuum_sql_list.append(f"VACUUM ANALYZE {settings.boundary_schema}.{input_pg_table}")
 
-    utils.multiprocess_list("sql", alter_sql_list, settings, logger)
-    utils.multiprocess_list("sql", update_sql_list, settings, logger)
-    utils.multiprocess_list("sql", vacuum_sql_list, settings, logger)
+    utils.multiprocess_list("sql", alter_sql_list,
+                            settings.max_concurrent_processes, settings.pg_connect_string, logger)
+    utils.multiprocess_list("sql", update_sql_list,
+                            settings.max_concurrent_processes, settings.pg_connect_string, logger)
+    utils.multiprocess_list("sql", vacuum_sql_list,
+                            settings.max_concurrent_processes, settings.pg_connect_string, logger)
 
     logger.info(f"\t- Step 2 of 3 : boundary ids prefixed : {datetime.now() - start_time}")
 
@@ -502,9 +508,12 @@ def create_display_boundaries(pg_cur):
 
     # print("\n".join(insert_sql_list))
 
-    utils.multiprocess_list("sql", create_sql_list, settings, logger)
-    utils.multiprocess_list("sql", insert_sql_list, settings, logger)
-    utils.multiprocess_list("sql", vacuum_sql_list, settings, logger)
+    utils.multiprocess_list("sql", create_sql_list,
+                            settings.max_concurrent_processes, settings.pg_connect_string, logger)
+    utils.multiprocess_list("sql", insert_sql_list,
+                            settings.max_concurrent_processes, settings.pg_connect_string, logger)
+    utils.multiprocess_list("sql", vacuum_sql_list,
+                            settings.max_concurrent_processes, settings.pg_connect_string, logger)
 
     logger.info(f"\t- Step 3 of 3 : web optimised boundaries created : {datetime.now() - start_time}")
 
