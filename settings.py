@@ -157,7 +157,7 @@ if census_year == '2021':
          # {"boundary": "sos", "id_field": "sos_code_2021", "name_field": "sos_name_2021", "area_field": "area_albers_sqkm"},
          # {"boundary": "sosr", "id_field": "ssr_code_2021", "name_field": "ssr_name_2021", "area_field": "area_albers_sqkm"},
          # {"boundary": "ssc", "id_field": "ssc_code_2021", "name_field": "ssc_name_2021", "area_field": "area_albers_sqkm"},
-         {"boundary": "ste", "id_field": "ste_code_2021", "name_field": "ste_name_2021", "area_field": "area_albers_sqkm"},
+         {"boundary": "ste", "id_field": "state_code_2021", "name_field": "state_name_2021", "area_field": "area_albers_sqkm"},
          # {"boundary": "sua", "id_field": "sua_code_2021", "name_field": "sua_name_2021", "area_field": "area_albers_sqkm"},
          {"boundary": "tr", "id_field": "tr_code_2021", "name_field": "tr_name_2021", "area_field": "area_albers_sqkm"}
          # {"boundary": "ucl", "id_field": "ucl_code_2021", "name_field": "ucl_name_2021", "area_field": "area_albers_sqkm"}
