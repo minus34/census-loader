@@ -384,7 +384,7 @@ def fix_boundary_ids():
 
     for boundary_dict in settings.bdy_table_dicts:
         boundary_name = boundary_dict["boundary"]
-        input_pg_table = "{boundary_name}_{settings.census_year}_aust"
+        input_pg_table = f"{boundary_name}_{settings.census_year}_aust_{settings.datum}"
 
         if boundary_name in settings.bdy_prefix_list:
             id_field = boundary_dict["id_field"]
@@ -435,8 +435,8 @@ def create_display_boundaries(pg_cur):
 
             # build create table statement
             create_table_list = list()
-            create_table_list.append("DROP TABLE IF EXISTS {0}.{1} CASCADE;")
-            create_table_list.append("CREATE TABLE {0}.{1} (")
+            create_table_list.append(f"DROP TABLE IF EXISTS {settings.web_schema}.{pg_table} CASCADE;")
+            create_table_list.append(f"CREATE TABLE {settings.web_schema}.{pg_table} (")
 
             # build column list
             column_list = list()

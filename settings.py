@@ -77,20 +77,26 @@ args = parser.parse_args()
 census_data_path = args.census_data_path or ""
 census_bdys_path = args.census_bdys_path or ""
 
-max_concurrent_processes = args.max_processes
-census_year = args.census_year
-states = ["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"]
-data_schema = args.data_schema or 'census_' + census_year + '_data'
-boundary_schema = args.boundary_schema or 'census_' + census_year + '_bdys'
-web_schema = args.web_schema or 'census_' + census_year + '_web'
-data_directory = census_data_path.replace("\\", "/")
-boundaries_directory = census_bdys_path.replace("\\", "/")
-
 srid = args.srid
 
 if srid not in (4283, 7844):
     print("Invalid coordinate system (SRID) - EXITING!\nValid values are 4283 (GDA94) and 7844 (GDA2020)")
     exit()
+
+if srid == 4283:
+    datum = "gda94"
+else:
+    datum = "gda2020"
+
+max_concurrent_processes = args.max_processes
+census_year = args.census_year
+states = ["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"]
+data_schema = args.data_schema or 'census_' + census_year + '_data'
+boundary_schema = args.boundary_schema or 'census_' + census_year + '_bdys_' + datum
+web_schema = args.web_schema or 'census_' + census_year + '_web'
+data_directory = census_data_path.replace("\\", "/")
+boundaries_directory = census_bdys_path.replace("\\", "/")
+
 
 # create postgres connect string
 pg_host = args.pghost or os.getenv("PGHOST", "localhost")
