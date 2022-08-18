@@ -430,7 +430,7 @@ def create_display_boundaries(pg_cur):
             name_field = boundary_dict["name_field"]
             area_field = boundary_dict["area_field"]
 
-            input_pg_table = "{boundary_name}_{settings.census_year}_aust"
+            input_pg_table = f"{boundary_name}_{settings.census_year}_aust_{settings.datum}"
             pg_table = boundary_name
 
             # build create table statement
@@ -457,7 +457,7 @@ def create_display_boundaries(pg_cur):
                                              USING gist (geom);
                                          ALTER TABLE {settings.web_schema}.{pg_table} CLUSTER ON {pg_table}_geom_idx""")
 
-            sql = "".join(create_table_list)
+            sql = "\n".join(create_table_list)
             create_sql_list.append(sql)
 
             # get population field and table
@@ -504,11 +504,7 @@ def create_display_boundaries(pg_cur):
                                         WHERE bdy.geom IS NOT NULL
                                         GROUP BY {id_field}, {name_field}, {pop_stat}""")
 
-            sql = " ".join(insert_into_list)
-
-            print(sql)
-
-
+            sql = "\n".join(insert_into_list)
             insert_sql_list.append(sql)
 
             vacuum_sql_list.append(f"VACUUM ANALYZE {settings.web_schema}.{pg_table}")
