@@ -124,6 +124,10 @@ if census_year == '2021':
     # TODO: verify this
     indigenous_population_table = "i01a"
 
+    # bdys that need their IDs prefixed by bdy type to match census stats (go figure...)
+    bdy_prefix_list = ["add", "ced", "dzn", "iare", "iloc", "ireg", "lga", "poa", "sal", "sed", "tr"]
+    # bdy_prefix_list = ["add", "ced", "dzn", "iare", "iloc", "ireg", "lga", "nrmr", "poa", "ra", "sal", "sed", "sos", "sosr", "ssc", "sua", "tr", "ucl"]
+
     bdy_table_dicts = \
         [{"boundary": "add", "id_field": "add_code_2021", "name_field": "add_name_2021", "area_field": "area_albers_sqkm"},
          {"boundary": "aus", "id_field": "aus_code_2021", "name_field": "aus_name_2021", "area_field": "area_albers_sqkm"},
@@ -170,6 +174,9 @@ elif census_year == '2016':
     indigenous_population_stat = "i3"
     indigenous_population_table = "i01a"
 
+    # bdys that need their IDs prefixed by bdy type to match census stats (go figure...)
+    bdy_prefix_list = ["ced", "iare", "iloc", "ireg", "lga", "poa", "ra", "sed", "ssc", "sos", "sosr", "ucl"]
+
     bdy_table_dicts = \
          [{"boundary": "ced", "id_field": "ced_code16", "name_field": "ced_name16", "area_field": "areasqkm16"},
          {"boundary": "gccsa", "id_field": "gcc_code16", "name_field": "gcc_name16", "area_field": "areasqkm16"},
@@ -210,6 +217,9 @@ elif census_year == '2011':
     population_table = "b01"
     indigenous_population_stat = "i3"
     indigenous_population_table = "i01a"
+
+    # bdys that need their IDs prefixed by bdy type to match census stats (go figure...)
+    bdy_prefix_list = ["ced", "iare", "iloc", "ireg", "lga", "poa", "ra", "sed", "ssc", "sos", "sosr", "ucl"]
 
     bdy_table_dicts = \
         [{"boundary": "ced", "id_field": "ced_code", "name_field": "ced_name", "area_field": "area_sqkm"},

@@ -91,26 +91,26 @@ def main():
     # --census-bdys-path=/Users/hugh/tmp/abs_census_2016_bdys
 
     # PART 1 - load census data from CSV files
-    logger.info(f"")
-    start_time = datetime.now()
-    logger.info(f"Part 1 of 2 : Start census data load : {start_time}")
-    create_metadata_tables(pg_cur, settings.metadata_file_prefix, settings.metadata_file_type)
-    populate_data_tables(settings.data_file_prefix, settings.data_file_type,
-                         settings.table_name_part, settings.bdy_name_part)
-    logger.info(f"Part 1 of 2 : Census data loaded! : {datetime.now() - start_time}")
-
-    # # PART 2 - load census boundaries from Shapefiles and optimise them for web visualisation
     # logger.info(f"")
     # start_time = datetime.now()
-    # logger.info(f"Part 2 of 2 : Start census boundary load : {start_time}")
+    # logger.info(f"Part 1 of 2 : Start census data load : {start_time}")
+    # create_metadata_tables(pg_cur, settings.metadata_file_prefix, settings.metadata_file_type)
+    # populate_data_tables(settings.data_file_prefix, settings.data_file_type,
+    #                      settings.table_name_part, settings.bdy_name_part)
+    # logger.info(f"Part 1 of 2 : Census data loaded! : {datetime.now() - start_time}")
+
+    # PART 2 - load census boundaries from Shapefiles and optimise them for web visualisation
+    logger.info(f"")
+    start_time = datetime.now()
+    logger.info(f"Part 2 of 2 : Start census boundary load : {start_time}")
     # load_boundaries(pg_cur)
-    # # add bdy type prefix to bdy id to enabled joins with stat data (Census 2016 data issue only)
-    # if settings.census_year == "2016":
-    #     fix_boundary_ids()
-    # else:
-    #     logger.info(f"\t- Step 2 of 3 : boundary id prefixes not required : {datetime.now() - start_time}")
-    # create_display_boundaries(pg_cur)
-    # logger.info(f"Part 2 of 2 : Census boundaries loaded! : {datetime.now() - start_time}")
+    # add bdy type prefix to bdy id to enabled joins with stat data (Census 2016 data issue only)
+    if settings.census_year != "2016":
+        fix_boundary_ids()
+    else:
+        logger.info(f"\t- Step 2 of 3 : boundary id prefixes not required : {datetime.now() - start_time}")
+    create_display_boundaries(pg_cur)
+    logger.info(f"Part 2 of 2 : Census boundaries loaded! : {datetime.now() - start_time}")
 
     # close Postgres connection
     pg_cur.close()
@@ -386,7 +386,7 @@ def fix_boundary_ids():
         boundary_name = boundary_dict["boundary"]
         input_pg_table = "{boundary_name}_{settings.census_year}_aust"
 
-        if boundary_name in ["ced", "iare", "iloc", "ireg", "lga", "poa", "ra", "sed", "ssc", "sos", "sosr", "ucl"]:
+        if boundary_name in settings.bdy_prefix_list:
             id_field = boundary_dict["id_field"]
 
             sql = f"ALTER TABLE {settings.boundary_schema}.{input_pg_table} ALTER COLUMN {id_field} TYPE text"
