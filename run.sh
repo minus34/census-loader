@@ -19,10 +19,6 @@ function getfile {
 
 SECONDS=0*
 
-# start Python environment with GDAL and Psycopg2
-conda deactivate
-conda activate geo
-
 # set Postgres connection string
 PG_CONNECT_STRING="PG:host=localhost user=postgres dbname=geo password=password port=5432"
 
