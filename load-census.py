@@ -451,10 +451,11 @@ def create_display_boundaries(pg_cur):
                 column_list.append(f"geojson_{display_zoom} jsonb NOT NULL")
 
             # add columns to create table statement and finish it
-            sql = f"""{','.join(column_list)}) WITH (OIDS=FALSE);
-                      ALTER TABLE {settings.web_schema}.{pg_table} OWNER TO {settings.pg_user};
-                      CREATE INDEX {pg_table}_geom_idx ON {settings.web_schema}.{pg_table} USING gist (geom);
-                      ALTER TABLE {settings.web_schema}.{pg_table} CLUSTER ON {pg_table}_geom_idx"""
+            create_table_list.append(f"""{','.join(column_list)}) WITH (OIDS=FALSE);
+                                         ALTER TABLE {settings.web_schema}.{pg_table} OWNER TO {settings.pg_user};
+                                         CREATE INDEX {pg_table}_geom_idx ON {settings.web_schema}.{pg_table} 
+                                             USING gist (geom);
+                                         ALTER TABLE {settings.web_schema}.{pg_table} CLUSTER ON {pg_table}_geom_idx""")
 
             sql = "".join(create_table_list)
             create_sql_list.append(sql)
@@ -493,22 +494,24 @@ def create_display_boundaries(pg_cur):
                 # trim coords to only the significant ones
                 decimal_places = utils.get_decimal_places(zoom_level)
 
-                geojson_list.append(f"ST_AsGeoJSON(ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform("
-                                    "bdy.geom, 3577), {0}))), 4283), {1})::jsonb"
-                                    .format(tolerance, decimal_places))
+                geojson_list.append(f"""ST_AsGeoJSON(ST_Transform(ST_Multi(ST_Union(ST_SimplifyVW(ST_Transform(
+                                            bdy.geom, 3577), {tolerance}))), 4283), {decimal_places})::jsonb""")
 
-            insert_into_list.append(",".join(geojson_list))
-            insert_into_list.append(f"FROM {0}.{1} AS bdy".format(settings.boundary_schema, input_pg_table))
-            insert_into_list.append(f"INNER JOIN {0}.{1}_{2} AS tab"
-                                    .format(settings.data_schema, boundary_name, pop_table))
-            insert_into_list.append(f"ON bdy.{0} = tab.{1}".format(id_field, settings.region_id_field))
-            insert_into_list.append(f"WHERE bdy.geom IS NOT NULL")
-            insert_into_list.append(f"GROUP BY {0}, {1}, {2}".format(id_field, name_field, pop_stat))
+            insert_into_list.append(f"""{','.join(geojson_list)}
+                                        FROM {settings.boundary_schema}.{input_pg_table} AS bdy
+                                        INNER JOIN {settings.data_schema}.{boundary_name}_{pop_table} AS tab
+                                            ON bdy.{id_field} = tab.{settings.region_id_field}
+                                        WHERE bdy.geom IS NOT NULL
+                                        GROUP BY {id_field}, {name_field}, {pop_stat}""")
 
             sql = " ".join(insert_into_list)
+
+            print(sql)
+
+
             insert_sql_list.append(sql)
 
-            vacuum_sql_list.append(f"VACUUM ANALYZE {0}.{1}".format(settings.web_schema, pg_table))
+            vacuum_sql_list.append(f"VACUUM ANALYZE {settings.web_schema}.{pg_table}")
 
     # print("\n".join(insert_sql_list))
 
