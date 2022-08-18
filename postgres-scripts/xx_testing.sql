@@ -1,5 +1,31 @@
 
 
+select *
+from census_2021_data.metadata_tables
+;
+
+select *
+from census_2021_data.metadata_stats
+where sequential_id = 'G10065'
+;
+
+select count(*),
+       substring(sequential_id, 1,1) as profile
+from census_2021_data.metadata_stats
+group by profile
+;
+
+
+select *
+from census_2021_data.sa4_g02;
+
+select *
+from census_2021_data.lga_g02;
+
+select *
+from census_2021_bdys_gda94.lga_2021_aust_gda94;
+
+
 WITH mvtgeom AS
          (
              SELECT ST_AsMVTGeom(geom, ST_TileEnvelope(12, 513, 412)) AS geom,

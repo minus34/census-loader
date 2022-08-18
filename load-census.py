@@ -41,6 +41,10 @@ from datetime import datetime
 def main():
     full_start_time = datetime.now()
 
+    # log Python and OS versions
+    logger.info(f"\t- running Python {settings.python_version} with Psycopg2 {settings.psycopg2_version}")
+    logger.info(f"\t- on {settings.os_version}")
+
     if settings.census_year not in ['2021', '2016', '2011']:
         logger.fatal("Invalid Census Year - ACTION: Set value to 2021, 2016 or 2011")
         return False
@@ -539,7 +543,6 @@ if __name__ == '__main__':
 
     logger.info(f"")
     logger.info(f"Start census-loader")
-    utils.check_python_version(logger)
 
     if main():
         logger.info(f"Finished successfully!")
