@@ -250,6 +250,7 @@ geos_version = "UNKNOWN"
 geos_version_num = 0.0
 
 st_subdivide_supported = False
+st_clusterkmeans_supported = False
 
 for lib_string in lib_strings:
     if lib_string[:8] == "POSTGIS=":
@@ -261,3 +262,6 @@ for lib_string in lib_strings:
 
 if postgis_version_num >= 2.2 and geos_version_num >= 3.5:
     st_subdivide_supported = True
+
+if postgis_version_num >= 2.3:
+    st_clusterkmeans_supported = True

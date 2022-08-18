@@ -66,11 +66,11 @@ def main():
     logger.info(f"\t- using Postgres {settings.pg_version} and PostGIS {settings.postgis_version} "
                 f"(with GEOS {settings.geos_version})")
 
-    # # test if ST_ClusterKMeans exists (only in PostGIS 2.3+).
-    # # It's used to create classes to display the data in the map
-    # if not settings.get('st_clusterkmeans_supported'):
-    #     logger.warning("YOU NEED TO INSTALL POSTGIS 2.3 OR HIGHER FOR THE MAP SERVER TO WORK\n"
-    #                    "it utilises the ST_ClusterKMeans() function in v2.3+")
+    # test if ST_ClusterKMeans exists (only in PostGIS 2.3+).
+    # It's used to create classes to display the data in the map
+    if not settings.st_clusterkmeans_supported:
+        logger.warning("YOU NEED TO INSTALL POSTGIS 2.3 OR HIGHER FOR THE MAP SERVER TO WORK\n"
+                       "it utilises the ST_ClusterKMeans() function in v2.3+")
 
     # START LOADING DATA
 
@@ -124,14 +124,16 @@ def create_metadata_tables(pg_cur, prefix, suffix):
 
     # create schema
     if settings.data_schema != "public":
-        pg_cur.execute("CREATE SCHEMA IF NOT EXISTS {0} AUTHORIZATION {1}"
-                       .format(settings.data_schema, settings.pg_user))
+        pg_cur.execute(f"CREATE SCHEMA IF NOT EXISTS {settings.data_schema} AUTHORIZATION {settings.pg_user}")
 
     # create metadata tables
-    sql = "DROP TABLE IF EXISTS {0}.metadata_tables CASCADE;" \
-          "CREATE TABLE {0}.metadata_tables (table_number text, table_name text, table_description text) " \
-          "WITH (OIDS=FALSE);" \
-          "ALTER TABLE {0}.metadata_tables OWNER TO {1}".format(settings.data_schema, settings.pg_user)
+    sql = f"""DROP TABLE IF EXISTS {settings.data_schema}.metadata_tables CASCADE;
+              CREATE TABLE {settings.data_schema}.metadata_tables (
+                  table_number text,
+                  table_name text,
+                  table_description text
+              ) WITH (OIDS=FALSE);
+              ALTER TABLE {settings.data_schema}.metadata_tables OWNER TO {settings.pg_user}"""
     pg_cur.execute(sql)
 
     sql = "DROP TABLE IF EXISTS {0}.metadata_stats CASCADE;" \
