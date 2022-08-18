@@ -171,8 +171,8 @@ elif census_year == '2016':
 
     data_file_prefix = "2016Census_"
     data_file_type = ".csv"
-    table_name_part = 1  # position in the data file name that equals it's destination table name
-    bdy_name_part = 3  # position in the data file name that equals it's census boundary name
+    table_name_part = 1  # position in the data file name that equals its destination table name
+    bdy_name_part = 3  # position in the data file name that equals its census boundary name
     region_id_field = "region_id"
 
     population_stat = "g3"

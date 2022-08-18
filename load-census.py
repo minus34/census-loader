@@ -393,7 +393,8 @@ def fix_boundary_ids():
             alter_sql_list.append(sql)
 
             sql = f"""UPDATE {settings.boundary_schema}.{input_pg_table} 
-                          SET {id_field} = upper('{boundary_name}') || {id_field}"""
+                          SET {id_field} = upper('{boundary_name}') || {id_field}
+                      WHERE {id_field} <> upper('{boundary_name}') || {id_field}"""
             update_sql_list.append(sql)
 
             vacuum_sql_list.append(f"VACUUM ANALYZE {settings.boundary_schema}.{input_pg_table}")
