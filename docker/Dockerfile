@@ -1,6 +1,6 @@
 FROM debian:buster-slim
 
-ARG CENSUS_YEAR="2016"
+ARG CENSUS_YEAR="2021"
 ENV CENSUS_YEAR ${CENSUS_YEAR}
 
 ARG BASE_URL="https://minus34.com/opendata/census-${CENSUS_YEAR}"
