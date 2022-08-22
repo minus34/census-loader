@@ -4,7 +4,7 @@
 
     <script src="https://unpkg.com/underscore@1.13.4/underscore-min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <link rel="stylesheet" href="/examples/site.css" />
+    <link rel="stylesheet" href="site.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://unpkg.com/flatgeobuf@3.22.0/dist/flatgeobuf-geojson.min.js"></script>
     <script src="https://unpkg.com/json-formatter-js"></script>
@@ -89,9 +89,9 @@
 
                 // Leaflet styling
                 const defaultStyle = {
-                    color: 'blue',
+                    // color: 'blue',
                     weight: 2,
-                    fillOpacity: 0.1,
+                    fillOpacity: 0.2,
                 };
 
                 L.geoJSON(feature, {
@@ -103,22 +103,11 @@
 
                     // onEachFeature: onEachFeature,
 
-                    pointToLayer: function (feature, latlng) {
-                        return L.circleMarker(latlng, {
-                            radius: 8,
-                            fillColor: "#ff7800",
-                            color: "#000",
-                            weight: 1,
-                            opacity: 1,
-                            fillOpacity: 0.8
-                        });
-                    }
-
                 }).on({
                     'mouseover': function(e) {
                         const layer = e.target;
                         layer.setStyle({
-                            color: 'blue',
+                            // color: 'blue',
                             weight: 4,
                             fillOpacity: 0.7,
                         });
