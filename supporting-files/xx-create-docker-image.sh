@@ -3,6 +3,24 @@
 # get the directory this script is running from
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+CENSUS_YEAR="2021"
+BASE_URL="https://minus34.com/opendata/census-${CENSUS_YEAR}"
+OUTPUT_FOLDER="/Users/$(whoami)/tmp"
+
+mkdir -p ${OUTPUT_FOLDER}
+
+cd ${OUTPUT_FOLDER}
+
+
+# NOT REQUIRED
+#echo "---------------------------------------------------------------------------------------------------------------------"
+#echo "download postgres dump files"
+#echo "---------------------------------------------------------------------------------------------------------------------"
+#
+#curl -O -L -s  ${BASE_URL}/census_${CENSUS_YEAR}_data.dmp
+#curl -O -L -s  ${BASE_URL}/census_${CENSUS_YEAR}_bdys.dmp
+#curl -O -L -s  ${BASE_URL}/census_${CENSUS_YEAR}_web.dmp
+
 echo "---------------------------------------------------------------------------------------------------------------------"
 echo "build census-loader docker image"
 echo "---------------------------------------------------------------------------------------------------------------------"
