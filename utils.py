@@ -137,7 +137,9 @@ def run_csv_import_multiprocessing(args):
 
         # import into Postgres
         sql = f"COPY {data_schema}.{table_name} FROM stdin WITH CSV HEADER DELIMITER as ',' NULL as '..'"
-        pg_cur.copy_expert(sql, csv_file)
+        with pg_cur.copy(sql) as copy:
+            while data := csv_file.read():
+                copy.write(data)
 
     except Exception as ex:
         return f"IMPORT CSV INTO POSTGRES FAILED! : {file_dict['path']} : {ex}"

@@ -209,7 +209,10 @@ def create_metadata_tables(pg_cur, prefix, suffix):
                         # import into Postgres
                         sql = f"""COPY {settings.data_schema}.{table_dict['table']} 
                                       FROM stdin WITH CSV DELIMITER as '\t' NULL as ''"""
-                        pg_cur.copy_expert(sql, tsv_file)
+
+                        with pg_cur.copy(sql) as copy:
+                            while data := tsv_file.read():
+                                copy.write(data)
 
                     j += 1
 
