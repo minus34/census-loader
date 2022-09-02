@@ -5,7 +5,7 @@
 # load-census.py
 # *********************************************************************************************************************
 #
-# A script for loading Australian Bureau of Statistics Census 2021, 2016 or 2011 data and boundaries
+# A script for loading Australian Bureau of Statistics Census 2021 data and boundaries
 #
 # Author: Hugh Saalmans
 # GitHub: minus34
@@ -29,9 +29,8 @@
 import io
 import logging.config
 import os
-import pandas  # module needs to be installed
-import psycopg2  # module needs to be installed
-import psycopg2.extensions
+import pandas  # module needs to be installed, along with openpyxl (for Excel file load)
+import psycopg  # module needs to be installed
 import settings
 import utils
 
@@ -42,18 +41,18 @@ def main():
     full_start_time = datetime.now()
 
     # log Python and OS versions
-    logger.info(f"\t- running Python {settings.python_version} with Psycopg2 {settings.psycopg2_version}")
+    logger.info(f"\t- running Python {settings.python_version} with Psycopg {settings.psycopg_version}")
     logger.info(f"\t- on {settings.os_version}")
 
     # get Postgres connection & cursor
-    pg_conn = psycopg2.connect(settings.pg_connect_string)
+    pg_conn = psycopg.connect(settings.pg_connect_string)
     pg_conn.autocommit = True
     pg_cur = pg_conn.cursor()
 
     # add postgis to database (in the public schema) - run this in a try to confirm db user has privileges
     try:
         pg_cur.execute("SET search_path = public, pg_catalog; CREATE EXTENSION IF NOT EXISTS postgis")
-    except psycopg2.Error:
+    except psycopg.Error:
         logger.fatal("Unable to add PostGIS extension\nACTION: Check your Postgres user privileges or PostGIS install")
         return False
 
