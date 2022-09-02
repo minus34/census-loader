@@ -5,10 +5,10 @@ import io
 import multiprocessing
 import math
 import os
-import platform
-import psycopg2
+# import platform
+import psycopg
 import subprocess
-import sys
+# import sys
 
 
 # calculates the area tolerance (in m2) for vector simplification using the Visvalingam-Whyatt algorithm
@@ -88,7 +88,7 @@ def run_csv_import_multiprocessing(args):
     pg_user = args[3]
     region_id_field = args[4]
 
-    pg_conn = psycopg2.connect(pg_connect_string)
+    pg_conn = psycopg.connect(pg_connect_string)
     pg_conn.autocommit = True
     pg_cur = pg_conn.cursor()
 
@@ -186,7 +186,7 @@ def run_sql_multiprocessing(args):
     the_sql = args[0]
     pg_connect_string = args[1]
 
-    pg_conn = psycopg2.connect(pg_connect_string)
+    pg_conn = psycopg.connect(pg_connect_string)
     pg_conn.autocommit = True
     pg_cur = pg_conn.cursor()
 
@@ -311,7 +311,7 @@ def intermediate_shapefile_load_step(args):
     delete_table = work_dict["delete_table"]
     spatial = work_dict["spatial"]
 
-    pg_conn = psycopg2.connect(pg_connect_string)
+    pg_conn = psycopg.connect(pg_connect_string)
     pg_conn.autocommit = True
     pg_cur = pg_conn.cursor()
 

@@ -46,10 +46,10 @@ parser.add_argument(
          'otherwise \'password\'.')
 
 # schema names for the census data & boundary tables
-# parser.add_argument(
-#     '--census-year', default=temp_census_year,
-#     help='Census year as YYYY. Valid values are \'2021\'. '
-#          'Defaults to \'' + temp_census_year + '\'.')
+parser.add_argument(
+    '--census-year', default=temp_census_year,
+    help='Census year as YYYY. Valid values are \'2021\'. '
+         'Defaults to \'' + temp_census_year + '\'.')
 parser.add_argument(
     "--srid", type=int, default=4283,
     help="Sets the coordinate system (SRID aka EPSG number) of the input data. "
