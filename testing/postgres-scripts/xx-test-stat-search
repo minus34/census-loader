@@ -1,0 +1,14 @@
+
+
+SELECT sequential_id, replace(long_id, '_', ' ') AS long_id FROM census_2016_data.metadata_stats WHERE lower(long_id) LIKE '%medi%' ORDER BY sequential_id;
+
+
+
+
+
+
+
+UNION ALL
+SELECT sequential_id, replace(long_id, '_', ' ') AS long_id FROM census_2016_data.metadata_stats WHERE sequential_id LIKE 'T%' AND lower(long_id) LIKE '%medi%'
+UNION ALL
+SELECT sequential_id, replace(long_id, '_', ' ') AS long_id FROM census_2016_data.metadata_stats WHERE sequential_id LIKE 'I%' AND lower(long_id) LIKE '%medi%';
