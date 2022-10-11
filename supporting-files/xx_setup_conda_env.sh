@@ -36,11 +36,11 @@ conda config --env --set channel_priority strict
 # reactivate for env vars to take effect
 conda activate ${ENV_NAME}
 
-# install Mamba (faster package installer)
-conda install -y -c conda-forge mamba
+## install Mamba (faster package installer)
+#conda install -y -c conda-forge mamba
 
-# install ${ENV_NAME}spatial packages
-mamba install -y -c conda-forge gdal pygeos pyarrow dask-geopandas openpyxl psycopg geoalchemy2 rasterio boto3
+# install geospatial packages
+conda install -y -c conda-forge gdal pygeos pyarrow dask-geopandas openpyxl psycopg geoalchemy2 rasterio boto3
 conda activate ${ENV_NAME}
 
 # --------------------------
