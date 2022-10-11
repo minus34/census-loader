@@ -18,6 +18,9 @@ conda activate base
 # WARNING - removes existing environment
 conda env remove --name ${ENV_NAME}
 
+# clear cache (builds over time)
+conda clean -y --all
+
 # update Conda base environment
 conda update -y conda
 
