@@ -16,7 +16,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 . ${SCRIPT_DIR}/run.sh GDA94
 . ${SCRIPT_DIR}/run.sh GDA2020
 
-# download and unzip DataPacKS
+# download and unzip census datapacks
 . ${SCRIPT_DIR}/download_datapacks.sh
 
 # load census data

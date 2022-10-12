@@ -36,6 +36,7 @@ INDIGENOUSBDYFILE="ASGS_Ed3_${CENSUS_YEAR}_Indigenous_Structure_${DATUM}_GPKG"
 NONABSBDYFILE="ASGS_Ed3_Non_ABS_Structures_${DATUM}_GPKG_updated_2022"
 SUAUCLBDYFILE="ASGS_2021_SUA_UCL_SOS_SOSR_GPKG_${DATUM}"
 
+
 echo "-------------------------------------------------------------------------"
 echo "Downloading ${DATUM} boundary files"
 echo "-------------------------------------------------------------------------"
