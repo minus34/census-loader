@@ -6,12 +6,12 @@
 
 # function to download, unzip, and delete file
 function getfile {
-  filename="2021_${}1_all_for_AUS_short-header.zip"
-  echo "  - Downloading ${filename}"
+  filename="2021_$1_all_for_AUS_short-header.zip"
+#  echo "  - Downloading ${filename}"
   # use insecure to enable downloading through man-in-the-middle proxy servers
   curl -O -L -s --insecure "https://www.abs.gov.au/census/find-census-data/datapacks/download/${filename}"
-  unzip -q "$1.zip" -d "$2"
-  rm "$1.zip"
+  unzip -o -q "${filename}" -d "$2"
+  rm "${filename}"
 }
 
 SECONDS=0*
@@ -23,11 +23,15 @@ cd "${DATA_PATH}"
 
 
 echo "-------------------------------------------------------------------------"
-echo "Downloading and Unzipping DataPacks"
+echo "Downloading and unzipping DataPacks"
 echo "-------------------------------------------------------------------------"
 
 for datapack in "GCP" "IP" "TSP" "PEP" "WPP"
 do
-  echo "Processing ${datapack}"
+  echo "- processing ${datapack}"
   getfile "${datapack}" "${DATA_PATH}"
 done
+
+
+duration=$SECONDS
+echo "DataPacks downloaded in $((duration / 60)) mins"

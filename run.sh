@@ -13,7 +13,7 @@ function getfile {
   echo "  - Downloading $1.zip"
   # use insecure to enable through man-in-the-middle proxy servers
   curl -O -L -s --insecure "https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files/$1.zip"
-  unzip -q "$1.zip" -d "$2"
+  unzip -o -q "$1.zip" -d "$2"
   rm "$1.zip"
 }
 
