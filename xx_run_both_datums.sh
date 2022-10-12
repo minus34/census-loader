@@ -16,5 +16,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 . ${SCRIPT_DIR}/run.sh GDA94
 . ${SCRIPT_DIR}/run.sh GDA2020
 
+# download and unzip DataPacKS
+. ${SCRIPT_DIR}/download_datapacks.sh
+
 # load census data
 python ${SCRIPT_DIR}/load-census.py --census-data-path=${DATA_PATH} --census-bdys-path=${BDYS_PATH}
