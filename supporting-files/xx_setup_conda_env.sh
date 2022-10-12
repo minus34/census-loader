@@ -18,9 +18,6 @@ conda activate base
 # WARNING - removes existing environment
 conda env remove --name ${ENV_NAME}
 
-# clear cache (builds over time)
-conda clean -y --all
-
 # update Conda base environment
 conda update -y conda
 
@@ -42,6 +39,9 @@ conda activate ${ENV_NAME}
 # install geospatial packages
 conda install -y -c conda-forge gdal pygeos pyarrow dask-geopandas openpyxl psycopg geoalchemy2 rasterio boto3
 conda activate ${ENV_NAME}
+
+# clear cache (builds over time)
+conda clean -y --all
 
 # --------------------------
 # extra bits
