@@ -43,10 +43,10 @@ echo "--------------------------------------------------------------------------
 
 #docker push minus34/censusloader:2016
 #docker push minus34/censusloader:2011
-docker push minus34/censusloader:2021
+#docker push minus34/censusloader:2021
 
 echo "---------------------------------------------------------------------------------------------------------------------"
 echo "clean up Docker locally - warning: this could accidentally destroy other Docker images"
 echo "---------------------------------------------------------------------------------------------------------------------"
 
-echo 'y' | docker system prune
+#echo 'y' | docker system prune
