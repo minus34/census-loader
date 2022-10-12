@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# start Python environment with GDAL and Psycopg2
+# start Python environment with GDAL and Psycopg 3
 conda deactivate
 conda activate geo
 
