@@ -60,7 +60,8 @@ def main():
     logger.info(f"\t- using Postgres {settings.pg_version} and PostGIS {settings.postgis_version} "
                 f"(with GEOS {settings.geos_version})")
 
-    # # test if ST_ClusterKMeans exists (only in PostGIS 2.3+). It's used to create classes to display the data in the map
+    # # test if ST_ClusterKMeans exists (only in PostGIS 2.3+).
+    # # It's used to create classes to display the data in the map
     # if not settings.st_clusterkmeans_supported:
     #     logger.warning("YOU NEED TO INSTALL POSTGIS 2.3 OR HIGHER FOR THE MAP SERVER TO WORK\n"
     #                    "it utilises the ST_ClusterKMeans() function in v2.3+")
@@ -79,19 +80,19 @@ def main():
 
     # START LOADING DATA
 
-    # PART 1 - load census data from CSV files
-    logger.info(f"")
-    start_time = datetime.now()
-    logger.info(f"Part 1 of 2 : Start census data load : {start_time}")
-    create_metadata_tables(pg_cur, settings.metadata_file_prefix, settings.metadata_file_type)
-    populate_data_tables(settings.data_file_prefix, settings.data_file_type,
-                         settings.table_name_part, settings.bdy_name_part)
-    logger.info(f"Part 1 of 2 : Census data loaded! : {datetime.now() - start_time}")
+    # # PART 1 - load census data from CSV files
+    # logger.info(f"")
+    # start_time = datetime.now()
+    # logger.info(f"Part 1 of 2 : Start census data load : {start_time}")
+    # create_metadata_tables(pg_cur, settings.metadata_file_prefix, settings.metadata_file_type)
+    # populate_data_tables(settings.data_file_prefix, settings.data_file_type,
+    #                      settings.table_name_part, settings.bdy_name_part)
+    # logger.info(f"Part 1 of 2 : Census data loaded! : {datetime.now() - start_time}")
 
-    # PART 2 - load census boundaries from Shapefiles and optimise them for web visualisation
+    # PART 2 - optimise census boundaries for web visualisation
     logger.info(f"")
     start_time = datetime.now()
-    logger.info(f"Part 2 of 2 : Start census boundary load : {start_time}")
+    logger.info(f"Part 2 of 2 : Start census boundary optimisation : {start_time}")
     # load_boundaries(pg_cur)
     # add bdy type prefix to bdy id to enabled joins with stat data (Census 2016 data issue only)
     if settings.census_year != "2016":
@@ -99,7 +100,7 @@ def main():
     else:
         logger.info(f"\t- Step 2 of 3 : boundary id prefixes not required : {datetime.now() - start_time}")
     create_display_boundaries(pg_cur)
-    logger.info(f"Part 2 of 2 : Census boundaries loaded! : {datetime.now() - start_time}")
+    logger.info(f"Part 2 of 2 : Census boundaries optimised! : {datetime.now() - start_time}")
 
     # close Postgres connection
     pg_cur.close()

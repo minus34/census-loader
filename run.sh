@@ -67,7 +67,11 @@ while read f;
 #    ogr2ogr -f "PostgreSQL" "${PG_CONNECT_STRING}" -a_srs EPSG:4283 -lco OVERWRITE=YES -lco GEOMETRY_NAME=geom -lco SCHEMA=${BDYS_SCHEMA} ${f}
   done < ${BDYS_PATH}/temp.txt
 
-rm ${BDYS_PATH}/temp.txt
+
+## WARNING: deletes the bdy directory
+rm -rf "${BDYS_PATH}"
+#rm ${BDYS_PATH}/temp.txt
+
 
 duration=$SECONDS
 echo "${DATUM} Boundaries loaded in $((duration / 60)) mins"

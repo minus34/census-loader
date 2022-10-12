@@ -178,7 +178,7 @@ if census_year == '2021':
           "area_field": "area_albers_sqkm"},
          {"boundary": "sos", "id_field": "sos_code_2021", "name_field": "sos_name_2021",
          "area_field": "area_albers_sqkm"},
-         {"boundary": "sosr", "id_field": "ssr_code_2021", "name_field": "ssr_name_2021",
+         {"boundary": "sosr", "id_field": "sosr_code_2021", "name_field": "sosr_name_2021",
          "area_field": "area_albers_sqkm"},
          # {"boundary": "ssc", "id_field": "ssc_code_2021", "name_field": "ssc_name_2021",
          # "area_field": "area_albers_sqkm"},
