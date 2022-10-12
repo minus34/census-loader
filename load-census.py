@@ -80,14 +80,14 @@ def main():
 
     # START LOADING DATA
 
-    # # PART 1 - load census data from CSV files
-    # logger.info(f"")
-    # start_time = datetime.now()
-    # logger.info(f"Part 1 of 2 : Start census data load : {start_time}")
-    # create_metadata_tables(pg_cur, settings.metadata_file_prefix, settings.metadata_file_type)
-    # populate_data_tables(settings.data_file_prefix, settings.data_file_type,
-    #                      settings.table_name_part, settings.bdy_name_part)
-    # logger.info(f"Part 1 of 2 : Census data loaded! : {datetime.now() - start_time}")
+    # PART 1 - load census data from CSV files
+    logger.info(f"")
+    start_time = datetime.now()
+    logger.info(f"Part 1 of 2 : Start census data load : {start_time}")
+    create_metadata_tables(pg_cur, settings.metadata_file_prefix, settings.metadata_file_type)
+    populate_data_tables(settings.data_file_prefix, settings.data_file_type,
+                         settings.table_name_part, settings.bdy_name_part)
+    logger.info(f"Part 1 of 2 : Census data loaded! : {datetime.now() - start_time}")
 
     # PART 2 - optimise census boundaries for web visualisation
     logger.info(f"")
@@ -98,7 +98,7 @@ def main():
     if settings.census_year != "2016":
         fix_boundary_ids()
     else:
-        logger.info(f"\t- Step 2 of 3 : boundary id prefixes not required : {datetime.now() - start_time}")
+        logger.info(f"\t- Step 1 of 2 : boundary id prefixes not required : {datetime.now() - start_time}")
     create_display_boundaries(pg_cur)
     logger.info(f"Part 2 of 2 : Census boundaries optimised! : {datetime.now() - start_time}")
 
@@ -400,7 +400,7 @@ def fix_boundary_ids():
     utils.multiprocess_list("sql", vacuum_sql_list,
                             settings.max_concurrent_processes, settings.pg_connect_string, logger)
 
-    logger.info(f"\t- Step 2 of 3 : boundary ids prefixed : {datetime.now() - start_time}")
+    logger.info(f"\t- Step 1 of 2 : boundary ids prefixed : {datetime.now() - start_time}")
 
 
 def create_display_boundaries(pg_cur):
@@ -513,7 +513,7 @@ def create_display_boundaries(pg_cur):
     utils.multiprocess_list("sql", vacuum_sql_list,
                             settings.max_concurrent_processes, settings.pg_connect_string, logger)
 
-    logger.info(f"\t- Step 3 of 3 : web optimised boundaries created : {datetime.now() - start_time}")
+    logger.info(f"\t- Step 2 of 2 : web optimised boundaries created : {datetime.now() - start_time}")
 
 
 if __name__ == '__main__':
