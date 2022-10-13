@@ -42,7 +42,7 @@ RUN mkdir -p /data \
     && pg_restore -Fc -d postgres -h localhost -p 5432 -U postgres /data/census_${CENSUS_YEAR}_web.dmp \
     && /etc/init.d/postgresql stop \
     && rm /data/census_${CENSUS_YEAR}_data.dmp \
-    && rm /data/census_${CENSUS_YEAR}_bdys.dmp \
+    && rm /data/census_${CENSUS_YEAR}_bdys_${DATUM}.dmp \
     && rm /data/census_${CENSUS_YEAR}_web.dmp
 
 # enable external access to postgres - WARNING: these are insecure settings! Edit these to restrict access
