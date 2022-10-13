@@ -1,9 +1,12 @@
 FROM debian:buster-slim
 
-ARG CENSUS_YEAR="2021"
+# ARG CENSUS_YEAR="2021"
 ENV CENSUS_YEAR ${CENSUS_YEAR}
 
-ARG BASE_URL="https://minus34.com/opendata/census-${CENSUS_YEAR}"
+ARG DATUM="gda94"
+ENV DATUM ${DATUM}
+
+# ARG BASE_URL="https://minus34.com/opendata/census-${CENSUS_YEAR}"
 ENV BASE_URL ${BASE_URL}
 
 # Postgres user password - WARNING: change this to something a lot more secure
@@ -35,7 +38,7 @@ RUN mkdir -p /data \
     && wget --quiet ${BASE_URL}/census_${CENSUS_YEAR}_web.dmp \
     && /etc/init.d/postgresql start \
     && pg_restore -Fc -d postgres -h localhost -p 5432 -U postgres /data/census_${CENSUS_YEAR}_data.dmp \
-    && pg_restore -Fc -d postgres -h localhost -p 5432 -U postgres /data/census_${CENSUS_YEAR}_bdys.dmp \
+    && pg_restore -Fc -d postgres -h localhost -p 5432 -U postgres /data/census_${CENSUS_YEAR}_bdys_${DATUM}.dmp \
     && pg_restore -Fc -d postgres -h localhost -p 5432 -U postgres /data/census_${CENSUS_YEAR}_web.dmp \
     && /etc/init.d/postgresql stop \
     && rm /data/census_${CENSUS_YEAR}_data.dmp \
