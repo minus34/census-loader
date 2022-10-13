@@ -28,7 +28,8 @@ echo "--------------------------------------------------------------------------
 cd ${SCRIPT_DIR}/../docker
 #docker build --tag minus34/censusloader:2016 --no-cache --build-arg CENSUS_YEAR="2016" --build-arg BASE_URL="https://minus34.com/opendata/census-2016" .
 #docker build --tag minus34/censusloader:2011 --no-cache --build-arg CENSUS_YEAR="2011" --build-arg BASE_URL="https://minus34.com/opendata/census-2011" .
-docker build --tag minus34/censusloader:2021 --no-cache --build-arg CENSUS_YEAR="2021" --build-arg BASE_URL="https://minus34.com/opendata/census-2021"  --build-arg DATUM="gda94" .
+
+#docker build --tag minus34/censusloader:2021 --no-cache --build-arg CENSUS_YEAR="2021" --build-arg BASE_URL="https://minus34.com/opendata/census-2021"  --build-arg DATUM="gda94" .
 #docker build --tag minus34/censusloader:2021 --no-cache --build-arg CENSUS_YEAR="2021" --build-arg BASE_URL="https://minus34.com/opendata/census-2021"  --build-arg DATUM="gda2020" .
 
 
@@ -44,7 +45,7 @@ echo "--------------------------------------------------------------------------
 
 #docker push minus34/censusloader:2016
 #docker push minus34/censusloader:2011
-#docker push minus34/censusloader:2021
+docker push minus34/censusloader:2021
 
 echo "---------------------------------------------------------------------------------------------------------------------"
 echo "clean up Docker locally - warning: this could accidentally destroy other Docker images"
