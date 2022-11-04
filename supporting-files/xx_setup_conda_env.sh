@@ -37,7 +37,7 @@ conda activate ${ENV_NAME}
 #conda install -y -c conda-forge mamba
 
 # install geospatial packages
-#conda install -y -c open3d-admin open3d
+#pip install open3d==0.15.1
 conda install -y -c conda-forge gdal pygeos pyarrow dask-geopandas openpyxl psycopg geoalchemy2 rasterio jupyter boto3
 conda activate ${ENV_NAME}
 
