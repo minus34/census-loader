@@ -21,3 +21,6 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 # load census data
 python ${SCRIPT_DIR}/load-census.py --census-data-path=${DATA_PATH} --census-bdys-path=${BDYS_PATH}
+
+# dump from postgres and copy to AWS S3
+. ${SCRIPT_DIR}/supporting-files/dump-census-schemas.sh
