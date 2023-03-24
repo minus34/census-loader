@@ -67,7 +67,7 @@ find ${BDYS_PATH} -name "*_${DATUM}*.gpkg" > ${BDYS_PATH}/temp.txt
 while read f;
   do
     echo "  - Importing ${f}"
-    ogr2ogr -f "PostgreSQL" "${PG_CONNECT_STRING}" -lco OVERWRITE=YES -lco GEOMETRY_NAME=geom -lco SCHEMA=${BDYS_SCHEMA} ${f}
+    $CONDA_PREFIX/bin/ogr2ogr -f "PostgreSQL" "${PG_CONNECT_STRING}" -lco OVERWRITE=YES -lco GEOMETRY_NAME=geom -lco SCHEMA=${BDYS_SCHEMA} ${f}
 #    ogr2ogr -f "PostgreSQL" "${PG_CONNECT_STRING}" -a_srs EPSG:4283 -lco OVERWRITE=YES -lco GEOMETRY_NAME=geom -lco SCHEMA=${BDYS_SCHEMA} ${f}
   done < ${BDYS_PATH}/temp.txt
 
