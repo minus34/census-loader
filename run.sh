@@ -8,6 +8,9 @@
 # Sample command line: . /Users/$(whoami)/git/minus34/census-loader/run.sh 2021 GDA94
 #
 
+# active Conda environment with GDAL
+conda activate geo
+
 # function to download, unzip, and delete file
 function getfile {
   echo "  - Downloading $1.zip"
@@ -35,7 +38,7 @@ MAINBDYFILE="ASGS_${CENSUS_YEAR}_MAIN_STRUCTURE_GPKG_${DATUM}"
 INDIGENOUSBDYFILE="ASGS_Ed3_${CENSUS_YEAR}_Indigenous_Structure_${DATUM}_GPKG"
 NONABSBDYFILE="ASGS_Ed3_Non_ABS_Structures_${DATUM}_GPKG_updated_2022"
 SUAUCLBDYFILE="ASGS_2021_SUA_UCL_SOS_SOSR_GPKG_${DATUM}"
-
+RABDYFILE="ASGS_Ed3_2021_RA_GPKG_${DATUM}"
 
 echo "-------------------------------------------------------------------------"
 echo "Downloading ${DATUM} boundary files"
@@ -50,6 +53,7 @@ getfile "${MAINBDYFILE}" "${BDYS_PATH}"
 getfile "${INDIGENOUSBDYFILE}" "${BDYS_PATH}"
 getfile "${NONABSBDYFILE}" "${BDYS_PATH}"
 getfile "${SUAUCLBDYFILE}" "${BDYS_PATH}"
+getfile "${RABDYFILE}" "${BDYS_PATH}"
 
 echo "-------------------------------------------------------------------------"
 echo "Importing ${DATUM} files into Postgres"
