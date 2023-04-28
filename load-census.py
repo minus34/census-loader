@@ -97,10 +97,11 @@ def main():
     # add bdy type prefix to bdy id to enabled joins with stat data (Census 2016 data issue only)
     if settings.census_year != "2016":
         fix_boundary_ids()
+        logger.info(f"\t- Step 1 of 1 : boundary ids prefixed : {datetime.now() - start_time}")
     else:
-        logger.info(f"\t- Step 1 of 2 : boundary id prefixes not required : {datetime.now() - start_time}")
-    create_display_boundaries(pg_cur)
-    logger.info(f"Part 2 of 2 : Census boundaries optimised! : {datetime.now() - start_time}")
+        logger.info(f"\t- Step 1 of 1 : boundary id prefixes not required : {datetime.now() - start_time}")
+    # create_display_boundaries(pg_cur)
+    # logger.info(f"Part 2 of 2 : Census boundaries optimised! : {datetime.now() - start_time}")
 
     # close Postgres connection
     pg_cur.close()
@@ -399,8 +400,6 @@ def fix_boundary_ids():
                             settings.max_concurrent_processes, settings.pg_connect_string, logger)
     utils.multiprocess_list("sql", vacuum_sql_list,
                             settings.max_concurrent_processes, settings.pg_connect_string, logger)
-
-    logger.info(f"\t- Step 1 of 2 : boundary ids prefixed : {datetime.now() - start_time}")
 
 
 def create_display_boundaries(pg_cur):
