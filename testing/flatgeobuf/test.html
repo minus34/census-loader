@@ -1,0 +1,122 @@
+<html lang="en">
+<head>
+    <title>streaming GeoJSONL/flatgeobuf by dropping-on</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/flatgeobuf@3.21.3/dist/flatgeobuf-geojson.min.js"></script>
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+<div id='map'></div>
+<script>
+    const pointStyle = {radius:2, color:"#a000a0", opacity:0.6};
+    const otherStyle = {weight:1, color:"#0000ff", opacity:0.6};
+
+    const map = L.map('map').setView([-33.85, 151.15], 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    map.createPane("pane620").style.zIndex = 620;
+
+    const geojsonStyle = feature => {
+        switch(feature.geometry.type) {
+            case "Point":
+            case "MultiPoint":
+                return {radius:pointStyle["radius"], fillColor:pointStyle["color"], fillOpacity:pointStyle["opacity"], weight:0, color:"#000000", opacity:0};
+        }
+        return {...otherStyle, fillColor: otherStyle["color"], fillOpacity: otherStyle["opacity"]*0.3};
+    }
+
+    const setDropArea = (area) => {
+        const draw = file => drawIterator(getIterator(file.stream(), file.name));
+        area.ondragover = () => false;
+        area.ondrop = event => {
+            [...event.dataTransfer.files].forEach(draw);
+            return false;
+        };
+    }
+    setDropArea(document.getElementById('map'));
+
+    // convert the rect into the format flatgeobuf expects
+    function fgBoundingBox() {
+        const bounds = map.getBounds();
+        // const bounds = getBoundForRect();
+        return {
+            minX: bounds.getWest(),
+            maxX: bounds.getEast(),
+            minY: bounds.getSouth(),
+            maxY: bounds.getNorth(),
+        };
+    }
+
+    // optionally show some meta-data about the FGB file
+    function handleHeaderMeta(headerMeta) {
+        const header = document.getElementById('header')
+        const formatter = new JSONFormatter(headerMeta, 10)
+        while (header.firstChild)
+            header.removeChild(header.firstChild)
+        header.appendChild(formatter.render())
+    }
+
+    const drawIterator = async (iter) => {
+        if(iter==undefined) return;
+        const layerOptions = {
+            pointToLayer: (_, latlng) => L.circleMarker(latlng, {pane: "pane620"}),
+            style: geojsonStyle
+        };
+        const drawFeatures = (feas) => L.geoJSON(feas, layerOptions).addTo(map);
+        const wait = () => new Promise(resolve => setTimeout(resolve, 0));
+        for await (const features of iter) {
+            await wait();
+            drawFeatures(features);
+        }
+    };
+
+    const getIterator = (stream, name) => {
+        const extension = name.split('.').pop();
+        switch(extension) {
+            case "jsonl":
+            case "geojsonl":
+                return readLines(stream, JSON.parse);
+            case "fgb":
+                const numBunch = 8;
+                return bunchIterator(flatgeobuf.deserialize('https://minus34.com/opendata/census-2021/flatgeobuf/sa1_2021_aust_gda94_50000.fgb', fgBoundingBox(), handleHeaderMeta), numBunch);
+        }
+    }
+
+    async function* readLines(readableStream, funcYield = (x) => x) {
+        const reader = readableStream.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let remaining = "";
+        try {
+            while (true) {
+                const {done, value} = await reader.read();
+                if (done) return;
+                const lines = (remaining + decoder.decode(value)).split("\n");
+                remaining = lines.pop();
+                yield lines.map(funcYield);
+            }
+        }
+        finally {
+            reader.releaseLock();
+        }
+    }
+
+    async function* bunchIterator(iter, numBunch = 1) {
+        let bunch = [];
+        for await (let e of iter) {
+            bunch.push(e);
+            if (bunch.length >= numBunch) {yield bunch; bunch = [];}
+        }
+        yield bunch;
+    }
+</script>
+</body>
+</html>

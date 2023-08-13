@@ -4,15 +4,17 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <title>CensusMap</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='leaflet.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='leaflet.bookmarks.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='radio-button.css') }}" />
-    <script src="{{ url_for('static', filename='jquery-3.2.1.min.js') }}" type="text/javascript"></script>
-    <script src="{{ url_for('static', filename='rainbowvis.js') }}" type="text/javascript"></script>
-    <script src="{{ url_for('static', filename='leaflet.js') }}" type="text/javascript"></script>
-    <script src="{{ url_for('static', filename='leaflet.Bookmarks.js') }}" type="text/javascript"></script>
-    <script src="{{ url_for('static', filename='loadmap.js') }}" type="text/javascript"></script>
-
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="leaflet.bookmarks.css" />
+    <link rel="stylesheet" href="radio-button.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" type="text/javascript"></script>
+    <script src="https://unpkg.com/underscore@1.13.4/underscore-min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="leaflet.Bookmarks.js" type="text/javascript"></script>
+    <script src="https://unpkg.com/flatgeobuf@3.22.0/dist/flatgeobuf-geojson.min.js"></script>
+    <script src="https://unpkg.com/json-formatter-js"></script>
+    <script src="rainbowvis.js" type="text/javascript"></script>
+    <script src="loadmap.js" type="text/javascript"></script>
 
 
     <style>

@@ -18,7 +18,7 @@ A quick way to get started with Australian Bureau of Statistics (ABS) Census 201
 ### There are 3 options for loading the data
 1. [Run](https://github.com/minus34/census-loader#option-1---run-loadcensuspy) the load-census Python script and build the database schemas in a single step
 2. [Build](https://github.com/minus34/census-loader#option-2---build-the-database-in-a-docker-environment) the database in a docker environment.
-3. [Download](https://github.com/minus34/census-loader#option-3---load-pg_dump-files) the Postgres dump files and restore them in your database. __Note: Census 2016 data and ASGS boundaries only__
+3. [Download](https://github.com/minus34/census-loader#option-3---load-pg_dump-files) the Postgres dump files and restore them in your database.
 
 ## Option 1 - Run load-census.py
 Running the Python script takes 15-30 minutes on a Postgres server configured for performance.
@@ -37,8 +37,8 @@ To get a good load time you'll need to configure your Postgres server for perfor
 
 ### Process
 1. Download [ABS Census DataPacks](https://datapacks.censusdata.abs.gov.au/datapacks/)
-2. Download [ABS 2016 ASGS boundaries](https://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.001) or [ABS 2011 ASGS boundaries](https://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login) **IMPORTANT - download the ESRI Shapefile versions**
-3. (optional) Download the 2016 [Indigenous](https://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.002) and [Non-ABS](https://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.003) boundaries as well
+2. Download [ABS 2021 ASGS boundaries](https://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.001) or [ABS 2011 ASGS boundaries](https://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login) **IMPORTANT - download the ESRI Shapefile versions**
+3. (optional) Download the 2021 [Indigenous](https://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.002) and [Non-ABS](https://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.003) boundaries as well
 4. Unzip the Census CSV files to a directory on your Postgres server
 5. Alter security on the directory to grant Postgres read access
 6. Unzip the ASGS boundaries to a local directory
@@ -56,21 +56,21 @@ The behaviour of census-loader can be controlled by specifying various command l
 #### Postgres Parameters
 * `--pghost` the host name for the Postgres server. This defaults to the `PGHOST` environment variable if set, otherwise defaults to `localhost`.
 * `--pgport` the port number for the Postgres server. This defaults to the `PGPORT` environment variable if set, otherwise `5432`.
-* `--pgdb` the database name for Postgres server. This defaults to the `PGDATABASE` environment variable if set, otherwise `psma_201602`.
+* `--pgdb` the database name for Postgres server. This defaults to the `PGDATABASE` environment variable if set, otherwise `geo`.
 * `--pguser` the username for accessing the Postgres server. This defaults to the `PGUSER` environment variable if set, otherwise `postgres`.
 * `--pgpassword` password for accessing the Postgres server. This defaults to the `PGPASSWORD` environment variable if set, otherwise `password`.
 
 #### Optional Arguments
-* `--census-year` year of the ABS Census data to load. Valid values are `2011` and `2016` Defaults to `2016`.
-* `--data-schema` schema name to store Census data tables in. Defaults to `census_2016_data`. **You will need to change this argument if you set `--census-year=2011`**
-* `--boundary-schema` schema name to store Census boundary tables in. Defaults to `census_2016_bdys`. **You will need to change this argument if you set `--census-year=2011`**
-* `--web-schema` schema name to store Census boundary tables in. Defaults to `census_2016_web`. **You will need to change this argument if you set `--census-year=2011`**
+* `--census-year` year of the ABS Census data to load. Valid values are `2011`, `2016` and `2021` Defaults to `2021`.
+* `--data-schema` schema name to store Census data tables in. Defaults to `census_2021_data`. **You will need to change this argument if you set `--census-year=2011`**
+* `--boundary-schema` schema name to store Census boundary tables in. Defaults to `census_2021_bdys_<gda94 or gda20202>`. **You will need to change this argument if you set `--census-year=2011`**
+* `--web-schema` schema name to store Census boundary tables in. Defaults to `census_2021_web`. **You will need to change this argument if you set `--census-year=2011`**
 * `--max-processes` specifies the maximum number of parallel processes to use for the data load. Set this to the number of cores on the Postgres server minus 2, but limit to 12 if 16+ cores - there is minimal benefit beyond 12. Defaults to 3.
 
 ### Example Command Line Arguments
-`python load-census.py --census-data-path="C:\temp\census_2016_data" --census-bdys-path="C:\temp\census_2016_boundaries"`
+`python load-census.py --census-data-path="C:\temp\census_2021_data" --census-bdys-path="C:\temp\census_2021_boundaries"`
 
-Loads the 2016 Census data using a maximum of 3 parallel processes into the default schemas. Census data archives have been extracted to the folder `C:\temp\census_2016_data`, and ASGS boundaries have been extracted to the `C:\temp\census_2016_boundaries` folder.
+Loads the 2021 Census data using a maximum of 3 parallel processes into the default schemas. Census data archives have been extracted to the folder `C:\temp\census_2021_data`, and ASGS boundaries have been extracted to the `C:\temp\census_2021_boundaries` folder.
 
 `python load-census.py --census-year=2011 --max-processes=6 --data-schema=census_2011_data --boundary-schema=census_2011_bdys --census-data-path="C:\temp\census_2011_data" --census-bdys-path="C:\temp\census_2011_boundaries"`
 
@@ -90,14 +90,15 @@ When using the resulting data from this process - you will need to adhere to the
 Create a Docker container with Census data and ASGS boundaries ready to go, so they can be deployed anywhere.
 
 ### Process
-1. Download [ABS Census DataPacks](https://datapacks.censusdata.abs.gov.au/datapacks/)
-2. Download [ABS 2016 ASGS boundaries](https://www.abs.gov.au/AUSSTATS/abs@.nsf/DetailsPage/1270.0.55.001July%202016) or [ABS 2011 ASGS boundaries](https://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login) **IMPORTANT - download the ESRI Shapefile versions**
-3. (optional) Download the 2016 [Indigenous](https://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.002) and [Non-ABS](https://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.003) boundaries as well
-4. Unzip Census data and ASGS boundaries in the data/ directory of this repository
-5. Run docker-compose: `docker-compose up`. The database will be built.
-6. Use the constructed database as you wish.
+1. In your docker environment pull the image using `docker pull minus34/censusloader:latest`
+2. Run using `docker run --publish=5433:5432 minus34/censusloader:latest`
+3. Access Postgres in the container via port `5433`. Default login is - user: `postgres`, password: `password`
 
-If you want only the db running, do `docker-compose up db`. If you want to view the webapp, navigate to `localhost`, or the docker machine IP on (if you're doing Docker the old way!).
+*Note: the compressed Docker image is 8Gb, uncompressed is 27Gb*
+
+**WARNING: The default postgres superuser password is insecure and should be changed using:**
+
+`ALTER USER postgres PASSWORD '<something a lot more secure>'`
 
 ## Option 3 - Load PG_DUMP Files
 Download Postgres dump files and restore them in your database.
@@ -109,9 +110,9 @@ Should take 15-30 minutes.
 - A knowledge of [Postgres pg_restore parameters](https://www.postgresql.org/docs/9.6/static/app-pgrestore.html)
 
 ### Process
-1. Download [census_2016_data.dmp](https://minus34.com/opendata/census-2016/census_2016_data.dmp) (~0.6Gb)
-2. Download [census_2016_bdys.dmp](https://minus34.com/opendata/census-2016/census_2016_bdys.dmp) (~1.1Gb)
-3. Download [census_2016_web.dmp](https://minus34.com/opendata/census-2016/census_2016_web.dmp) (~0.8Gb)
+1. Download [census_2021_data.dmp](https://minus34.com/opendata/census-2021/census_2021_data.dmp) (~0.6Gb)
+2. Download [census_2021_bdys.dmp](https://minus34.com/opendata/census-2021/census_2021_bdys_gda94.dmp) (~1.1Gb)
+3. Download [census_2021_web.dmp](https://minus34.com/opendata/census-2021/census_2021_web.dmp) (~0.8Gb)
 4. Edit the restore-census-schemas.bat or .sh script in the supporting-files folder for your database parameters and for the location of pg_restore
 5. Run the script, come back in 15-30 minutes and enjoy!
 
