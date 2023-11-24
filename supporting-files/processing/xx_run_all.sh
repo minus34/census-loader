@@ -29,7 +29,7 @@ echo "processing census data"
 echo "---------------------------------------------------------------------------------------------------------------------"
 
 # load census data
-python ../../load-census.py --census-data-path=${DATA_PATH} --census-bdys-path=${BDYS_PATH}
+python ../../load-census.py --census-data-path=${DATA_PATH}
 
 echo "---------------------------------------------------------------------------------------------------------------------"
 echo "creating Postgres dump files and upload to AWS S3"

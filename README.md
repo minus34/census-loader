@@ -1,39 +1,33 @@
 # census-loader
-A quick way to get started with Australian Bureau of Statistics (ABS) Census 2021 data; as well as Census 2016 or 2011 data.
+A quick way to get started with Australian Bureau of Statistics (ABS) Census 2021 data.
 
 ### There are 3 options for loading the data
-1. [Run](https://github.com/minus34/census-loader#option-1---run-loadcensuspy) the load-census Python script and build the database schemas in a single step
+1. [Run](https://github.com/minus34/census-loader#option-1---run-loadcensuspy) the load-census Python script and build the database schemas in a single step **on a Mac or Linux machine**
 2. [Build](https://github.com/minus34/census-loader#option-2---build-the-database-in-a-docker-environment) the database in a docker environment.
 3. [Download](https://github.com/minus34/census-loader#option-3---load-pg_dump-files) the Postgres dump files and restore them in your database.
 
 ## Option 1 - Run load-census.py
-Running the Python script takes 15-30 minutes on a Postgres server (or dekstop) configured for performance.
+Running the Python script takes 15-30 minutes on a Postgres server (or desktop) configured for performance.
 
 ### Performance
-To get a good load time you'll need to configure your Postgres server for performance. There's a good guide [here](https://revenant.ca/www/postgis/workshop/tuning.html), noting it's old and some of the memory parameters can be beefed up if you have the RAM.
+To get a good load time you'll need to configure your Postgres server for performance. There's a good guide [here](https://revenant.ca/www/postgis/workshop/tuning.html), noting its old and the memory parameters can be beefed up if you have the RAM.
 
 ### Pre-requisites
 - Postgres 14+ with PostGIS 3.x+ (tested on 14.10 on macOS Sonoma)
 - Add the Postgres bin directory to your system PATH
-- Python 3.x with Psycopg, xlrd & Pandas packages installed
+- Python 3.x with Psycopg3 & Pandas packages installed
 
 ### Process
-1. Download [ABS Census DataPacks](https://datapacks.censusdata.abs.gov.au/datapacks/)
-2. Download [ABS 2021 ASGS boundaries](https://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.001) or [ABS 2011 ASGS boundaries](https://www.abs.gov.au/websitedbs/censushome.nsf/home/datapacks) (requires a free login) **IMPORTANT - download the ESRI Shapefile versions**
-3. (optional) Download the 2021 [Indigenous](https://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.002) and [Non-ABS](https://www.abs.gov.au/ausstats/abs@.nsf/mf/1270.0.55.003) boundaries as well
-4. Unzip the Census CSV files to a directory on your Postgres server
-5. Alter security on the directory to grant Postgres read access
-6. Unzip the ASGS boundaries to a local directory
-7. Create the target database (if required)
-8. Check the optional and required arguments by running load-census.py with the `-h` argument (see command line examples below)
-9. Run the script, come back in 10-15 minutes and enjoy!
+1. Run the `xx_run_all.sh` script in the `supporting-files/processing` folder. It will download the data and boundary files from the ABS and import them into Postgres.
+2. Come back in 15-30 minutes and enjoy!
 
-### Command Line Options
-The behaviour of census-loader can be controlled by specifying various command line options to the script. Supported arguments are:
+Alternately - you can download the files manually yourself, import the boundary Shapefiles or GeoPackages using GDAL and then import the data using the main script `load-census.py`.
+
+### load-census.py Command Line Options
+The behaviour of the main census-loader script can be controlled by specifying various command line options to the script. Supported arguments are:
 
 #### Required Arguments
 * `--census-data-path` specifies the path to the extracted Census metadata and data tables (eg *.xlsx and *.csv files). __This directory must be accessible by the Postgres server__, and the corresponding local path for the server to this directory may need to be set via the `local-server-dir` argument
-* `--census-bdys-path` specifies the path to the extracted ASGS boundary files. Unlike `census-data-path`, this path does not necessarily have to be accessible to the remote Postgres server.
 
 #### Postgres Parameters
 * `--pghost` the host name for the Postgres server. This defaults to the `PGHOST` environment variable if set, otherwise defaults to `localhost`.

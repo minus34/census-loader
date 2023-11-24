@@ -93,10 +93,10 @@ max_concurrent_processes = args.max_processes
 census_year = args.census_year or temp_census_year
 states = ["ACT", "NSW", "NT", "OT", "QLD", "SA", "TAS", "VIC", "WA"]
 data_schema = args.data_schema or 'census_' + census_year + '_data'
-boundary_schema = args.boundary_schema or 'census_' + census_year + '_bdys_' + datum
-web_schema = args.web_schema or 'census_' + census_year + '_web'
+# boundary_schema = args.boundary_schema or 'census_' + census_year + '_bdys_' + datum
+# web_schema = args.web_schema or 'census_' + census_year + '_web'
 data_directory = census_data_path.replace("\\", "/")
-boundaries_directory = census_bdys_path.replace("\\", "/")
+# boundaries_directory = census_bdys_path.replace("\\", "/")
 
 
 # create postgres connect string
