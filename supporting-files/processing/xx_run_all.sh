@@ -17,12 +17,12 @@ conda activate geo
 # get the directory this script is running from
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-# load both sets of census boundaries
-. 02_download_boundaries.sh GDA94
-. 02_download_boundaries.sh GDA2020
-
-# download and unzip census datapacks
-. 03_download_datapacks.sh
+## load both sets of census boundaries
+#. 02_download_boundaries.sh GDA94
+#. 02_download_boundaries.sh GDA2020
+#
+## download and unzip census datapacks
+#. 03_download_datapacks.sh
 
 echo "---------------------------------------------------------------------------------------------------------------------"
 echo "processing census data"
@@ -31,12 +31,12 @@ echo "--------------------------------------------------------------------------
 # load census data
 python ../../load-census.py --census-data-path=${DATA_PATH}
 
-echo "---------------------------------------------------------------------------------------------------------------------"
-echo "creating Postgres dump files and upload to AWS S3"
-echo "---------------------------------------------------------------------------------------------------------------------"
-
-# dump from postgres and copy to AWS S3
-. ../dump-census-schemas.sh
-
-# create docker images for both datums
-. 04_create_docker_images.sh
+#echo "---------------------------------------------------------------------------------------------------------------------"
+#echo "creating Postgres dump files and upload to AWS S3"
+#echo "---------------------------------------------------------------------------------------------------------------------"
+#
+## dump from postgres and copy to AWS S3
+#. ../dump-census-schemas.sh
+#
+## create docker images for both datums
+#. 04_create_docker_images.sh

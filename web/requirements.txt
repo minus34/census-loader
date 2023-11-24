@@ -1,3 +1,0 @@
-flask
-psycopg2
-flask_compress
