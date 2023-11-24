@@ -78,9 +78,9 @@ def main():
 
     # load boundaries (geometries are Well Known Text strings)
     bdy_df = spark.read.format("geoparquet").load(os.path.join(s3_bdys_path, "ra_2021_aust"))
-    # bdy_df = bdy_df.repartition(512, "state")
-    bdy_df.printSchema()
-    bdy_df.show(5)
+    bdy_df = bdy_df.repartition(512, "state_code_2021")
+    # bdy_df.printSchema()
+    # bdy_df.show(5)
     print(f"Boundary dataframe has {bdy_df.count()} rows")
 
     # create view to enable SQL queries
@@ -109,8 +109,9 @@ def main():
     #   - spatial partitions and indexes for join will be created automatically
     #   - it's an inner join so point records will be lost when they are outside the boundaries
     sql = """SELECT pnt.gnaf_pid,
-                    bdy.name as lga_name,
-                    bdy.state,
+                    bdy.ra_code_2021,
+                    bdy.ra_name_2021,
+                    pnt.state,
                     pnt.geom
              FROM pnt
              INNER JOIN bdy ON ST_Intersects(pnt.geom, bdy.geom)"""
