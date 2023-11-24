@@ -10,7 +10,7 @@ A quick way to get started with Australian Bureau of Statistics (ABS) Census 202
 Running the Python script takes 15-30 minutes on a Postgres server (or desktop) configured for performance.
 
 ### Performance
-To get a good load time you'll need to configure your Postgres server for performance. There's a good guide [here](https://revenant.ca/www/postgis/workshop/tuning.html), noting its old and the memory parameters can be beefed up if you have the RAM.
+To get a good load time you'll need to configure your Postgres server for performance. There's a good guide [here](https://postgis.net/workshops/postgis-intro/tuning.html), noting its old and the memory parameters can be beefed up if you have the RAM.
 
 ### Pre-requisites
 - Postgres 14+ with PostGIS 3.2+ (tested on 14.10 on macOS Sonoma)
@@ -79,7 +79,7 @@ Should take 15-30 minutes.
 
 ### Pre-requisites
 - Postgres 14+ with PostGIS 3.2+
-- A knowledge of [Postgres pg_restore parameters](https://www.postgresql.org/docs/9.6/static/app-pgrestore.html)
+- A knowledge of [Postgres pg_restore parameters](https://www.postgresql.org/docs/14/app-pgrestore.html)
 
 ### Process
 1. Download [census_2021_data.dmp](https://minus34.com/opendata/census-2021/census_2021_data.dmp) (~1.1Gb)
