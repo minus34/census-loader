@@ -21,7 +21,6 @@ rm -rf "${DATA_PATH}"
 mkdir -p "${DATA_PATH}"
 cd "${DATA_PATH}"
 
-
 echo "-------------------------------------------------------------------------"
 echo "Downloading and unzipping DataPacks"
 echo "-------------------------------------------------------------------------"
@@ -31,7 +30,6 @@ do
   echo "- processing ${datapack}"
   getfile "${datapack}" "${DATA_PATH}"
 done
-
 
 duration=$SECONDS
 echo "DataPacks downloaded in $((duration / 60)) mins"

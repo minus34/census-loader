@@ -4,7 +4,7 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 CENSUS_YEAR="2021"
-OUTPUT_FOLDER="/Users/$(whoami)/tmp"
+OUTPUT_FOLDER = "/Users/$(whoami)/tmp/census_${CENSUS_YEAR}"
 
 cd ${OUTPUT_FOLDER}
 
