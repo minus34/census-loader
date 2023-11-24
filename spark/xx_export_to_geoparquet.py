@@ -71,7 +71,7 @@ pg_connect_string = "dbname={DB} host={HOST} port={PORT} user={USER} password={P
 # get runtime arguments
 parser = argparse.ArgumentParser(description="Converts Postgres/PostGIS tables to Parquet files with WKT geometries.")
 
-parser.add_argument("--data-schema", help="Input schema name for GNAF tables.")
+# parser.add_argument("--data-schema", help="Input schema name for GNAF tables.")
 parser.add_argument("--bdy-schema", help="Input schema name for admin boundary tables.")
 parser.add_argument("--output-path", help="Output path for Parquet files.")
 
@@ -82,7 +82,8 @@ def main():
     # get settings
     args = parser.parse_args()
     output_path = args.output_path
-    schema_names = [args.data_schema, args.bdy_schema]
+    schema_names = [args.bdy_schema]
+    # schema_names = [args.data_schema, args.bdy_schema]
 
     # create output path (if required)
     Path(output_path).mkdir(parents=True, exist_ok=True)
@@ -269,12 +270,12 @@ def import_table(spark, sql, min_gid, max_gid, partition_size, is_spatial):
         return raw_df
 
 
-# export a dataframe to gz parquet files
+# export a dataframe to parquet files
 def export_to_parquet(df, name, output_path, is_spatial):
     if is_spatial:
         df.write.mode("overwrite") \
             .format("geoparquet") \
-            .save(os.path.join(output_path, name))
+            .save(os.path.join(output_path, name.replace("_gda94", "")))
     else:
         df.write.option("compression", "snappy") \
             .mode("overwrite") \

@@ -1,5 +1,5 @@
 
-# script to load boundary & point data into Spark and run a spatial (point in polygon) query with the data
+# script to load Census boundary & GNAF point data into Spark and run a spatial (point in polygon) query with the data
 
 import boto3
 import logging
@@ -20,7 +20,8 @@ aws_profile = "minus34"
 
 #######################################################################################################################
 
-s3_path = "s3a://minus34.com/opendata/geoscape-202311/geoparquet/"
+s3_points_path = "s3a://minus34.com/opendata/geoscape-202311/geoparquet/"
+s3_bdys_path = "s3a://minus34.com/opendata/census-2021/geoparquet/"
 
 # number of CPUs to use in processing (defaults to number of local CPUs)
 num_processors = cpu_count()
@@ -76,10 +77,10 @@ def main():
     start_time = datetime.now()
 
     # load boundaries (geometries are Well Known Text strings)
-    bdy_df = spark.read.format("geoparquet").load(os.path.join(s3_path, "local_government_areas"))
-    bdy_df = bdy_df.repartition(512, "state")
-    # bdy_df.printSchema()
-    # bdy_df.show(5)
+    bdy_df = spark.read.format("geoparquet").load(os.path.join(s3_bdys_path, "ra_2021_aust"))
+    # bdy_df = bdy_df.repartition(512, "state")
+    bdy_df.printSchema()
+    bdy_df.show(5)
     print(f"Boundary dataframe has {bdy_df.count()} rows")
 
     # create view to enable SQL queries
@@ -91,7 +92,7 @@ def main():
     start_time = datetime.now()
 
     # load points (spatial data is lat/long fields)
-    point_df = spark.read.format("geoparquet").load(os.path.join(s3_path, "address_principals"))
+    point_df = spark.read.format("geoparquet").load(os.path.join(s3_points_path, "address_aliases"))
     point_df = point_df.repartition(512, "state")
     # point_df.printSchema()
     # point_df.show(5)
