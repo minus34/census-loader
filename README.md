@@ -2,7 +2,7 @@
 A quick way to get started with Australian Bureau of Statistics (ABS) Census 2021 data and boundaries. Note: Boundaries are available in both datums (GDA94 and GDA2020)
 
 ### There are 3 options for loading the data
-1. [Run](https://github.com/minus34/census-loader#option-1---run-loadcensuspy) the load-census Python script and build the database schemas in a single step **on a Mac or Linux machine**
+1. [Run](https://github.com/minus34/census-loader#option-1---run-load-censuspy) the load-census Python script and build the database schemas in a single step **on a Mac or Linux machine**
 2. [Pull](https://github.com/minus34/census-loader#option-2---run-the-database-in-a-docker-container) the database from Docker Hub and run it in a container
 3. [Download](https://github.com/minus34/census-loader#option-3---load-pg_dump-files) the Postgres dump files and restore them in your database.
 
