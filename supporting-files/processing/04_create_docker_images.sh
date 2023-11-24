@@ -3,8 +3,8 @@
 # get the directory this script is running from
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-CENSUS_YEAR="2021"
-OUTPUT_FOLDER = "/Users/$(whoami)/tmp/census_${CENSUS_YEAR}"
+CENSUS_YEAR=2021
+OUTPUT_FOLDER="/Users/$(whoami)/tmp/census_${CENSUS_YEAR}"
 
 cd ${OUTPUT_FOLDER}
 
@@ -46,9 +46,8 @@ echo "--------------------------------------------------------------------------
 echo "build census-loader GDA2020 docker image"
 echo "---------------------------------------------------------------------------------------------------------------------"
 
-cd ${OUTPUT_FOLDER_2020}
 docker build --platform linux/amd64 --no-cache --tag docker.io/minus34/censusloader:latest-gda2020 --tag docker.io/minus34/censusloader:${CENSUS_YEAR}-gda2020 \
-  -f /Users/$(whoami)/git/minus34/census-loader/docker/Dockerfile  --build-arg DATUM="gda2020" .
+  -f /Users/$(whoami)/git/minus34/census-loader/docker/Dockerfile --build-arg DATUM="gda2020" .
 
 echo "---------------------------------------------------------------------------------------------------------------------"
 echo "push images (with 2 new tags) to Docker Hub"
