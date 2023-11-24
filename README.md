@@ -13,9 +13,9 @@ Running the Python script takes 15-30 minutes on a Postgres server (or desktop) 
 To get a good load time you'll need to configure your Postgres server for performance. There's a good guide [here](https://revenant.ca/www/postgis/workshop/tuning.html), noting its old and the memory parameters can be beefed up if you have the RAM.
 
 ### Pre-requisites
-- Postgres 14+ with PostGIS 3.x+ (tested on 14.10 on macOS Sonoma)
+- Postgres 14+ with PostGIS 3.2+ (tested on 14.10 on macOS Sonoma)
 - Add the Postgres bin directory to your system PATH
-- Python 3.x with Psycopg3 & Pandas packages installed
+- Python 3.6+ with Psycopg 3 & Pandas packages installed
 
 ### Process
 1. Run the `xx_run_all.sh` script in the `supporting-files/processing` folder. It will download the data and boundary files from the ABS and import them into Postgres in a single step.
@@ -59,7 +59,6 @@ When using the resulting data from this process - you will need to adhere to the
 - Whilst you can choose which schema to load the data into, I haven't QA'd the permutations. Stick with the defaults if you have limited Postgres experience 
 
 ## Option 2 - Run the database in a docker container
-
 Download and run a Docker container with Census data and ASGS boundaries ready to go in a Postgres database.
 
 ### Process
@@ -79,13 +78,13 @@ Download Postgres dump files and restore them in your database.
 Should take 15-30 minutes.
 
 ### Pre-requisites
-- Postgres 9.6+ with PostGIS 2.2+
+- Postgres 14+ with PostGIS 3.2+
 - A knowledge of [Postgres pg_restore parameters](https://www.postgresql.org/docs/9.6/static/app-pgrestore.html)
 
 ### Process
 1. Download [census_2021_data.dmp](https://minus34.com/opendata/census-2021/census_2021_data.dmp) (~1.1Gb)
 2. Download [census_2021_bdys_gda94.dmp](https://minus34.com/opendata/census-2021/census_2021_bdys_gda94.dmp) or [census_2021_bdys_gda2020.dmp](https://minus34.com/opendata/census-2021/census_2021_bdys_gda2020.dmp) (~1.5Gb)
-3. Edit the restore-census-schemas.bat or .sh script in the supporting-files folder for your database parameters and for the location of pg_restore
+3. Edit the `restore-census-schemas.bat` or 'restore-census-schemas.sh' script in the 'supporting-files' folder for your database parameters and for the location of pg_restore
 4. Run the script, come back in 15-30 minutes and enjoy!
 
 ### Data License
