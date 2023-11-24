@@ -5,7 +5,7 @@
 # Arguments:
 #   1. The datum of the boundary files: valid values are GDA94 or GDA2020
 #
-# Sample command line: . /Users/$(whoami)/git/minus34/census-loader/run.sh 2021 GDA94
+# Sample command line: . /Users/$(whoami)/git/minus34/census-loader/02_download_boundaries.sh 2021 GDA94
 #
 
 # active Conda environment with GDAL
@@ -29,9 +29,7 @@ PG_CONNECT_STRING="PG:host=localhost user=postgres dbname=geo password=password 
 DATUM=$(echo $1 | tr '[:lower:]' '[:upper:]')
 BDY_SCHEMA_SUFFIX=$(echo ${DATUM} | tr '[:upper:]' '[:lower:]')
 
-#DATA_SCHEMA="census_${CENSUS_YEAR}_data"
 BDYS_SCHEMA="census_${CENSUS_YEAR}_bdys_${BDY_SCHEMA_SUFFIX}"
-#WEB_SCHEMA="census_${CENSUS_YEAR}_web"
 
 # boundary Geopackage file names - DO NOT EDIT
 MAINBDYFILE="ASGS_${CENSUS_YEAR}_MAIN_STRUCTURE_GPKG_${DATUM}"
@@ -68,13 +66,12 @@ while read f;
   do
     echo "  - Importing ${f}"
     $CONDA_PREFIX/bin/ogr2ogr -f "PostgreSQL" "${PG_CONNECT_STRING}" -lco OVERWRITE=YES -lco GEOMETRY_NAME=geom -lco SCHEMA=${BDYS_SCHEMA} ${f}
-#    ogr2ogr -f "PostgreSQL" "${PG_CONNECT_STRING}" -a_srs EPSG:4283 -lco OVERWRITE=YES -lco GEOMETRY_NAME=geom -lco SCHEMA=${BDYS_SCHEMA} ${f}
   done < ${BDYS_PATH}/temp.txt
 
 
 ## WARNING: deletes the bdy directory
 rm -rf "${BDYS_PATH}"
-#rm ${BDYS_PATH}/temp.txt
+rm ${BDYS_PATH}/temp.txt
 
 
 duration=$SECONDS

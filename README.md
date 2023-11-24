@@ -1,19 +1,5 @@
 # census-loader
-A quick way to get started with Australian Bureau of Statistics (ABS) Census 2011 or 2016 data.
-
-**census-loader is 2 things:**
-1. A quick way to load the entire census into Postgres
-2. A [map server](https://github.com/minus34/census-loader/tree/master/web) for quickly visualising census data and trends
-
-**DEMOS** (CURRENTLY OFFLINE)
-
-* Age: [https://census.minus34.com?stats=G247,G248,G249,G250,G251,G252,G253,G254,G255](https://census.minus34.com?stats=G247,G248,G249,G250,G251,G252,G253,G254,G255)
-* Religion: [https://census.minus34.com?stats=G5456,G5363,G5423,G5426,G5429,G5432](https://census.minus34.com?stats=G5456,G5363,G5423,G5426,G5429,G5432)
-* Median age, income, rent, mortgages: [https://census.minus34.com?stats=G109,G110,G111,G112,G113,G114,G115,G116](https://census.minus34.com?stats=G109,G110,G111,G112,G113,G114,G115,G116)
-* Country of birth: [https://census.minus34.com?stats=G2320,G2380,G2410,G2450,G2470,G2520,G2620,G2660,G2780](https://census.minus34.com?stats=G2320,G2380,G2410,G2450,G2470,G2520,G2620,G2660,G2780)
-
-
-![melbourne_rent.png](https://github.com/minus34/census-loader/blob/master/sample-images/melbourne_rent.png)
+A quick way to get started with Australian Bureau of Statistics (ABS) Census 2021 data; as well as Census 2016 or 2011 data.
 
 ### There are 3 options for loading the data
 1. [Run](https://github.com/minus34/census-loader#option-1---run-loadcensuspy) the load-census Python script and build the database schemas in a single step
@@ -21,19 +7,15 @@ A quick way to get started with Australian Bureau of Statistics (ABS) Census 201
 3. [Download](https://github.com/minus34/census-loader#option-3---load-pg_dump-files) the Postgres dump files and restore them in your database.
 
 ## Option 1 - Run load-census.py
-Running the Python script takes 15-30 minutes on a Postgres server configured for performance.
-
-Benchmarks are:
-- 3 year old, 32 core Windows server with SSDs = 15 mins
-- MacBook Pro = 25 mins
+Running the Python script takes 15-30 minutes on a Postgres server (or dekstop) configured for performance.
 
 ### Performance
-To get a good load time you'll need to configure your Postgres server for performance. There's a good guide [here](https://revenant.ca/www/postgis/workshop/tuning.html), noting it's a few years old and some of the memory parameters can be beefed up if you have the RAM.
+To get a good load time you'll need to configure your Postgres server for performance. There's a good guide [here](https://revenant.ca/www/postgis/workshop/tuning.html), noting it's old and some of the memory parameters can be beefed up if you have the RAM.
 
 ### Pre-requisites
-- Postgres 9.6+ with PostGIS 2.3+ (tested on 9.6 on macOS Sierra and Windows 10)
+- Postgres 14+ with PostGIS 3.x+ (tested on 14.10 on macOS Sonoma)
 - Add the Postgres bin directory to your system PATH
-- Python 3.x with Psycopg2, xlrd & Pandas packages installed
+- Python 3.x with Psycopg, xlrd & Pandas packages installed
 
 ### Process
 1. Download [ABS Census DataPacks](https://datapacks.censusdata.abs.gov.au/datapacks/)
@@ -111,10 +93,9 @@ Should take 15-30 minutes.
 
 ### Process
 1. Download [census_2021_data.dmp](https://minus34.com/opendata/census-2021/census_2021_data.dmp) (~0.6Gb)
-2. Download [census_2021_bdys.dmp](https://minus34.com/opendata/census-2021/census_2021_bdys_gda94.dmp) (~1.1Gb)
-3. Download [census_2021_web.dmp](https://minus34.com/opendata/census-2021/census_2021_web.dmp) (~0.8Gb)
-4. Edit the restore-census-schemas.bat or .sh script in the supporting-files folder for your database parameters and for the location of pg_restore
-5. Run the script, come back in 15-30 minutes and enjoy!
+2. Download [census_2021_bdys_gda94.dmp](https://minus34.com/opendata/census-2021/census_2021_bdys_gda94.dmp) (~1.1Gb)
+3. Edit the restore-census-schemas.bat or .sh script in the supporting-files folder for your database parameters and for the location of pg_restore
+4. Run the script, come back in 15-30 minutes and enjoy!
 
 ### Data License
 
