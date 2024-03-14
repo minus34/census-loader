@@ -8,11 +8,12 @@ SELECT bdy.lga_code_2021,
        bdy.lga_name_2021,
 	   stats.g3,
 	   bdy.area_albers_sqkm,
-	   (stats.g3::float / bdy.area_albers_sqkm)::numeric(5,1) as pop_density,
+	   (stats.g3::float / bdy.area_albers_sqkm)::integer as pop_density,
 	   bdy.geom
 FROM census_2021_bdys_gda94.lga_2021_aust_gda94 as bdy
-LEFT OUTER JOIN census_2016_data.lga_g01 as stats on bdy.lga_code_2021 = stats.region_id
+LEFT OUTER JOIN census_2021_data.lga_g01 as stats on bdy.lga_code_2021 = stats.region_id
 ;
+
 
 
 
