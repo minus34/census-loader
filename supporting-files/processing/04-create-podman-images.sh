@@ -57,11 +57,11 @@ podman manifest push --compression-level 9 localhost/censusloader docker://docke
 ## delete postgres dmp files
 #rm ${DOCKER_FOLDER}/*.dmp
 
-echo "---------------------------------------------------------------------------------------------------------------------"
-echo "copy GDA2020 postgres dump files to Dockerfile folder : $(date)"
-echo "---------------------------------------------------------------------------------------------------------------------"
-
-cp ${OUTPUT_FOLDER_2020}/*.dmp ${DOCKER_FOLDER}/
+#echo "---------------------------------------------------------------------------------------------------------------------"
+#echo "copy GDA2020 postgres dump files to Dockerfile folder : $(date)"
+#echo "---------------------------------------------------------------------------------------------------------------------"
+#
+#cp ${OUTPUT_FOLDER_2020}/*.dmp ${DOCKER_FOLDER}/
 
 echo "---------------------------------------------------------------------------------------------------------------------"
 echo "re-initialise podman - warning: this could accidentally destroy other images : $(date)"
