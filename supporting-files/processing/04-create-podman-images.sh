@@ -35,7 +35,7 @@ podman login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD} docker.io/minus34
 cd ${DOCKER_FOLDER}
 
 echo "---------------------------------------------------------------------------------------------------------------------"
-echo "build gnaf-loader GDA94 images : $(date)"
+echo "build census-loader GDA94 images : $(date)"
 echo "---------------------------------------------------------------------------------------------------------------------"
 
 # build images
@@ -78,7 +78,7 @@ podman login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD} docker.io/minus34
 cd ${DOCKER_FOLDER}
 
 echo "---------------------------------------------------------------------------------------------------------------------"
-echo "build gnaf-loader GDA2020 images : $(date)"
+echo "build census-loader GDA2020 images : $(date)"
 echo "---------------------------------------------------------------------------------------------------------------------"
 
 # build images

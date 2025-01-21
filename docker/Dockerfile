@@ -42,7 +42,7 @@ RUN /etc/init.d/postgresql start \
     && sudo -u postgres psql -c "CREATE EXTENSION postgis;" \
     && /etc/init.d/postgresql stop
 
-# download and restore GNAF & Admin Boundary Postgres dump files
+# download and restore Census Postgres dump files
 RUN mkdir -p /data
 WORKDIR /data
 
