@@ -7,7 +7,3 @@ podman machine start
 
 # run census loader container
 podman run --name=censusloader --publish=5433:5432 minus34/censusloader:latest
-
-
-## get census loader image pull count
-#curl -s https://hub.docker.com/v2/repositories/minus34/censusloader/ | jq -r ".pull_count"
