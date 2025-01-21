@@ -56,7 +56,7 @@ ADD census_${CENSUS_YEAR}_bdys_${DATUM}.dmp .
 #     && wget --quiet ${BASE_URL}/census_${CENSUS_YEAR}_bdys_${DATUM}.dmp
 
 RUN /etc/init.d/postgresql start \
-    && pg_restore -Fc -d postgres -h 127.0.0.1 -p 5432 -U postgres /census_${CENSUS_YEAR}_data.dmp \
+    && pg_restore -Fc -d postgres -h 127.0.0.1 -p 5432 -U postgres /data/census_${CENSUS_YEAR}_data.dmp \
     && pg_restore -Fc -d postgres -h 127.0.0.1 -p 5432 -U postgres /data/census_${CENSUS_YEAR}_bdys_${DATUM}.dmp \
     && /etc/init.d/postgresql stop \
     && rm /data/*.dmp
