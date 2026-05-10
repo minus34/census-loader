@@ -92,3 +92,4 @@ ENV/
 
 data/*
 fail*.sql
+.DS_Store
