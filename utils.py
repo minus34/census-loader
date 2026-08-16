@@ -1,13 +1,14 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 import io
-import multiprocessing
 import math
+import multiprocessing
 import os
+import subprocess
+
 # import platform
 import psycopg
-import subprocess
+
 # import sys
 
 
@@ -286,8 +287,9 @@ def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_
     try:
         process = subprocess.Popen(shp2pgsql_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         sql_obj, err = process.communicate()
-    except:
-        return f"Importing {file_path} - Couldn't convert Shapefile to SQL"
+    except Exception as ex:  # noqa: BLE001
+        process.kill() # type: ignore
+        return f"Importing {file_path} - Couldn't convert Shapefile to SQL : {ex}"
 
     # print(f"SQL object is this long: {len(sql_obj)}")
     # print(f"Error is: {err}")
@@ -309,7 +311,7 @@ def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_
     # import data to Postgres
     try:
         pg_cur.execute(sql)
-    except:
+    except psycopg.Error:
         # if import fails for some reason - output sql to file for debugging
         target = open(os.path.join(os.path.dirname(os.path.realpath(__file__)), f"fail_{pg_table}.sql"), "w")
         target.write(sql)
@@ -322,7 +324,7 @@ def import_shapefile_to_postgres(pg_cur, file_path, pg_table, pg_schema, delete_
 
         try:
             pg_cur.execute(sql)
-        except:
+        except psycopg.Error:
             return f"\tImporting {pg_table} - Couldn't cluster on spatial index"
 
     return "SUCCESS"
