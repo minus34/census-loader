@@ -220,66 +220,6 @@ def run_command_line(cmd):
     return result
 
 
-def split_sql_into_list(pg_cur, the_sql, table_schema, table_name, table_alias, table_gid,
-                        max_concurrent_processes, logger):
-    # get min max gid values from the table to split
-    min_max_sql = f"SELECT MIN({table_gid}) AS min, MAX({table_gid}) AS max FROM {table_schema}.{table_name}"
-
-    pg_cur.execute(min_max_sql)
-
-    try:
-        result = pg_cur.fetchone()
-
-        min_pkey = int(result[0])
-        max_pkey = int(result[1])
-        diff = max_pkey - min_pkey
-
-        # Number of records in each query
-        rows_per_request = int(math.floor(float(diff) / float(max_concurrent_processes))) + 1
-
-        # If less records than processes or rows per request,
-        # reduce both to allow for a minimum of 15 records each process
-        if float(diff) / float(max_concurrent_processes) < 10.0:
-            rows_per_request = 10
-            processes = int(math.floor(float(diff) / 10.0)) + 1
-            logger.info(f"\t\t- running {processes} processes (adjusted due to low row count in table to split)")
-        else:
-            processes = max_concurrent_processes
-
-        # create list of sql statements to run with multiprocessing
-        sql_list = []
-        start_pkey = min_pkey - 1
-
-        for i in range(0, processes):
-            end_pkey = start_pkey + rows_per_request
-
-            where_clause = f""" WHERE {table_alias}.{table_gid} > {start_pkey} 
-                                    AND {table_alias}.{table_gid} <= {end_pkey}"""
-
-            if "WHERE " in the_sql:
-                mp_sql = the_sql.replace(" WHERE ", where_clause + " AND ")
-            elif "GROUP BY " in the_sql:
-                mp_sql = the_sql.replace("GROUP BY ", where_clause + " GROUP BY ")
-            elif "ORDER BY " in the_sql:
-                mp_sql = the_sql.replace("ORDER BY ", where_clause + " ORDER BY ")
-            else:
-                if ";" in the_sql:
-                    mp_sql = the_sql.replace(";", where_clause + ";")
-                else:
-                    mp_sql = the_sql + where_clause
-                    logger.warning("\t\t- NOTICE: no ; found at the end of the SQL statement")
-
-            sql_list.append(mp_sql)
-            start_pkey = end_pkey
-
-        # logger.info('\n'.join(sql_list))
-
-        return sql_list
-    except Exception as ex:
-        logger.fatal(f"Looks like the table in this query is empty: {min_max_sql}\n{ex}")
-        return None
-
-
 def multiprocess_shapefile_load(work_list, max_concurrent_processes, pg_connect_string, logger):
     pool = multiprocessing.Pool(processes=max_concurrent_processes)
 
