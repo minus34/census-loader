@@ -195,7 +195,7 @@ def run_sql_multiprocessing(args):
 
     # # set raw gnaf database schema (it's needed for the primary and foreign key creation)
     # if raw_gnaf_schema != "public":
-    #     pg_cur.execute(f"SET search_path = {raw_gnaf_schema}, public, pg_catalog")
+    #     pg_cur.execute(sql.SQL("SET search_path = {}, public, pg_catalog").format(sql.Identifier(settings.raw_gnaf_schema)))
 
     try:
         pg_cur.execute(the_sql)
